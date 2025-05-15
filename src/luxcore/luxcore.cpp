@@ -133,7 +133,8 @@ Properties luxcore::GetPlatformDesc() {
 
 	Properties props;
 
-	static const string luxCoreVersion(LUXCORE_VERSION);
+	#define CUSTOM_TAG "-GRIN-May15"
+	static const string luxCoreVersion(string(LUXCORE_VERSION) + CUSTOM_TAG);
 	props << Property("version.number")(luxCoreVersion);
 
 #if !defined(LUXRAYS_DISABLE_OPENCL)
