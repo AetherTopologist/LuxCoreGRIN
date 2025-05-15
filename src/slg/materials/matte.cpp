@@ -49,7 +49,8 @@ Spectrum MatteMaterial::Evaluate(const HitPoint &hitPoint,
 		*reversePdfW = fabsf((hitPoint.fromLight ? localLightDir.z : localEyeDir.z) * INV_PI);
 
 	*event = DIFFUSE | REFLECT;
-	return Kd->GetSpectrumValue(hitPoint).Clamp(0.f, 1.f) * (INV_PI * fabsf(localLightDir.z));
+	//return Kd->GetSpectrumValue(hitPoint).Clamp(0.f, 1.f) * (INV_PI * fabsf(localLightDir.z));
+	return Spectrum();
 }
 
 Spectrum MatteMaterial::Sample(const HitPoint &hitPoint,
