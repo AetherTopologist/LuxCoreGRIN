@@ -85,21 +85,29 @@ float HeterogeneousVolume::Scatter(const Ray &ray, const float u,
 		hitPoint.p = ray(ray.mint + evaluationPoint);
 
 		///////////////////////////////////////////////////////////
-		// GRIN TEST
+		// GRIN TEST — Ray Curvature Injection (Debug)
 		///////////////////////////////////////////////////////////
-		// DEBUG GRIN CURVATURE: Apply a consistent bend to the ray direction for testing
+
+		// Copy original ray direction
 		Vector curvedDirection = ray.d;
 
-		// Inject a fake curvature along +X (or Y/Z) for testing
-		const float curvatureStrength = 0.05f;  // Try small values: 0.01f, 0.05f, etc.
-		curvedDirection.x += curvatureStrength * s; // s is the step index
+		// Normalize step-based curvature to avoid scale explosions
+		const float curvatureStrength = 1.0f; // Tunable constant multiplier
+		const float curveFactor = curvatureStrength * currentStepSize * s;
+
+		// Create a perpendicular vector to bend along (+X axis relative to camera frame)
+		Vector bendAxis(1.0f, 0.0f, 0.0f);
+
+		// Create a rotated direction by adding the curve vector
+		curvedDirection += bendAxis * curveFactor;
 		curvedDirection = Normalize(curvedDirection);
 
-		// Replace ray direction at this point with curved version
+		// Apply curved direction at this step
 		hitPoint.fixedDir = curvedDirection;
 		hitPoint.geometryN = hitPoint.interpolatedN = hitPoint.shadeN = Normal(-curvedDirection);
+
 		///////////////////////////////////////////////////////////
-		// GRIN TEST END
+		// END GRIN TEST
 		///////////////////////////////////////////////////////////
 
 		// Volume segment values
