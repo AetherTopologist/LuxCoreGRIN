@@ -48,7 +48,7 @@ void Scene::ParseVolumes(const Properties &props) {
 		if (volName == "")
 			throw runtime_error("Syntax error in volume definition: " + volName);
 
-		SDL_LOG("Volume(GRIN) definition: " << volName);
+		SDL_LOG("Volume definition: " << volName);
 		// In order to have harlequin colors with MATERIAL_ID output
 		const u_int index = defaultMaterialIDIndex++;
 		const u_int volID = ((u_int)(RadicalInverse(index + 1, 2) * 255.f + .5f)) |

@@ -73,7 +73,7 @@ Camera *Scene::CreateCamera(const Properties &props) {
 
 	const string type = props.Get(Property("scene.camera.type")("perspective")).Get<string>();		
 
-	SDL_LOG("Camera type: " << type);
+	SDL_LOG("🔥[GRIN Debug] Camera type: " << type);
 	SDL_LOG("Camera position: " << orig);
 	SDL_LOG("Camera target: " << target);
 

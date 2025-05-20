@@ -92,7 +92,7 @@ void Scene::ParseMaterials(const Properties &props) {
 		if (matDefs.IsMaterialDefined(matName)) {
 			SDL_LOG("Material re-definition: " << matName);
 		} else {
-			SDL_LOG("Material definition: " << matName);
+			SDL_LOG("🔥[GRIN Debug] Material definition: " << matName);
 		}
 
 		// In order to have harlequin colors with MATERIAL_ID output
