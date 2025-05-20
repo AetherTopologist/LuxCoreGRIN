@@ -82,45 +82,29 @@ float HeterogeneousVolume::Scatter(const Ray &ray, const float u,
 		// Compute the scattering over the current step
 		const float evaluationPoint = (s + rng.floatValue()) * currentStepSize;
 
-		hitPoint.p = ray(ray.mint + evaluationPoint);
 
 		///////////////////////////////////////////////////////////
-		// GRIN TEST — Ray Curvature Injection (Debug)
+		// Ray-Curving GRIN Test
 		///////////////////////////////////////////////////////////
 
-		// Copy original ray direction
-		Vector curvedDirection = ray.d;
-
-		// Normalize step-based curvature to avoid scale explosions
-		const float curvatureStrength = 1.0f; // Tunable constant multiplier
+		const float curvatureStrength = 20.0f;
 		const float curveFactor = curvatureStrength * currentStepSize * s;
 
-		// Create a perpendicular vector to bend along (+X axis relative to camera frame)
-		Vector bendAxis(1.0f, 0.0f, 0.0f);
+		Vector bendAxis(1.0f, 0.0f, 1.0f); // Bend along +X axis
 
-		// Create a rotated direction by adding the curve vector
-		curvedDirection += bendAxis * curveFactor;
-		curvedDirection = Normalize(curvedDirection);
+		Vector curvedOffset = bendAxis * curveFactor;
 
-		// Apply curved direction at this step
-		hitPoint.fixedDir = curvedDirection;
-		hitPoint.geometryN = hitPoint.interpolatedN = hitPoint.shadeN = Normal(-curvedDirection);
+		// Compute curved marching position
+		hitPoint.p = ray(ray.mint + evaluationPoint) + curvedOffset;
 
-		///////////////////////////////////////////////////////////
-		// END GRIN TEST
-		///////////////////////////////////////////////////////////
+		hitPoint.fixedDir = ray.d;
+		hitPoint.geometryN = hitPoint.interpolatedN = hitPoint.shadeN = Normal(-ray.d);
 
 		// Volume segment values
 		const Spectrum sigmaA = SigmaA(hitPoint);
 		const Spectrum sigmaS = SigmaS(hitPoint);
 		const Spectrum emission = Emission(hitPoint);
 		
-		// Evaluate the current segment like if it was an homogenous volume
-		//
-		// This could be optimized by inlining the code and exploiting
-		// exp(a) * exp(b) = exp(a + b) in order to evaluate a single exp() at
-		// the end instead of one each step.
-		// However the code would be far less simple and readable.
 		Spectrum segmentTransmittance, segmentEmission;
 		const float scatterDistance = HomogeneousVolume::Scatter(rng.floatValue(), scatterAllowed,
 				currentStepSize, sigmaA, sigmaS, emission,
