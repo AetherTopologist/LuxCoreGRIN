@@ -98,8 +98,8 @@ float HeterogeneousVolume::Scatter(const Ray &ray, const float u,
 		static thread_local Point rayPos = ray(ray.mint);
 
 		// Inject curved motion step-by-step
-		const Vector curveAxis(0.0f, 0.0f, 1.0f); // Z-axis curvature for XY plane
-		const float curvatureAmount = 0.1f;       // Adjust for curvature strength
+		const Vector curveAxis(1.0f, 0.0f, 1.0f); // Z-axis curvature for XY plane
+		const float curvatureAmount = 0.5f;       // Adjust for curvature strength
 
 		// Apply curvature to direction
 		rayDir += Cross(curveAxis, rayDir) * curvatureAmount * currentStepSize;
@@ -123,16 +123,15 @@ float HeterogeneousVolume::Scatter(const Ray &ray, const float u,
 		const Spectrum emission = Emission(hitPoint);
 		
 		Spectrum segmentTransmittance, segmentEmission;
-		const float scatterDistance = HomogeneousVolume::Scatter(rng.floatValue(), scatterAllowed,
-				currentStepSize, sigmaA, sigmaS, emission,
-				segmentTransmittance, segmentEmission);
+		const float scatterDistance = HomogeneousVolume::Scatter(rng.floatValue(), false, currentStepSize, sigmaA, sigmaS, emission, segmentTransmittance, segmentEmission);
+		//const float scatterDistance = HomogeneousVolume::Scatter(rng.floatValue(), scatterAllowed, currentStepSize, sigmaA, sigmaS, emission, segmentTransmittance, segmentEmission);
 
 		// I need to update first connectionEmission and than connectionThroughput
 		*connectionEmission += *connectionThroughput * emission;
 		*connectionThroughput *= segmentTransmittance;
 
-		if (scatterDistance >= 0.f)
-			return ray.mint + s * currentStepSize + scatterDistance;
+		//if (scatterDistance >= 0.f)
+			//return ray.mint + s * currentStepSize + scatterDistance;
 	}
 
 	return -1.f;
