@@ -82,23 +82,40 @@ float HeterogeneousVolume::Scatter(const Ray &ray, const float u,
 		// Compute the scattering over the current step
 		const float evaluationPoint = (s + rng.floatValue()) * currentStepSize;
 
-
 		///////////////////////////////////////////////////////////
 		// Ray-Curving GRIN Test
 		///////////////////////////////////////////////////////////
 
-		const float curvatureStrength = 20.0f;
-		const float curveFactor = curvatureStrength * currentStepSize * s;
-
-		Vector bendAxis(1.0f, 0.0f, 1.0f); // Bend along +X axis
-
-		Vector curvedOffset = bendAxis * curveFactor;
-
 		// Compute curved marching position
-		hitPoint.p = ray(ray.mint + evaluationPoint) + curvedOffset;
+		//const float curvatureStrength = 20.0f;
+		//const float curveFactor = curvatureStrength * currentStepSize * s;
+		//Vector bendAxis(1.0f, 0.0f, 1.0f); // Bend along +X axis
+		//Vector curvedOffset = bendAxis * curveFactor;
+		//hitPoint.p = ray(ray.mint + evaluationPoint) + curvedOffset;
 
-		hitPoint.fixedDir = ray.d;
-		hitPoint.geometryN = hitPoint.interpolatedN = hitPoint.shadeN = Normal(-ray.d);
+		// Initialize mutable marching state
+		static thread_local Vector rayDir = Normalize(ray.d);
+		static thread_local Point rayPos = ray(ray.mint);
+
+		// Inject curved motion step-by-step
+		const Vector curveAxis(0.0f, 0.0f, 1.0f); // Z-axis curvature for XY plane
+		const float curvatureAmount = 0.1f;       // Adjust for curvature strength
+
+		// Apply curvature to direction
+		rayDir += Cross(curveAxis, rayDir) * curvatureAmount * currentStepSize;
+		rayDir = Normalize(rayDir);
+
+		// Advance position with curved direction
+		rayPos += rayDir * currentStepSize;
+
+		// Populate hitPoint with updated values
+		hitPoint.p = rayPos;
+		hitPoint.fixedDir = rayDir;
+		hitPoint.geometryN = hitPoint.interpolatedN = hitPoint.shadeN = Normal(-rayDir);
+
+
+		//hitPoint.fixedDir = ray.d;
+		//hitPoint.geometryN = hitPoint.interpolatedN = hitPoint.shadeN = Normal(-ray.d);
 
 		// Volume segment values
 		const Spectrum sigmaA = SigmaA(hitPoint);
