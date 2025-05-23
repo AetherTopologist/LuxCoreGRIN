@@ -99,7 +99,7 @@ float HeterogeneousVolume::Scatter(const Ray &ray, const float u,
 
 		// Inject curved motion step-by-step
 		const Vector curveAxis(1.0f, 0.0f, 1.0f); // Z-axis curvature for XY plane
-		const float curvatureAmount = 0.5f;       // Adjust for curvature strength
+		const float curvatureAmount = 10.0f;       // Adjust for curvature strength
 
 		// Apply curvature to direction
 		rayDir += Cross(curveAxis, rayDir) * curvatureAmount * currentStepSize;
