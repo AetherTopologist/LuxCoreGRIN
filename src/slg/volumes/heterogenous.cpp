@@ -82,56 +82,22 @@ float HeterogeneousVolume::Scatter(const Ray &ray, const float u,
 		// Compute the scattering over the current step
 		const float evaluationPoint = (s + rng.floatValue()) * currentStepSize;
 
-		///////////////////////////////////////////////////////////
-		// Ray-Curving GRIN Test
-		///////////////////////////////////////////////////////////
-
-		// Compute curved marching position
-		//const float curvatureStrength = 20.0f;
-		//const float curveFactor = curvatureStrength * currentStepSize * s;
-		//Vector bendAxis(1.0f, 0.0f, 1.0f); // Bend along +X axis
-		//Vector curvedOffset = bendAxis * curveFactor;
-		//hitPoint.p = ray(ray.mint + evaluationPoint) + curvedOffset;
-
-		// Initialize mutable marching state
-		static thread_local Vector rayDir = Normalize(ray.d);
-		static thread_local Point rayPos = ray(ray.mint);
-
-		// Inject curved motion step-by-step
-		const Vector curveAxis(1.0f, 0.0f, 1.0f); // Z-axis curvature for XY plane
-		const float curvatureAmount = 10.0f;       // Adjust for curvature strength
-
-		// Apply curvature to direction
-		rayDir += Cross(curveAxis, rayDir) * curvatureAmount * currentStepSize;
-		rayDir = Normalize(rayDir);
-
-		// Advance position with curved direction
-		rayPos += rayDir * currentStepSize;
-
-		// Populate hitPoint with updated values
-		hitPoint.p = rayPos;
-		hitPoint.fixedDir = rayDir;
-		hitPoint.geometryN = hitPoint.interpolatedN = hitPoint.shadeN = Normal(-rayDir);
-
-
-		//hitPoint.fixedDir = ray.d;
-		//hitPoint.geometryN = hitPoint.interpolatedN = hitPoint.shadeN = Normal(-ray.d);
-
+		hitPoint.p = ray(ray.mint + evaluationPoint);
+		
 		// Volume segment values
 		const Spectrum sigmaA = SigmaA(hitPoint);
 		const Spectrum sigmaS = SigmaS(hitPoint);
 		const Spectrum emission = Emission(hitPoint);
 		
 		Spectrum segmentTransmittance, segmentEmission;
-		const float scatterDistance = HomogeneousVolume::Scatter(rng.floatValue(), false, currentStepSize, sigmaA, sigmaS, emission, segmentTransmittance, segmentEmission);
-		//const float scatterDistance = HomogeneousVolume::Scatter(rng.floatValue(), scatterAllowed, currentStepSize, sigmaA, sigmaS, emission, segmentTransmittance, segmentEmission);
+		const float scatterDistance = HomogeneousVolume::Scatter(rng.floatValue(), scatterAllowed, currentStepSize, sigmaA, sigmaS, emission, segmentTransmittance, segmentEmission);
 
 		// I need to update first connectionEmission and than connectionThroughput
 		*connectionEmission += *connectionThroughput * emission;
 		*connectionThroughput *= segmentTransmittance;
 
-		//if (scatterDistance >= 0.f)
-			//return ray.mint + s * currentStepSize + scatterDistance;
+		if (scatterDistance >= 0.f)
+			return ray.mint + s * currentStepSize + scatterDistance;
 	}
 
 	return -1.f;

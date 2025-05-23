@@ -642,12 +642,6 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		} else
 			sampleResult.irradiancePathThroughput *= bsdfSample;
 
-		// Just above eyeRay.Update(...)
-		Vector curveBend(1.0f, 0.0f, 0.0f); // Adjust x-bending only for test
-		const float curveAmount = 0.1f;
-		sampledDir += curveBend * curveAmount;
-		sampledDir = Normalize(sampledDir);
-
 		// Now use the updated direction
 		eyeRay.Update(bsdf.GetRayOrigin(sampledDir), sampledDir);
 	}
