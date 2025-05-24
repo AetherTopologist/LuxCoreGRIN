@@ -583,16 +583,17 @@ bool Scene::Intersect(IntersectionDevice *device,
 		// 📍 Function: Scene::Intersect(...)
 		// Just BEFORE the line:
 		// bool hit = device ? device->TraceRay(...) : ...;
-		// Inject this full override:
+		// Inject a full override:
 		if (ray->isCurved) {
 			const luxrays::Vector curveAxis = Normalize(ray->curveAxis);
 			const float curveStrength = ray->curveStrength;
 			const float stepSize = 0.05f;
 			const int maxSteps = 500;
 
-			luxrays::Vector pos = ray->o;
+			//luxrays::Vector pos = ray->o;
+			luxrays::Point pos = ray->o;
 			luxrays::Vector dir = Normalize(ray->d);
-
+			
 			std::ofstream log;
 			log.open("ray_log.csv", std::ios::app);
 			if (!log) std::cerr << "Failed to open ray_log.csv for writing\n";
@@ -604,9 +605,6 @@ bool Scene::Intersect(IntersectionDevice *device,
 
 				// Write debug log for Blender viz
 				log << pos.x << "," << pos.y << "," << pos.z << std::endl;
-
-				// OPTIONAL: Implement mock hit test here
-				// if (IsPointInsideBoundingBox(pos, boxMin, boxMax)) { ... }
 			}
 
 			log.close();
