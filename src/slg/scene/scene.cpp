@@ -577,6 +577,41 @@ bool Scene::Intersect(IntersectionDevice *device,
 	bsdf->hitPoint.throughShadowTransparency = false;
 
 	for (;;) {
+		// BB GRIN
+		// === FILE: scene.cpp ===
+		// 📍 Function: Scene::Intersect(...)
+		// Just BEFORE the line:
+		// bool hit = device ? device->TraceRay(...) : ...;
+		// Inject this full override:
+		if (ray->isCurved) {
+			const luxrays::Vector curveAxis = Normalize(ray->curveAxis);
+			const float curveStrength = ray->curveStrength;
+			const float stepSize = 0.05f;
+			const int maxSteps = 500;
+
+			luxrays::Vector pos = ray->o;
+			luxrays::Vector dir = Normalize(ray->d);
+
+			std::ofstream log("ray_log.csv", std::ios::app);
+
+			for (int i = 0; i < maxSteps; ++i) {
+				dir += Cross(curveAxis, dir) * curveStrength * stepSize;
+				dir = Normalize(dir);
+				pos += dir * stepSize;
+
+				// Write debug log for Blender viz
+				log << pos.x << "," << pos.y << "," << pos.z << std::endl;
+
+				// OPTIONAL: Implement mock hit test here
+				// if (IsPointInsideBoundingBox(pos, boxMin, boxMax)) { ... }
+			}
+
+			log.close();
+			return false; // No hit found manually
+		}
+		// === END OF INJECTION ===
+		// BB GRIN END
+
 		bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
 
 		bool bevelContinueToTrace = !hit;

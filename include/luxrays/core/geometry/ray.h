@@ -85,6 +85,16 @@ public:
 
 	unsigned int flags;
 	float pad[2]; // Add padding to avoid size discrepancies between OpenCL and C++
+
+	// BB GRIN
+	// === FILE: ray.h ===
+	// 📍 Path: include/luxrays/core/ray.h
+	// Add to class Ray (around other public data fields)
+	bool isCurved = false;
+	luxrays::Vector curveAxis = luxrays::Vector(0.0f, 0.0f, 1.0f);
+	float curveStrength = 0.0f;
+	// BB GRIN END
+
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Ray &r) {

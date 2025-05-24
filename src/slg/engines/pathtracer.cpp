@@ -670,6 +670,16 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	EyePathInfo pathInfo;
 	Ray eyeRay;
 	GenerateEyeRay(scene->camera, film, eyeRay, pathInfo.volume, sampler, sampleResults[0]);
+	
+	// BB GRIN
+	// === FILE: pathtracer.cpp ===
+	// 📍 Function: PathTracer::RenderEyePath(...)
+	// Just after: GenerateEyeRay(...)
+	// Inject this to enable curved rays from the camera:
+	eyeRay.isCurved = true;
+	eyeRay.curveAxis = luxrays::Vector(0.0f, 0.0f, 1.0f); // Curve about Z axis
+	eyeRay.curveStrength = 0.3f; // Tunable
+	// BB GRIN END
 
 	RenderEyePath(device, scene, sampler, pathInfo, eyeRay, Spectrum(1.f), sampleResults);
 }
