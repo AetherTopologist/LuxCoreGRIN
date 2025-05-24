@@ -23,6 +23,7 @@
 #include <set>
 #include <vector>
 #include <memory>
+#include <fstream>  // Needed for std::ofstream
 
 #include <boost/detail/container_fwd.hpp>
 #include <boost/lexical_cast.hpp>
@@ -592,7 +593,9 @@ bool Scene::Intersect(IntersectionDevice *device,
 			luxrays::Vector pos = ray->o;
 			luxrays::Vector dir = Normalize(ray->d);
 
-			std::ofstream log("ray_log.csv", std::ios::app);
+			std::ofstream log;
+			log.open("ray_log.csv", std::ios::app);
+			if (!log) std::cerr << "Failed to open ray_log.csv for writing\n";
 
 			for (int i = 0; i < maxSteps; ++i) {
 				dir += Cross(curveAxis, dir) * curveStrength * stepSize;
