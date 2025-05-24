@@ -595,8 +595,8 @@ bool Scene::Intersect(IntersectionDevice *device,
 			luxrays::Vector dir = Normalize(ray->d);
 			
 			std::ofstream log;
-			log.open("ray_log.csv", std::ios::app);
-			if (!log) std::cerr << "Failed to open ray_log.csv for writing\n";
+			log.open("C:/LuxCoreBB/logs/ray_log.csv", std::ios::app);  // Set to a writable path
+			if (!log.is_open()) std::cerr << "[GRIN Debug] ❌ Failed to open ray_log.csv — check path!\n";
 
 			for (int i = 0; i < maxSteps; ++i) {
 				dir += Cross(curveAxis, dir) * curveStrength * stepSize;
