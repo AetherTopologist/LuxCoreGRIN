@@ -678,7 +678,7 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	// Inject this to enable curved rays from the camera:
 	eyeRay.isCurved = true;
 	eyeRay.curveAxis = luxrays::Vector(0.0f, 0.0f, 1.0f); // Curve about Z axis
-	eyeRay.curveStrength = 0.3f; // Tunable
+	eyeRay.curveStrength = 0.0001f; // Tunable
 	// BB GRIN END
 
 	RenderEyePath(device, scene, sampler, pathInfo, eyeRay, Spectrum(1.f), sampleResults);

@@ -602,6 +602,9 @@ bool Scene::Intersect(IntersectionDevice *device,
 				dir += Cross(curveAxis, dir) * curveStrength * stepSize;
 				dir = Normalize(dir);
 				pos += dir * stepSize;
+				const float maxRayDistance = 10.0f; // or scene bounding box estimate
+				if ((pos - ray->o).LengthSquared() > maxRayDistance * maxRayDistance)
+					break;
 
 				// Write debug log for Blender viz
 				log << pos.x << "," << pos.y << "," << pos.z << std::endl;
