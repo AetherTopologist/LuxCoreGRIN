@@ -28,10 +28,12 @@ using namespace slg;
 //------------------------------------------------------------------------------
 // GRINVolume
 //------------------------------------------------------------------------------
-
-GRINVolume::GRINVolume(const Texture *iorTex, const Texture *emiTex,
-		const Texture *a) : Volume(iorTex, emiTex) {
-	sigmaA = a;
+GRINVolume::GRINVolume(const Texture *iorTex, const Texture *emiTex, const Texture *a,
+                       const luxrays::Spectrum &minIor, const luxrays::Spectrum &maxIor,
+                       const luxrays::Vector &stretchVec, const std::string &profileType)
+    : Volume(iorTex, emiTex), iorMin(minIor), iorMax(maxIor),
+      stretch(stretchVec), profile(profileType) {
+    sigmaA = a;
 }
 
 Spectrum GRINVolume::SigmaA(const HitPoint &hitPoint) const {

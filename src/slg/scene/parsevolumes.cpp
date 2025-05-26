@@ -153,8 +153,6 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		const string profile = props.Get(Property(propName + ".profile")("radial")).Get<string>();
 
 		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile);
-	}
-
 	} else
 		throw runtime_error("Unknown volume type: " + volType);
 
