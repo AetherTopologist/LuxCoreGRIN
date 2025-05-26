@@ -578,13 +578,16 @@ bool Scene::Intersect(IntersectionDevice *device,
 	bsdf->hitPoint.throughShadowTransparency = false;
 
 	for (;;) {
-		// BB GRIN
+		// BB GRIN – placeholder for curved primary ray override
 		// === FILE: scene.cpp ===
 		// 📍 Function: Scene::Intersect(...)
 		// Just BEFORE the line:
 		// bool hit = device ? device->TraceRay(...) : ...;
 		// Inject a full override:
-		if (ray->isCurved) {
+
+		const bool ENABLE_GRIN_CURVED_PATH = false;
+
+		if (ENABLE_GRIN_CURVED_PATH && ray->isCurved) {
 			const luxrays::Vector curveAxis = Normalize(ray->curveAxis);
 			const float curveStrength = ray->curveStrength;
 			const float stepSize = 0.05f;
