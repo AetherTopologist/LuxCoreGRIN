@@ -72,7 +72,7 @@ typedef enum {
 	TWOSIDED,
 			
 	// Volumes
-	HOMOGENEOUS_VOL, CLEAR_VOL, HETEROGENEOUS_VOL
+	HOMOGENEOUS_VOL, CLEAR_VOL, HETEROGENEOUS_VOL, GRIN_VOL
 } MaterialType;
 
 typedef struct {

@@ -141,6 +141,7 @@ u_int CompiledScene::CompileMaterialOps(const u_int matIndex,
 		case DISNEY:
 		case HOMOGENEOUS_VOL:
 		case CLEAR_VOL:
+		case GRIN_VOL:
 		case HETEROGENEOUS_VOL:
 			switch (opType) {
 				case slg::ocl::EVAL_ALBEDO:
@@ -957,6 +958,7 @@ void CompiledScene::CompileMaterials() {
 			// Volumes
 			//------------------------------------------------------------------
 			case CLEAR_VOL:
+			case GRIN_VOL:
 			case HOMOGENEOUS_VOL:
 			case HETEROGENEOUS_VOL: {
 				const Volume *v = static_cast<const Volume *>(m);
@@ -971,6 +973,12 @@ void CompiledScene::CompileMaterials() {
 
 				switch (m->GetType()) {
 					case CLEAR_VOL: {
+						const ClearVolume *cv = static_cast<const ClearVolume *>(m);
+						mat->type = slg::ocl::CLEAR_VOL;
+						mat->volume.clear.sigmaATexIndex = scene->texDefs.GetTextureIndex(cv->GetSigmaA());
+						break;
+					}
+					case GRIN_VOL: {
 						const ClearVolume *cv = static_cast<const ClearVolume *>(m);
 						mat->type = slg::ocl::CLEAR_VOL;
 						mat->volume.clear.sigmaATexIndex = scene->texDefs.GetTextureIndex(cv->GetSigmaA());
