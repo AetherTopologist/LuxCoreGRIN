@@ -147,10 +147,10 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 	} else if (volType == "grin") {
 		const Texture *absorption = GetTexture(props.Get(Property(propName + ".absorption")(0.f, 0.f, 0.f)));
 
-		const Spectrum iorMin = props.Get(Property(propName + ".iormin")(1.0f)).Get<Spectrum>();
-		const Spectrum iorMax = props.Get(Property(propName + ".iormax")(1.5f)).Get<Spectrum>();
-		const Vector stretch = props.Get(Property(propName + ".stretch")(1.f, 1.f, 1.f)).Get<Vector>();
-		const string profile = props.Get(Property(propName + ".profile")("radial")).Get<string>();
+		const Spectrum iorMin = props.Get(Property(propName + ".grin.iormin")(1.0f)).Get<Spectrum>();
+		const Spectrum iorMax = props.Get(Property(propName + ".grin.iormax")(1.5f)).Get<Spectrum>();
+		const Vector stretch = props.Get(Property(propName + ".grin.stretch")(1.f, 1.f, 1.f)).Get<Vector>();
+		const string profile = props.Get(Property(propName + ".grin.profile")("radial")).Get<string>();
 
 		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile);
 	} else
