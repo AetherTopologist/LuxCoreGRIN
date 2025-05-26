@@ -20,7 +20,6 @@
 #define	_SLG_GRINVOL_H
 
 #include "slg/volumes/volume.h"
-#include "luxrays/core/spectrum.h"
 
 namespace slg {
 
@@ -59,9 +58,9 @@ public:
 
 	const Texture *GetSigmaA() const { return sigmaA; }
 
-	Spectrum iorMin;
-	Spectrum iorMax;
-	Vector stretch; // e.g., Vector(1.0f, 2.0f, 1.0f)
+	luxrays::Spectrum iorMin;
+	luxrays::Spectrum iorMax;
+	luxrays::Vector stretch; // e.g., Vector(1.0f, 2.0f, 1.0f)
 	std::string profile; // "radial", "axial", "shell", etc.
 
 protected:
