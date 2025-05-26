@@ -26,7 +26,6 @@ namespace slg {
 //------------------------------------------------------------------------------
 // GRINVolume
 //------------------------------------------------------------------------------
-
 class GRINVolume : public Volume {
 public:
 	GRINVolume(const Texture *iorTex, const Texture *emiTex, const Texture *a);
@@ -59,7 +58,8 @@ public:
 
 	const Texture *GetSigmaA() const { return sigmaA; }
 
-	Spectrum iorMin, iorMax;
+	Spectrum iorMin;
+	Spectrum iorMax;
 	Vector stretch; // e.g., Vector(1.0f, 2.0f, 1.0f)
 	std::string profile; // "radial", "axial", "shell", etc.
 
