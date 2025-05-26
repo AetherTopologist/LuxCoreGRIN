@@ -29,6 +29,7 @@
 #include "slg/textures/constfloat3.h"
 
 #include "slg/volumes/clear.h"
+#include "slg/volumes/grin.h"
 #include "slg/volumes/heterogenous.h"
 #include "slg/volumes/homogenous.h"
 

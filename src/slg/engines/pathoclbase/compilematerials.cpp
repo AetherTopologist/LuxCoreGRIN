@@ -50,6 +50,7 @@
 #include "slg/materials/velvet.h"
 
 #include "slg/volumes/clear.h"
+#include "slg/volumes/grin.h"
 #include "slg/volumes/heterogenous.h"
 #include "slg/volumes/homogenous.h"
 #include "slg/materials/disney.h"

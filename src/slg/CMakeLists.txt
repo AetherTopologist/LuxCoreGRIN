@@ -483,9 +483,10 @@ set(SLG_CORE_SRCS
   ${PROJECT_SOURCE_DIR}/src/slg/utils/pathinfo.cpp
   ${PROJECT_SOURCE_DIR}/src/slg/utils/pathvolumeinfo.cpp
   ${PROJECT_SOURCE_DIR}/src/slg/utils/varianceclamping.cpp
-  ${PROJECT_SOURCE_DIR}/src/slg/volumes/clear.cpp
+  ${PROJECT_SOURCE_DIR}/src/slg/volumes/
   ${PROJECT_SOURCE_DIR}/src/slg/volumes/heterogenous.cpp
   ${PROJECT_SOURCE_DIR}/src/slg/volumes/homogenous.cpp
+  ${PROJECT_SOURCE_DIR}/src/slg/volumes/grin.cpp
   ${PROJECT_SOURCE_DIR}/src/slg/volumes/volume.cpp
   ${PROJECT_SOURCE_DIR}/src/slg/renderconfig.cpp
   ${PROJECT_SOURCE_DIR}/src/slg/rendersession.cpp
