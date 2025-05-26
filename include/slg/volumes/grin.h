@@ -20,6 +20,7 @@
 #define	_SLG_GRINVOL_H
 
 #include "slg/volumes/volume.h"
+#include "luxrays/core/spectrum.h"
 
 namespace slg {
 
