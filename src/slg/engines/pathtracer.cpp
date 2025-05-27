@@ -403,10 +403,13 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		grinCtx.enabled = false;
 
 		const Volume *vol = pathInfo.volume.GetCurrentVolume();
+		if (vol)
+			SLG_LOG("🔥 [Debug] Volume class name: " << typeid(*vol).name());
+		else
+			SLG_LOG("🔥 [Debug] Volume is nullptr");
 		const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(vol);
 		if (grinVol) {
-			SLG_LOG("🔥 [PathTracer] GRIN Volume found with IOR range: %f - %f", grinCtx.iorMin, grinCtx.iorMax);
-
+			SLG_LOG("🔥 [PathTracer] GRIN Volume found with IOR range: " << grinCtx.iorMin << " - " << grinCtx.iorMax);
 			grinCtx.enabled = true;
 			grinCtx.volume = grinVol;
 			grinCtx.rayOrigin = eyeRay.o;
@@ -424,12 +427,12 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		Spectrum connectionThroughput;
 		const float passThrough = sampler->GetSample(sampleOffset);
 		// 💥 Pass GRIN context to Intersect
+		bool hit;
 		if (grinVol) {
-			const bool hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult, &grinCtx);
+			hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult, &grinCtx);
 		} else{
-			const bool hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult);
+			hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult);
 		}
-
 
 		pathThroughput *= connectionThroughput;
 		// Note: pass-through check is done inside Scene::Intersect()
