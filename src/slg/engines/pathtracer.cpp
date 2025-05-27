@@ -403,10 +403,12 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		grinCtx.enabled = false;
 
 		const Volume *vol = pathInfo.volume.GetCurrentVolume();
-		if (vol)
+		if (vol) {
 			SLG_LOG("🔥 [Debug] Volume class name: " << typeid(*vol).name());
-		else
+		} else{
 			SLG_LOG("🔥 [Debug] Volume is nullptr");
+		}
+
 		const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(vol);
 		if (grinVol) {
 			SLG_LOG("🔥 [PathTracer] GRIN Volume found with IOR range: " << grinCtx.iorMin << " - " << grinCtx.iorMax);
