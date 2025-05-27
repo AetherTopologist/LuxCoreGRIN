@@ -65,6 +65,12 @@ public:
 	luxrays::Vector stretch; // e.g., Vector(1.0f, 2.0f, 1.0f)
 	std::string profile; // "radial", "axial", "shell", etc.
 
+	const luxrays::Spectrum &GetIORMin() const { return iorMin; }
+	const luxrays::Spectrum &GetIORMax() const { return iorMax; }
+	const luxrays::Vector &GetStretch() const { return stretch; }
+	const std::string &GetProfile() const { return profile; }
+
+
 protected:
 	virtual luxrays::Spectrum SigmaA(const HitPoint &hitPoint) const;
 	virtual luxrays::Spectrum SigmaS(const HitPoint &hitPoint) const;
