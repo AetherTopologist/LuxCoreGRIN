@@ -553,12 +553,17 @@ void Scene::DeleteLights(vector<string> &lightNames) {
 }
 
 //------------------------------------------------------------------------------
-
+// BB GRIN
+// Ray Tracing Straight Line Assumption – GRIN Evaluation TODO
+// Scene::Intersect critical terms "luxrays::Point pos" and "luxrays::Vector dir"
+// BB GRIN
 bool Scene::Intersect(IntersectionDevice *device,
 		const SceneRayType rayType, PathVolumeInfo *volInfo,
 		const float initialPassThrough, Ray *ray, RayHit *rayHit, BSDF *bsdf,
 		Spectrum *connectionThroughput, const Spectrum *pathThroughput,
-		SampleResult *sampleResult, const bool backTracing) const {
+		SampleResult *sampleResult, const bool backTracing,
+    	const GRINRayContext *grinCtx  // <-- Optional new arg!
+	) const {
 	*connectionThroughput = Spectrum(1.f);
 
 	// I need a sequence of pseudo-random numbers starting form a floating point
@@ -587,13 +592,15 @@ bool Scene::Intersect(IntersectionDevice *device,
 
 		const bool ENABLE_GRIN_CURVED_PATH = false;
 
-		if (ENABLE_GRIN_CURVED_PATH && ray->isCurved) {
+		//if (ENABLE_GRIN_CURVED_PATH && ray->isCurved) {
+		//if (grinCtx && grinCtx->enabled && volInfo && volInfo->GetCurrentVolume() == grinCtx->volume) {
+		if (grinCtx && grinCtx->enabled) {
+			// Curved ray logic goes here
 			const luxrays::Vector curveAxis = Normalize(ray->curveAxis);
 			const float curveStrength = ray->curveStrength;
 			const float stepSize = 0.05f;
 			const int maxSteps = 500;
 
-			//luxrays::Vector pos = ray->o;
 			luxrays::Point pos = ray->o;
 			luxrays::Vector dir = Normalize(ray->d);
 			

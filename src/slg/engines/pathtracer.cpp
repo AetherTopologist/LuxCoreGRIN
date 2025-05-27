@@ -370,7 +370,10 @@ void PathTracer::GenerateEyeRay(const Camera *camera, const Film *film, Ray &eye
 //------------------------------------------------------------------------------
 // RenderEyePath methods
 //------------------------------------------------------------------------------
-
+// BB GRIN
+// Ray Tracing Straight Line Assumption – GRIN Evaluation TODO
+// PathTracer::RenderEyePath critical terms "const bool hit"
+// BB GRIN
 void PathTracer::RenderEyePath(IntersectionDevice *device,
 		const Scene *scene, Sampler *sampler, EyePathInfo &pathInfo,
 		Ray &eyeRay,  const luxrays::Spectrum &eyeTroughput,
@@ -394,14 +397,33 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		sampleResult.firstPathVertex = (pathInfo.depth.depth == 0);
 		const u_int sampleOffset = eyeSampleBootSize + pathInfo.depth.depth * eyeSampleStepSize;
 
+		// 🔥 Inject GRIN context setup
+		GRINRayContext grinCtx;
+		grinCtx.enabled = false;
+
+		const Volume *vol = pathInfo.volume.GetCurrentVolume();
+		const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(vol);
+		if (grinVol) {
+			grinCtx.enabled = true;
+			grinCtx.volume = grinVol;
+			grinCtx.rayOrigin = eyeRay.o;
+			grinCtx.rayDir = eyeRay.d;
+			grinCtx.rayMinT = eyeRay.mint;
+			grinCtx.rayMaxT = eyeRay.maxt;
+			grinCtx.iorMin = grinVol->GetIORMin().Filter();  // optional: use .Average() if preferred
+			grinCtx.iorMax = grinVol->GetIORMax().Filter();
+			grinCtx.stretchAxis = grinVol->GetStretch();
+			grinCtx.profile = grinVol->GetProfile();
+			// grinCtx.center and grinCtx.radius could be passed during volume parsing if needed
+		}
+
 		RayHit eyeRayHit;
 		Spectrum connectionThroughput;
 		const float passThrough = sampler->GetSample(sampleOffset);
-		const bool hit = scene->Intersect(device,
-				EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY),
-				&pathInfo.volume, passThrough,
-				&eyeRay, &eyeRayHit, &bsdf, &connectionThroughput,
-				&pathThroughput, &sampleResult);
+		//const bool hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult);
+		// 💥 Pass GRIN context to Intersect
+		const bool hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult, &grinCtx);
+
 		pathThroughput *= connectionThroughput;
 		// Note: pass-through check is done inside Scene::Intersect()
 

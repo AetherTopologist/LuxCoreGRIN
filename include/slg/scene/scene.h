@@ -75,6 +75,21 @@ typedef int SceneRayType;
 
 class SampleResult;
 
+//------------------------------------------------------------------------------
+// GRIN Volume Context (optional curved-ray override context)
+//------------------------------------------------------------------------------
+struct GRINRayContext {
+	bool enabled = false;  // If false, ignore all GRIN logic
+
+	const slg::Volume *volume = nullptr;  // Optional ref to the GRINVolume
+	luxrays::Point center;                // Center of the GRIN volume (e.g., object origin)
+	luxrays::Vector stretchAxis;          // Direction of GRIN skew/stretch (normalized)
+	float iorMin = 1.f;
+	float iorMax = 1.f;
+	float radius = 1.f;
+	std::string profile;                  // e.g., "radial", "shell", etc.
+};
+
 class Scene {
 public:
 	// Constructor used to create a scene by calling methods
