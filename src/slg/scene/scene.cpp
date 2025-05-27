@@ -596,11 +596,11 @@ bool Scene::Intersect(IntersectionDevice *device,
 		//if (grinCtx && grinCtx->enabled && volInfo && volInfo->GetCurrentVolume() == grinCtx->volume) {
 		if (grinCtx && grinCtx->enabled) {
 			SLG_LOG("🔥 [Scene::Intersect] GRIN context enabled");
-			if (grinCtx->volume)
+			if (grinCtx->volume) {
 				SLG_LOG("🔥 [Scene::Intersect] GRIN Volume profile: %s" << grinCtx->profile.c_str());
-			else
+			} else{
 				SLG_LOG("⚠️ [Scene::Intersect] GRIN Volume pointer was null!");
-
+			}
 			// Curved ray logic goes here
 			const luxrays::Vector curveAxis = Normalize(ray->curveAxis);
 			const float curveStrength = ray->curveStrength;
