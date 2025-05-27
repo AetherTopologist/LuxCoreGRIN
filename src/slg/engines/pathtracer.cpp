@@ -22,6 +22,7 @@
 #include "slg/engines/caches/photongi/photongicache.h"
 #include "slg/samplers/metropolis.h"
 #include "slg/utils/varianceclamping.h"
+#include "slg/volumes/grin.h"
 
 using namespace std;
 using namespace luxrays;

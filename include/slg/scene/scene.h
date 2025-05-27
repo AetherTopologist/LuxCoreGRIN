@@ -88,7 +88,12 @@ struct GRINRayContext {
 	float iorMax = 1.f;
 	float radius = 1.f;
 	std::string profile;                  // e.g., "radial", "shell", etc.
+	luxrays::Point rayOrigin;
+	luxrays::Vector rayDir;
+	float rayMinT, rayMaxT;
 };
+
+
 
 class Scene {
 public:
