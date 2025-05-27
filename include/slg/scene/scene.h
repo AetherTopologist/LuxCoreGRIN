@@ -93,8 +93,6 @@ struct GRINRayContext {
 	float rayMinT, rayMaxT;
 };
 
-
-
 class Scene {
 public:
 	// Constructor used to create a scene by calling methods
@@ -106,7 +104,7 @@ public:
 	bool Intersect(luxrays::IntersectionDevice *device, const SceneRayType rayType, PathVolumeInfo *volInfo,
 		const float passThrough, luxrays::Ray *ray, luxrays::RayHit *rayHit, BSDF *bsdf,
 		luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
-		SampleResult *sampleResult = nullptr, const bool backTracing = false) const;
+		SampleResult *sampleResult = nullptr, const bool backTracing = false, const GRINRayContext *grinCtx) const;
 
 	void PreprocessCamera(const u_int filmWidth, const u_int filmHeight, const u_int *filmSubRegion);
 	void Preprocess(luxrays::Context *ctx,
