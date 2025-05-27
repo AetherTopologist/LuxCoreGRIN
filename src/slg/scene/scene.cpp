@@ -597,7 +597,7 @@ bool Scene::Intersect(IntersectionDevice *device,
 		if (grinCtx && grinCtx->enabled) {
 			SLG_LOG("🔥 [Scene::Intersect] GRIN context enabled");
 			if (grinCtx->volume)
-				SLG_LOG("🔥 [Scene::Intersect] GRIN Volume profile: %s", grinCtx->profile.c_str());
+				SLG_LOG("🔥 [Scene::Intersect] GRIN Volume profile: %s" << grinCtx->profile.c_str());
 			else
 				SLG_LOG("⚠️ [Scene::Intersect] GRIN Volume pointer was null!");
 
