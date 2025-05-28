@@ -76,7 +76,7 @@ void Scene::Init(const luxrays::Properties *resizePolicyProps) {
 	// Add random image map to imgMapCache 
 	imgMapCache.DefineImageMap(ImageMapTexture::randomImageMap.get());
 
-	enableParsePrint = false;
+	enableParsePrint = true;
 }
 
 Scene::~Scene() {

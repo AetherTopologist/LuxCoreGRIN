@@ -113,7 +113,8 @@ void Scene::ParseVolumes(const Properties &props) {
 Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, const Properties &props) {
 	const string propName = "scene.volumes." + volName;
 	const string volType = props.Get(Property(propName + ".type")("homogenous")).Get<string>();
-
+	SLG_LOG("🧪 [parsevolumes] Parsing volType: " << volType);
+	
 	const Texture *iorTex = GetTexture(props.Get(Property(propName + ".ior")(1.f)));
 	const Texture *emissionTex = props.IsDefined(propName + ".emission") ?
 		GetTexture(props.Get(Property(propName + ".emission")(0.f, 0.f, 0.f))) : NULL;
@@ -152,6 +153,11 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		const Vector stretch = props.Get(Property(propName + ".grin.stretch")(1.f, 1.f, 1.f)).Get<Vector>();
 		const string profile = props.Get(Property(propName + ".grin.profile")("radial")).Get<string>();
 
+		SLG_LOG("🔥 [parsevolumes] Created GRIN volume: " << volName);
+		SLG_LOG("🔥 [parsevolumes] GRIN IOR Range: " << iorMin.c[0] << " - " << iorMax.c[0]);
+		SLG_LOG("🔥 [parsevolumes] GRIN Stretch: (" << stretch.x << ", " << stretch.y << ", " << stretch.z << ")");
+		SLG_LOG("🔥 [parsevolumes] GRIN Profile: " << profile);
+
 		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile);
 	} else
 		throw runtime_error("Unknown volume type: " + volType);
@@ -163,6 +169,8 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 	vol->SetPriority(props.Get(Property(propName + ".priority")(0)).Get<int>());
 
 	vol->SetPhotonGIEnabled(props.Get(Property(propName + ".photongi.enable")(false)).Get<bool>());
+
+	SLG_LOG("🧪 [parsevolumes] Parsed volume: " << volName << " | Type: " << volType);
 
 	return vol;
 }
