@@ -995,10 +995,6 @@ void PathTracer::RenderSample(PathTracerThreadState &state) const {
 	for (size_t i = 0; i < sampleResults->size(); ++i) {
 		const SampleResult &sr = (*sampleResults)[i];
 		SLG_LOG("[GRIN Trace] ➤ Pixel (" << sr.pixelX << ", " << sr.pixelY << ")");
-		for (size_t j = 0; j < sr.radianceGroupCount; ++j) {
-			const Spectrum &s = sr.radiance[j];
-			SLG_LOG("        RadianceGroup[" << j << "] = " << s);
-		}
 	}
 
 	if (sampler == state.eyeSampler)
