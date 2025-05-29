@@ -1238,6 +1238,8 @@ Triangle *SceneImpl::AllocTrianglesBuffer(const unsigned int meshTriCount) {
 //------------------------------------------------------------------------------
 
 RenderConfigImpl::RenderConfigImpl(const Properties &props, SceneImpl *scn) {
+	std::cout << "🔥 [GRIN RenderConfigImpl] Scene will now be parsed..." << std::endl;
+
 	if (scn) {
 		scene = scn;
 		allocatedScene = false;
@@ -1495,6 +1497,8 @@ RenderState *RenderSessionImpl::GetRenderState() {
 
 void RenderSessionImpl::Start() {
 	API_BEGIN_NOARGS();
+	
+	std::cout << "🔥 [GRIN RenderSessionImpl::Start] Triggered RenderSession Start!" << std::endl;
 
 	renderSession->Start();
 

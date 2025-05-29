@@ -142,6 +142,7 @@ void Scene::ParseMaterials(const Properties &props) {
 Material *Scene::CreateMaterial(const u_int defaultMatID, const string &matName, const Properties &props) {
 	const string propName = "scene.materials." + matName;
 	const string matType = props.Get(Property(propName + ".type")("matte")).Get<string>();
+	SLG_LOG("🧾 [ParseMaterials] Creating Material: " << propName << " with material type: " << matType);
 
 	// For compatibility with the past
 	const Texture *transparencyTex = props.IsDefined(propName + ".transparency") ?
@@ -570,6 +571,9 @@ Material *Scene::CreateMaterial(const u_int defaultMatID, const string &matName,
 		if (!v)
 			throw runtime_error(volName + " is not a volume and can not be used for material interior volume: " + matName);
 		mat->SetInteriorVolume(v);
+
+		SLG_LOG("🧾 [ParseMaterials] Assigned interior vol: " << interiorVolume->GetName() << " to material: " << mat->GetName());
+
 	}
 
 	// Exterior volumes
@@ -581,6 +585,8 @@ Material *Scene::CreateMaterial(const u_int defaultMatID, const string &matName,
 			throw runtime_error(volName + " is not a volume and can not be used for material exterior volume: " + matName);
 		mat->SetExteriorVolume(v);
 	}
+
+	SLG_LOG("🔍 [ParseMaterials] Material Parse Finished for: '" << mat->GetName() << "' type: " << mat->GetType());
 
 	return mat;
 }
