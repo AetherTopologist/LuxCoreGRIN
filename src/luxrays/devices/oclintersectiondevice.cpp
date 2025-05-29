@@ -41,11 +41,12 @@ OpenCLIntersectionDevice::~OpenCLIntersectionDevice() {
 
 void OpenCLIntersectionDevice::SetDataSet(DataSet *newDataSet) {
 	IntersectionDevice::SetDataSet(newDataSet);
-
+	SLG_LOG("🔥GRIN [OpenCLIntersectionDevice::SetDataSet]");
 	if (dataSet) {
 		const AcceleratorType accelType = dataSet->GetAcceleratorType();
 		if (accelType != ACCEL_AUTO) {
-			accel = dataSet->GetAccelerator(accelType);
+			//accel = dataSet->GetAccelerator(accelType);
+			accel = dataSet->GetAccelerator(ACCEL_BVH);
 		} else {
 			if (dataSet->RequiresInstanceSupport() || dataSet->RequiresMotionBlurSupport())
 				accel = dataSet->GetAccelerator(ACCEL_MBVH);

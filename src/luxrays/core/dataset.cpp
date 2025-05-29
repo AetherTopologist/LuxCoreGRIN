@@ -112,6 +112,7 @@ bool DataSet::HasAccelerator(const AcceleratorType accelType) const {
 
 const Accelerator *DataSet::GetAccelerator(const AcceleratorType accelType) {
 	boost::unordered_map<AcceleratorType, Accelerator *>::const_iterator it = accels.find(accelType);
+
 	if (it == accels.end()) {
 		boost::unique_lock<boost::mutex> lock(accelsMutex);
 
