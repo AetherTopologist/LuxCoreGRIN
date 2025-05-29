@@ -974,6 +974,8 @@ void PathTracer::ApplyVarianceClamp(const PathTracerThreadState &state,
 }
 
 void PathTracer::RenderSample(PathTracerThreadState &state) const {
+	SLG_LOG("[GRIN Trace] Inside PathTracer::RenderSample()");
+
 	// Check if I have to trace an eye or light path
 	Sampler *sampler;
 	vector<SampleResult> *sampleResults;
@@ -981,10 +983,19 @@ void PathTracer::RenderSample(PathTracerThreadState &state) const {
 		// Trace an eye path
 		sampler = state.eyeSampler;
 		sampleResults = &state.eyeSampleResults;
+		SLG_LOG("[GRIN Trace] 📌 Rendering path type: EYE");
 	} else {
 		// Trace a light path
 		sampler = state.lightSampler;
 		sampleResults = &state.lightSampleResults;
+		SLG_LOG("[GRIN Trace] 📌 Rendering path type: LIGHT");
+	}
+
+	SLG_LOG("[GRIN Trace] 📊 SampleResults vector size: " << sampleResults->size());
+	for (size_t i = 0; i < sampleResults->size(); ++i) {
+		const SampleResult &sr = (*sampleResults)[i];
+		SLG_LOG("[GRIN Trace]    ➤ Result[" << i << "]: radiance group count = " << sr.radianceGroupCount
+			<< ", pixel index = (" << sr.pixelX << ", " << sr.pixelY << ")");
 	}
 
 	if (sampler == state.eyeSampler)

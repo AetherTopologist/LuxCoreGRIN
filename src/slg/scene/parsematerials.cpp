@@ -572,7 +572,7 @@ Material *Scene::CreateMaterial(const u_int defaultMatID, const string &matName,
 			throw runtime_error(volName + " is not a volume and can not be used for material interior volume: " + matName);
 		mat->SetInteriorVolume(v);
 
-		SLG_LOG("🧾 [ParseMaterials] Assigned interior vol: " << interiorVolume->GetName() << " to material: " << mat->GetName());
+		SLG_LOG("🧾 [ParseMaterials] Assigned interior vol: " << volName << " to material: " << mat->GetName());
 
 	}
 
