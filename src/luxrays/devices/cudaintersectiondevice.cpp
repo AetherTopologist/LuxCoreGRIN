@@ -19,6 +19,7 @@
 #if !defined(LUXRAYS_DISABLE_CUDA)
 
 #include "luxrays/devices/cudaintersectiondevice.h"
+#include "slg/slg.h"
 
 using namespace std;
 
@@ -42,7 +43,7 @@ CUDAIntersectionDevice::~CUDAIntersectionDevice() {
 void CUDAIntersectionDevice::SetDataSet(DataSet *newDataSet) {
 	IntersectionDevice::SetDataSet(newDataSet);
 
-	LR_LOG("🔥GRIN [CUDAIntersectionDevice::SetDataSet]");
+	SLG_LOG("🔥GRIN [CUDAIntersectionDevice::SetDataSet]");
 	if (dataSet) {
 		const AcceleratorType accelType = dataSet->GetAcceleratorType();
 		if (accelType != ACCEL_AUTO) {

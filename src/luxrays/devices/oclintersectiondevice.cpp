@@ -19,6 +19,7 @@
 #if !defined(LUXRAYS_DISABLE_OPENCL)
 
 #include "luxrays/devices/oclintersectiondevice.h"
+#include "slg/slg.h"
 
 using namespace std;
 
@@ -41,7 +42,7 @@ OpenCLIntersectionDevice::~OpenCLIntersectionDevice() {
 
 void OpenCLIntersectionDevice::SetDataSet(DataSet *newDataSet) {
 	IntersectionDevice::SetDataSet(newDataSet);
-	LR_LOG("🔥GRIN [OpenCLIntersectionDevice::SetDataSet]");
+	SLG_LOG("🔥GRIN [OpenCLIntersectionDevice::SetDataSet]");
 	if (dataSet) {
 		const AcceleratorType accelType = dataSet->GetAcceleratorType();
 		if (accelType != ACCEL_AUTO) {
