@@ -991,11 +991,11 @@ void PathTracer::RenderSample(PathTracerThreadState &state) const {
 		SLG_LOG("[GRIN Trace] 📌 Rendering path type: LIGHT");
 	}
 
-	SLG_LOG("[GRIN Trace] 📊 SampleResults vector size: " << sampleResults->size());
+	SLG_LOG("[GRIN Trace] 📊 SampleResults vector size: %zu", sampleResults->size());
 	for (size_t i = 0; i < sampleResults->size(); ++i) {
 		const SampleResult &sr = (*sampleResults)[i];
-		SLG_LOG("[GRIN Trace]    ➤ Result[" << i << "]: radiance group count = " << sr.radianceGroupCount
-			<< ", pixel index = (" << sr.pixelX << ", " << sr.pixelY << ")");
+		SLG_LOG("[GRIN Trace] ➤ Result[%zu]: pixel = (%u, %u), radiance size = %zu",
+		        i, sr.pixelX, sr.pixelY, sr.radiance.size());
 	}
 
 	if (sampler == state.eyeSampler)
