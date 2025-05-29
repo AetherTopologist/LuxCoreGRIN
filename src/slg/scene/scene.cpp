@@ -581,6 +581,7 @@ bool Scene::Intersect(IntersectionDevice *device,
 	// This field can be checked by the calling code even if there was no
 	// intersection (and not BSDF initialization)
 	bsdf->hitPoint.throughShadowTransparency = false;
+	SLG_LOG("🔥 [Scene::Intersect] Entry");
 
 	for (;;) {
 		// BB GRIN – placeholder for curved primary ray override
@@ -591,6 +592,7 @@ bool Scene::Intersect(IntersectionDevice *device,
 		// Inject a full override:
 
 		const bool ENABLE_GRIN_CURVED_PATH = false;
+		SLG_LOG("🔥 [Scene::Intersect] for loop iteration");
 
 		//if (ENABLE_GRIN_CURVED_PATH && ray->isCurved) {
 		//if (grinCtx && grinCtx->enabled && volInfo && volInfo->GetCurrentVolume() == grinCtx->volume) {
