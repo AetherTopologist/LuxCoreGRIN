@@ -41,7 +41,7 @@ OpenCLIntersectionDevice::~OpenCLIntersectionDevice() {
 
 void OpenCLIntersectionDevice::SetDataSet(DataSet *newDataSet) {
 	IntersectionDevice::SetDataSet(newDataSet);
-	SLG_LOG("🔥GRIN [OpenCLIntersectionDevice::SetDataSet]");
+	LR_LOG("🔥GRIN [OpenCLIntersectionDevice::SetDataSet]");
 	if (dataSet) {
 		const AcceleratorType accelType = dataSet->GetAcceleratorType();
 		if (accelType != ACCEL_AUTO) {
