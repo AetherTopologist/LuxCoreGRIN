@@ -41,6 +41,7 @@ GlassMaterial::GlassMaterial(const Texture *frontTransp, const Texture *backTran
 Spectrum GlassMaterial::Evaluate(const HitPoint &hitPoint,
 	const Vector &localLightDir, const Vector &localEyeDir, BSDFEvent *event,
 	float *directPdfW, float *reversePdfW) const {
+	SLG_LOG("🔥GRIN [GlassMaterial::Evaluate()] Called");
 	return Spectrum();
 }
 
@@ -116,7 +117,7 @@ static float WaveLength2IOR(const float waveLength, const float IOR, const float
 
 	// Cauchy's equation
 	const float cauchyEq = A + B / Sqr(waveLength / 1000.f);
-
+	SLG_LOG("🔥GRIN [WaveLength2IOR()] Called");
 	return cauchyEq;
 }
 
@@ -196,6 +197,7 @@ Spectrum GlassMaterial::Sample(const HitPoint &hitPoint,
 	const Spectrum kr = Kr->GetSpectrumValue(hitPoint).Clamp(0.f, 1.f);
 	const Spectrum kt = Kt->GetSpectrumValue(hitPoint).Clamp(0.f, 1.f);
 
+	SLG_LOG("🔥GRIN [GlassMaterial::Sample()] Called");
 	const float nc = ExtractExteriorIors(hitPoint, exteriorIor);
 	const float nt = ExtractInteriorIors(hitPoint, interiorIor);
 

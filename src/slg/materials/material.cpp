@@ -357,6 +357,7 @@ float slg::ExtractExteriorIors(const HitPoint &hitPoint, const Texture *exterior
 
 float slg::ExtractInteriorIors(const HitPoint &hitPoint, const Texture *interiorIor) {
 	float nt = 1.f;
+	SLG_LOG("🔥GRIN [slg::ExtractInteriors()] Entry");
 	if (interiorIor)
 		nt = interiorIor->GetFloatValue(hitPoint);
 	else if (hitPoint.interiorVolume)
@@ -395,6 +396,7 @@ float slg::SchlickDistribution_SchlickZ(const float roughness, const float cosNH
 }
 
 float slg::SchlickDistribution_SchlickA(const Vector &H, const float anisotropy) {
+	SLG_LOG("🔥GRIN [slg::SchlickDistr4ibution_SchlickA()] Called");
 	const float h = sqrtf(H.x * H.x + H.y * H.y);
 	if (h > 0.f) {
 		const float w = (anisotropy > 0.f ? H.x : H.y) / h;
@@ -423,6 +425,7 @@ float slg::SchlickDistribution_G(const float roughness, const Vector &localFixed
 }
 
 static float GetPhi(const float a, const float b) {
+	SLG_LOG("🔥GRIN [getPhi()] Called");
 	return M_PI * .5f * sqrtf(a * b / (1.f - a * (1.f - b)));
 }
 

@@ -41,6 +41,8 @@ void HitPoint::Init(const bool fixedFromLight, const bool throughShadowTransp,
 
 	p = pnt;
 	fixedDir = dir;
+	
+	SLG_LOG("🔥GRIN [HitPoint::Init()] Entry");
 
 	// Get the scene object
 	const SceneObject *sceneObject = scene.objDefs.GetSceneObject(meshIndex);
@@ -75,6 +77,7 @@ void HitPoint::Init(const bool fixedFromLight, const bool throughShadowTransp,
 // Initialize all fields (i.e. the one missing a default constructor)
 void HitPoint::Init() {
 	mesh = nullptr;
+	SLG_LOG("🔥GRIN [HitPoint::Init()] Entry (No inputs)");
 
 	passThroughEvent = 0.f;
 	interiorVolume = nullptr;
