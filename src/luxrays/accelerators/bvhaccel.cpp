@@ -170,12 +170,16 @@ void BVHAccel::Init(const deque<const Mesh *> &ms, const u_longlong totVert,
 bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	assert (initialized);
 
+	LR_LOG(ctx, "🔥GRIN [BVHAccel::Intersect] Entry");
+
 	rayHit->t = initialRay->maxt;
 	rayHit->SetMiss();
 	if (!nNodes)
 		return false;
 
 	Ray ray(*initialRay);
+	
+	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
 
 	u_int currentNode = 0; // Root Node
 	const u_int stopNode = BVHNodeData_GetSkipIndex(bvhTree[0].nodeData); // Non-existent
