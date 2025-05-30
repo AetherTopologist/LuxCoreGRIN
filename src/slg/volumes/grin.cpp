@@ -56,6 +56,8 @@ float GRINVolume::Scatter(const Ray &ray, const float u,
     // Apply curvature step for the ray (for future RK4)
 	// TODO BB GRIN
 
+	SLG_LOG("🔥GRIN [GRINVolume::Scatter()]");
+
 	// Point where to evaluate the volume
 	HitPoint hitPoint;
 	hitPoint.Init();
@@ -98,6 +100,7 @@ Spectrum GRINVolume::Sample(const HitPoint &hitPoint,
 		const float u0, const float u1, const float passThroughEvent,
 		float *pdfW, BSDFEvent *event) const {
 	throw runtime_error("Internal error: called GRINVolume::Sample()");
+	SLG_LOG("🔥GRIN [GRINVolume::Sample()]");
 }
 
 void GRINVolume::Pdf(const HitPoint &hitPoint,

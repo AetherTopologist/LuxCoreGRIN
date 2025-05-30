@@ -42,6 +42,8 @@ PathTracerThreadState::PathTracerThreadState(IntersectionDevice *dev,
 	// Initialize Eye SampleResults
 	eyeSampleResults.resize(1);
 	PathTracer::InitEyeSampleResults(film, eyeSampleResults, useFilmSplat);
+	
+	SLG_LOG("🔥GRIN [PathTracerThreadState::PathTracerThreadState())]");
 
 	eyeSampleCount = 0.0;
 	// Using 1.0 instead of 0.0 to avoid a division by zero
@@ -246,7 +248,7 @@ PathTracer::DirectLightResult PathTracer::DirectLightSampling(
 			}
 		}
 	}
-
+	SLG_LOG("🔥GRIN [PathTracer::DirectLightSampling()] Exiting");
 	return NOT_VISIBLE;
 }
 
@@ -281,6 +283,8 @@ void PathTracer::DirectHitFiniteLight(const Scene *scene,
 
 	float directPdfA;
 	const Spectrum emittedRadiance = bsdf.GetEmittedRadiance(&directPdfA);
+	
+	SLG_LOG("🔥GRIN [PathTracer::DirectHitFiniteLight()] Exiting");
 
 	if (!emittedRadiance.Black()) {
 		float weight;
@@ -313,6 +317,8 @@ void PathTracer::DirectHitInfiniteLight(const Scene *scene,
 	// will take care of transporting all emitted light
 	if (bsdf && bsdf->hitPoint.throughShadowTransparency)
 		return;
+
+	SLG_LOG("🔥GRIN [PathTracer::DirectHitInfiniteLight()] Exiting");
 
 	BOOST_FOREACH(EnvLightSource *envLight, scene->lightDefs.GetEnvLightSources()) {
 		// Check if the light source is visible according the settings
@@ -365,6 +371,8 @@ void PathTracer::GenerateEyeRay(const Camera *camera, const Film *film, Ray &eye
 
 	const float timeSample = sampler->GetSample(4);
 	const float time = camera->GenerateRayTime(timeSample);
+
+	SLG_LOG("🔥GRIN [PathTracer::GenerateEyeRay()] Exiting");
 
 	camera->GenerateRay(time, sampleResult.filmX, sampleResult.filmY, &eyeRay, &volInfo,
 		sampler->GetSample(2), sampler->GetSample(3));
@@ -694,6 +702,8 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 	if (photonGICache && (photonGICache->GetDebugType() == PhotonGIDebugType::PGIC_DEBUG_SHOWINDIRECTPATHMIX) &&
 			!photonGIShowIndirectPathMixUsed)
 		sampleResult.radiance[0] = Spectrum(1.f, 0.f, 0.f);
+
+	SLG_LOG("🔥GRIN [PathTracer::RenderEyePath()] Exiting");
 }
 
 //------------------------------------------------------------------------------
@@ -721,6 +731,8 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	eyeRay.curveStrength = 0.0001f; // Tunable
 	// BB GRIN END
 
+	SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()] Exiting");
+
 	RenderEyePath(device, scene, sampler, pathInfo, eyeRay, Spectrum(1.f), sampleResults);
 }
 
@@ -732,7 +744,7 @@ SampleResult &PathTracer::AddLightSampleResult(vector<SampleResult> &sampleResul
 		const Film *film) {
 	const u_int size = sampleResults.size();
 	sampleResults.resize(size + 1);
-
+	
 	SampleResult &sampleResult = sampleResults[size];
 	sampleResult.Init(&lightSampleResultsChannels, film->GetRadianceGroupCount());
 
@@ -949,6 +961,8 @@ void PathTracer::RenderLightSample(IntersectionDevice *device,
 //------------------------------------------------------------------------------
 
 bool PathTracer::HasToRenderEyeSample(PathTracerThreadState &state) const {
+	SLG_LOG("🔥GRIN [PathTracer::HasToRenderEyeSample] Start");
+
 	// Check if I have to trace an eye or light path
 	if (hybridBackForwardEnable) {
 		const double ratio = state.eyeSampleCount / state.lightSampleCount;

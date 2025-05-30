@@ -80,6 +80,7 @@ Spectrum ClearVolume::Evaluate(const HitPoint &hitPoint,
 		const Vector &localLightDir, const Vector &localEyeDir, BSDFEvent *event,
 		float *directPdfW, float *reversePdfW) const {
 	throw runtime_error("Internal error: called ClearVolume::Evaluate()");
+	SLG_LOG("🔥GRIN [ClearVolume::Evaluate()]");
 }
 
 Spectrum ClearVolume::Sample(const HitPoint &hitPoint,
@@ -87,6 +88,7 @@ Spectrum ClearVolume::Sample(const HitPoint &hitPoint,
 		const float u0, const float u1, const float passThroughEvent,
 		float *pdfW, BSDFEvent *event) const {
 	throw runtime_error("Internal error: called ClearVolume::Sample()");
+	SLG_LOG("🔥GRIN [ClearVolume::Sample()]");
 }
 
 void ClearVolume::Pdf(const HitPoint &hitPoint,
