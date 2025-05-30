@@ -40,7 +40,7 @@ RTPathCPURenderThread::~RTPathCPURenderThread() {
 
 void RTPathCPURenderThread::StartRenderThread() {
 	// Avoid to allocate the film thread because I'm going to use the global one
-
+	SLG_LOG("🔥GRIN [RTPathCPURenderThread::StartRenderThread()]");
 	CPURenderThread::StartRenderThread();
 }
 

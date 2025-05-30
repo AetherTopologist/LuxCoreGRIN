@@ -96,6 +96,7 @@ void RenderEngine::SetRenderState(RenderState *state, Film *oldFilm) {
 }
 
 void RenderEngine::Start(Film *flm, boost::mutex *flmMutex) {
+	SLG_LOG("🔥GRIN [RenderEngine::Start()]");
 	boost::unique_lock<boost::mutex> lock(engineMutex);
 
 	assert (!started);

@@ -61,7 +61,7 @@ RenderState *PathCPURenderEngine::GetRenderState() {
 
 void PathCPURenderEngine::StartLockLess() {
 	const Properties &cfg = renderConfig->cfg;
-
+	SLG_LOG("🔥GRIN [PathCPURenderEngine::StartLockLess()]");
 	//--------------------------------------------------------------------------
 	// Check to have the right sampler settings
 	//--------------------------------------------------------------------------

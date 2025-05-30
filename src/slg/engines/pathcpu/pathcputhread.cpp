@@ -37,7 +37,8 @@ PathCPURenderThread::PathCPURenderThread(PathCPURenderEngine *engine,
 }
 
 void PathCPURenderThread::RenderFunc() {
-	//SLG_LOG("[PathCPURenderEngine::" << threadIndex << "] Rendering thread started");
+	SLG_LOG("[PathCPURenderEngine::" << threadIndex << "] Rendering thread started");
+	SLG_LOG("🔥GRIN [PathCPURenderThread::Renderfunc()]");
 
 	//--------------------------------------------------------------------------
 	// Initialization

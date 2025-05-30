@@ -138,6 +138,7 @@ PathTracer::DirectLightResult PathTracer::DirectLightSampling(
 		const EyePathInfo &pathInfo, const Spectrum &pathThroughput,
 		const BSDF &bsdf, SampleResult *sampleResult,
 		const bool useBSDFEVal) const {
+	SLG_LOG("🔥GRIN [PathTracer::DirectLightSampling()]");
 	if (!bsdf.IsDelta()) {
 		// Select the light strategy to use
 		const LightStrategy *lightStrategy;
@@ -342,6 +343,7 @@ void PathTracer::GenerateEyeRay(const Camera *camera, const Film *film, Ray &eye
 	const float filmY = sampler->GetSample(1);
 
 	// Use fast pixel filtering, like the one used in TILEPATH.
+	SLG_LOG("🔥GRIN [PathTracer::GenerateEyeRay()]");
 
 	const u_int *subRegion = film->GetSubRegion();
 	sampleResult.pixelX = Min(Floor2UInt(filmX), subRegion[1]);
@@ -381,6 +383,8 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		vector<SampleResult> &sampleResults) const {
 	// To keep track of the number of rays traced
 	const double deviceRayCount = device->GetTotalRaysCount();
+	
+	SLG_LOG("🔥GRIN [PathTracer::RenderEyePath()]");
 
 	// This is used by light strategy
 	pathInfo.lastShadeN = Normal(eyeRay.d);
@@ -705,6 +709,8 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	Ray eyeRay;
 	GenerateEyeRay(scene->camera, film, eyeRay, pathInfo.volume, sampler, sampleResults[0]);
 	
+	SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()]");	
+
 	// BB GRIN
 	// === FILE: pathtracer.cpp ===
 	// 📍 Function: PathTracer::RenderEyePath(...)
@@ -747,6 +753,8 @@ void PathTracer::ConnectToEye(IntersectionDevice *device,
 	Vector eyeDir(bsdf.hitPoint.p - pathInfo.lensPoint);
 	const float eyeDistance = eyeDir.Length();
 	eyeDir /= eyeDistance;
+
+	SLG_LOG("🔥GRIN [PathTracer::ConnectToEye()]");
 
 	Ray eyeRay(pathInfo.lensPoint, eyeDir,
 			0.f,
@@ -818,6 +826,8 @@ void PathTracer::RenderLightSample(IntersectionDevice *device,
 	sampleResults.clear();
 
 	Spectrum lightPathFlux;
+
+	SLG_LOG("🔥GRIN [PathTracer::RenderLightSample()]");
 
 	const float timeSample = sampler->GetSample(8);
 	const float time = scene->camera->GenerateRayTime(timeSample);
@@ -974,7 +984,7 @@ void PathTracer::ApplyVarianceClamp(const PathTracerThreadState &state,
 }
 
 void PathTracer::RenderSample(PathTracerThreadState &state) const {
-	SLG_LOG("[GRIN Trace] Inside PathTracer::RenderSample()");
+	SLG_LOG("🔥GRIN Inside PathTracer::RenderSample()");
 
 	// Check if I have to trace an eye or light path
 	Sampler *sampler;

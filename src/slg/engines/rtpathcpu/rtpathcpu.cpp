@@ -38,6 +38,7 @@ RTPathCPURenderEngine::~RTPathCPURenderEngine() {
 }
 
 void RTPathCPURenderEngine::StartLockLess() {
+	SLG_LOG("🔥GRIN [RTPathCPURenderEngine::StartLockLess()]");
 	const Properties &cfg = renderConfig->cfg;
 	zoomFactor = (u_int)Max(1, cfg.Get(GetDefaultProps().Get("rtpathcpu.zoomphase.size")).Get<int>());
 	zoomWeight = Max(.0001f, cfg.Get(GetDefaultProps().Get("rtpathcpu.zoomphase.weight")).Get<float>());

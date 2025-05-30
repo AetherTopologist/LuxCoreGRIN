@@ -272,6 +272,8 @@ Spectrum BSDF::Evaluate(const Vector &generatedDir,
 	const float absDotLightDirNG = fabsf(dotLightDirNG);
 	const float dotEyeDirNG = Dot(eyeDir, hitPoint.geometryN);
 	const float absDotEyeDirNG = fabsf(dotEyeDirNG);
+	
+	SLG_LOG("🔥GRIN [BSDF::Evaluate()]");
 
 	if (!IsVolume()) {
 		// These kind of tests make sense only for materials
@@ -344,6 +346,8 @@ Spectrum BSDF::Sample(Vector *sampledDir,
 		BSDFEvent *event) const {
 	Vector localFixedDir = frame.ToLocal(hitPoint.fixedDir);
 	Vector localSampledDir;
+	
+	SLG_LOG("🔥GRIN [BSDF::Sample()]");
 
 	Spectrum result = material->Sample(hitPoint,
 			localFixedDir, &localSampledDir, u0, u1, hitPoint.passThroughEvent,
