@@ -77,6 +77,8 @@ void ProjectiveCamera::UpdateAuto(const Scene *scene) {
 
 void ProjectiveCamera::Update(const u_int width, const u_int height, const u_int *subRegion) {
 	Camera::Update(width, height, subRegion);
+	
+	SLG_LOG("🔥GRIN [ProjectiveCamera::Update]");
 
 	// Used to translate the camera
 	dir = target - orig;
@@ -164,6 +166,7 @@ void ProjectiveCamera::GenerateRay(const float  time,
 	InitRay(ray, filmX, filmY);
 	volInfo->AddVolume(volume);
 
+	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay]");
 	// Modify ray for depth of field
 	if ((lensRadius > 0.f) && (focalDistance > 0.f)) {
 		// Sample point on lens

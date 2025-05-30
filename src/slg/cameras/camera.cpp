@@ -41,6 +41,8 @@ bool Camera::GetSamplePosition(const luxrays::Point &p,
 	Point lensPoint;
 	if (!SampleLens(0.f, 0.f, 0.f, &lensPoint))
 		return false;
+	
+	SLG_LOG("🔥GRIN [Camera::GetSamplePosition]");
 
 	Vector eyeDir = p - lensPoint;
 	const float eyeDistance = eyeDir.Length();
