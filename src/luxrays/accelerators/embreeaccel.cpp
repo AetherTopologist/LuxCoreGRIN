@@ -116,7 +116,7 @@ void EmbreeAccel::Init(const std::deque<const Mesh *> &meshes,
 	//--------------------------------------------------------------------------
 	// Extract the meshes min. and max. time. To normalize between 0.f and 1.f.
 	//--------------------------------------------------------------------------
-	LR_LOG("[GRIN Trace] 🌌 EmbreeAccel::Init called");
+	LR_LOG(ctx, "[GRIN Trace] 🌌 EmbreeAccel::Init called");
 	
 	minTime = std::numeric_limits<float>::max();
 	maxTime = std::numeric_limits<float>::min();
@@ -230,7 +230,7 @@ bool EmbreeAccel::Intersect(const Ray *ray, RayHit *hit) const {
 	RTCIntersectContext context;
 	rtcInitIntersectContext(&context);
 
-	LR_LOG("[GRIN Trace] 🌌 EmbreeAccel::Intersect called");
+	LR_LOG(ctx, "[GRIN Trace] 🌌 EmbreeAccel::Intersect called");
 	RTCRayHit embreeRayHit;
 
 	if (isnan(ray->o.x) || isnan(ray->o.y) || isnan(ray->o.z) || isnan(ray->d.x) || isnan(ray->d.y) || isnan(ray->d.z))
