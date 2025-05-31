@@ -167,6 +167,8 @@ void ProjectiveCamera::GenerateRay(const float  time,
 	volInfo->AddVolume(volume);
 
 	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay]");
+	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay] filmX: " << filmX << " filmY: " << filmY);
+	
 	// Modify ray for depth of field
 	if ((lensRadius > 0.f) && (focalDistance > 0.f)) {
 		// Sample point on lens
@@ -200,6 +202,8 @@ void ProjectiveCamera::GenerateRay(const float  time,
 		ray->d = Normalize(ray->d);
 	} else
 		*ray = camTrans.cameraToWorld * (*ray);
+
+	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay] filmX: " << filmX << ", filmY: " << filmY << ", time: " << time);
 
 	// World arbitrary clipping plane support
 	if (enableClippingPlane)

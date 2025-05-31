@@ -136,6 +136,7 @@ CPURenderEngine::~CPURenderEngine() {
 }
 
 void CPURenderEngine::StartLockLess() {
+	SLG_LOG("🔥GRIN [CPURenderEngine::StartLockLess()] starting CPURenderEngine::NewRenderThread() family using luxrays::IntersectionDevice");
 	for (size_t i = 0; i < renderThreads.size(); ++i) {
 		if (!renderThreads[i])
 			renderThreads[i] = NewRenderThread(i, intersectionDevices[i]);
@@ -218,7 +219,7 @@ CPUNoTileRenderEngine::~CPUNoTileRenderEngine() {
 
 void CPUNoTileRenderEngine::StartLockLess() {
 	samplerSharedData = renderConfig->AllocSamplerSharedData(&seedBaseGenerator, film);
-	
+	SLG_LOG("🔥GRIN inside [CPUNoTileRenderEngine::StartLockLess()]");
 	CPURenderEngine::StartLockLess();
 }
 

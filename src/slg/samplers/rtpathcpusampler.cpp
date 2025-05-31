@@ -174,7 +174,7 @@ void RTPathCPUSampler::NextPixel() {
 
 float RTPathCPUSampler::GetSample(const u_int index) {
 	assert (index < requestedSamples);
-
+	SLG_LOG("🔥GRIN [RTPathCPUSampler::GetSample()] Called");
 	float u;
 	switch (index) {
 		case 0: {
@@ -201,7 +201,8 @@ float RTPathCPUSampler::GetSample(const u_int index) {
 
 void RTPathCPUSampler::NextSample(const vector<SampleResult> &sampleResults) {
 	// film->AddSampleCount(1.0) is done in NextPixel()
-
+	SLG_LOG("🔥GRIN [RTPathCPUSampler::NextSample()] Called");
+	
 	const SampleResult *sr = &sampleResults[0];
 	
 	// AddSamplesToFilm(sampleResults) is replaced by this special section of code to

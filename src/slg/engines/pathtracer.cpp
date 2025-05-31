@@ -1037,6 +1037,7 @@ void PathTracer::RenderSample(PathTracerThreadState &state) const {
 //------------------------------------------------------------------------------
 
 void PathTracer::ParseOptions(const luxrays::Properties &cfg, const luxrays::Properties &defaultProps) {
+	SLG_LOG("🔥GRIN [PathTracer::ParseOptions()]");
 	// Path depth settings
 	maxPathDepth.depth = Max(0, cfg.Get(defaultProps.Get("path.pathdepth.total")).Get<int>());
 	maxPathDepth.diffuseDepth = Max(0, cfg.Get(defaultProps.Get("path.pathdepth.diffuse")).Get<int>());

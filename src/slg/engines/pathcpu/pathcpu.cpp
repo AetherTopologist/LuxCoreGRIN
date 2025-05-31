@@ -130,7 +130,7 @@ void PathCPURenderEngine::StartLockLess() {
 	//--------------------------------------------------------------------------
 	// Initialize the PathTracer class with rendering parameters
 	//--------------------------------------------------------------------------
-
+	SLG_LOG("🔥GRIN Initializing the PathTracer Class with Rendering Parameters [PathTracer::ParseOptions()]");
 	pathTracer.ParseOptions(cfg, GetDefaultProps());
 
 	if (pathTracer.hybridBackForwardEnable)
@@ -145,7 +145,7 @@ void PathCPURenderEngine::StartLockLess() {
 	pathTracer.SetPhotonGICache(photonGICache);
 	
 	//--------------------------------------------------------------------------
-
+	SLG_LOG("🔥GRIN Beginning CPUNoTileRenderEngine::StartLockLess() inside [PathCPURenderEngine::StartLockLess()]");
 	CPUNoTileRenderEngine::StartLockLess();
 }
 
