@@ -57,7 +57,7 @@ Properties Sampler::ToProperties() const {
 			Property("sampler.imagesamples.enable")(imageSamplesEnable);
 }
 
-//------------------------------------------------------------------------------
+//---------------------------------------------------------------------a---------
 // Static methods used by SamplerRegistry
 //------------------------------------------------------------------------------
 

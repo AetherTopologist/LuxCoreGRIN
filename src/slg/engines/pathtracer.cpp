@@ -719,6 +719,11 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	Ray eyeRay;
 	GenerateEyeRay(scene->camera, film, eyeRay, pathInfo.volume, sampler, sampleResults[0]);
 	
+	// 🔥 GRIN Corruption Test #3: Warp Ray Origin
+	eyeRay.o.x += 0.1f * sinf(eyeRay.o.y * 5.0f);
+	eyeRay.o.y += 0.1f * cosf(eyeRay.o.x * 5.0f);
+	// 🔥 GRIN Corruption Test #3: Warp Ray Origin
+
 	SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()]");	
 
 	// BB GRIN
