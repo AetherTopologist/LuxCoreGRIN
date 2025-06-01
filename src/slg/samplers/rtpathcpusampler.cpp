@@ -98,7 +98,7 @@ RTPathCPUSampler::RTPathCPUSampler(luxrays::RandomGenerator *rnd, Film *flm,
 	film = flm;
 	// Disable denoiser statistics collection
 	film->GetDenoiser().SetEnabled(false);
-
+	SLG_LOG("🔥GRIN [RTPathCPUSampler::RTPathCPUSampler()]");
 	// NOTE: The sampler can not be used until the call of SetRenderEngine()
 }
 
@@ -107,7 +107,7 @@ RTPathCPUSampler::~RTPathCPUSampler() {
 
 void RTPathCPUSampler::SetRenderEngine(RTPathCPURenderEngine *re) {
 	engine = re;
-
+	SLG_LOG("🔥GRIN [RTPathCPUSampler::SetRenderEngine()]");
 	Reset(film);
 }
 
@@ -125,6 +125,7 @@ void RTPathCPUSampler::Reset(Film *flm) {
 }
 
 void RTPathCPUSampler::NextPixel() {
+	SLG_LOG("🔥GRIN [RTPathCPUSampler::NextPixel()]");
 	if (!firstFrameDone) {
 		// Render one pixel every engine->zoomFactor x engine->zoomFactor on the first frame
 		currentX += engine->zoomFactor;

@@ -205,6 +205,13 @@ void ProjectiveCamera::GenerateRay(const float  time,
 
 	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay] filmX: " << filmX << ", filmY: " << filmY << ", time: " << time);
 
+	// 🔥GRIN Visual debug warp: sinusoidal bend in direction
+	// 🔥[GRIN] corruption
+	ray->d.x += 0.05f * sin(ray->o.y * 10.0f);
+	ray->d.y += 0.05f * cos(ray->o.x * 10.0f);
+	ray->d = Normalize(ray->d);
+// 🔥[GRIN] corruption
+
 	// World arbitrary clipping plane support
 	if (enableClippingPlane)
 		ApplyArbitraryClippingPlane(ray);

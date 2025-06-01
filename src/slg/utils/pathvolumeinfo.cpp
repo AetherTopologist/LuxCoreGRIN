@@ -33,7 +33,7 @@ using namespace slg;
 PathVolumeInfo::PathVolumeInfo() {
 	currentVolume = NULL;
 	volumeListSize = 0;
-
+	SLG_LOG("🔥GRIN [PathVolumeInfo::PathVolumeInfo()]");
 	scatteredStart = false;
 }
 
@@ -137,7 +137,7 @@ void PathVolumeInfo::Update(const BSDFEvent eventType, const BSDF &bsdf) {
 bool PathVolumeInfo::CompareVolumePriorities(const Volume *vol1, const Volume *vol2) {
 	// A volume wins over another if and only if it is the same volume or has an
 	// higher priority
-
+	SLG_LOG("🔥GRIN [PathVolumeInfo::CompareVolumePriorities()]");
 	if (vol1) {
 		if (vol2) {
 			if (vol1 == vol2)

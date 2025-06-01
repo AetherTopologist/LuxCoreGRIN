@@ -47,9 +47,11 @@ SamplerSharedData *SamplerSharedData::FromProperties(const Properties &cfg, Rand
 void Sampler::RequestSamples(const SampleType smplType, const u_int size) {
 	sampleType = smplType;
 	requestedSamples = size;
+	SLG_LOG("🔥GRIN [Sampler::RequestSamples()]");
 }
 
 Properties Sampler::ToProperties() const {
+	SLG_LOG("🔥GRIN [Sampler::ToProperties()]");
 	return Properties() <<
 			Property("sampler.type")(SamplerType2String(GetType())) <<
 			Property("sampler.imagesamples.enable")(imageSamplesEnable);
@@ -61,7 +63,7 @@ Properties Sampler::ToProperties() const {
 
 Properties Sampler::ToProperties(const Properties &cfg) {
 	const string type = cfg.Get(Property("sampler.type")(SobolSampler::GetObjectTag())).Get<string>();
-
+	SLG_LOG("🔥GRIN [Sampler::ToProperties with()]");
 	SamplerRegistry::ToProperties func;
 
 	if (SamplerRegistry::STATICTABLE_NAME(ToProperties).Get(type, func)) {

@@ -66,6 +66,7 @@ RenderSession::~RenderSession() {
 }
 
 void RenderSession::Start() {
+	SLG_LOG("🔥GRIN [RenderSession::Start()]");
 	if (film->IsInitiliazed()) {
 		// I need to allocate a new film because the current one has already been
 		// used. For instance, it can happen when stopping and starting the
@@ -222,6 +223,7 @@ RenderState *RenderSession::GetRenderState() {
 }
 
 void RenderSession::Parse(const luxrays::Properties &props) {
+	SLG_LOG("🔥GRIN [RenderSession::Parse()]");
 	assert (renderEngine->IsStarted());
 
 	if ((props.IsDefined("film.width") && (props.Get("film.width").Get<u_int>() != film->GetWidth())) ||

@@ -100,6 +100,7 @@ SobolSampler::~SobolSampler() {
 }
 
 void SobolSampler::InitNewSample() {
+	SLG_LOG("🔥GRIN [SobolSampler::InitNewSample()]");
 	const bool doImageSamples = (imageSamplesEnable && film);
 
 	const u_int *filmSubRegion;

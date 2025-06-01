@@ -200,6 +200,12 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 			
 			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
+				// 🔥[GRIN] corruption
+				b1 = 1.0f - b1;
+				b2 = 1.0f - b2;
+				b1 = fabs(0.5f - b1);
+				b2 = fabs(0.5f - b2);
+				// 🔥[GRIN] corruption
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
