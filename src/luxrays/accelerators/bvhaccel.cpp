@@ -178,7 +178,13 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 		return false;
 
 	Ray ray(*initialRay);
-	
+
+	// 🔥[GRIN] corruption
+	ray.d.x += 0.05f * sin(ray.o.y * 10.0f);
+	ray.d.y += 0.05f * cos(ray.o.x * 10.0f);
+	ray.d = Normalize(ray.d);
+	// 🔥[GRIN] corruption
+
 	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
 
 	u_int currentNode = 0; // Root Node
@@ -198,14 +204,17 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 			const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[0]);
 			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[1]);
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
-			
-			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 
+			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 				// 🔥[GRIN] corruption
-				if ((ray.o.x + ray.o.y) > 1.5f)  // some arbitrary spatial filter
-					continue; // Skip this triangle, pretend it missed
-				b1 = sin(b1 * 3.14f);  // warp barycentrics
-				b2 = cos(b2 * 3.14f);
+				// 🔥[GRIN] Spatial bending using ray origin (x, y) as basis
+				const float radius = sqrtf(ray.o.x * ray.o.x + ray.o.y * ray.o.y);
+				const float angle = atan2f(ray.o.y, ray.o.x);
+				// Add a sinusoidal angular warping to bend rays based on radial distance
+				const float warpFactor = 0.25f * sinf(radius * 5.0f + angle * 3.0f); // play with these!
+
+				b1 += warpFactor;
+				b2 += warpFactor * 0.5f;
 				// 🔥[GRIN] corruption
 
 				if (t < rayHit->t) {
