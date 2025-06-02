@@ -187,8 +187,10 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
     const float gain = 0.75f;      // Increase for stronger visible effect
     const float falloff = 0.001f;  // Prevent divide-by-zero
 
-    const float r = ray.o.Length() + falloff; // Radial distance from origin
-    const float yCurvature = gain / r;
+    //const float r = ray.o.Length() + falloff; // Radial distance from origin
+	const float r = Length(ray.o) + falloff;
+
+	const float yCurvature = gain / r;
 
     ray.d.y += yCurvature;
     ray.d = Normalize(ray.d);
