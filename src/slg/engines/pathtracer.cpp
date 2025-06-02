@@ -720,7 +720,7 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	GenerateEyeRay(scene->camera, film, eyeRay, pathInfo.volume, sampler, sampleResults[0]);
 	
 	// 🔥 GRIN Corruption Test #3: Warp Ray Origin
-	eyeRay.o.x += 0.1f * sinf(eyeRay.o.y * 15.0f);
+	eyeRay.o.x += 0.2f * sinf(eyeRay.o.y * 10.0f);
 	eyeRay.o.y += 0.1f * cosf(eyeRay.o.x * 5.0f);
 	// 🔥 GRIN Corruption Test #3: Warp Ray Origin
 
@@ -733,7 +733,7 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	// Inject this to enable curved rays from the camera:
 	eyeRay.isCurved = true;
 	eyeRay.curveAxis = luxrays::Vector(0.0f, 0.0f, 1.0f); // Curve about Z axis
-	eyeRay.curveStrength = 0.0001f; // Tunable
+	eyeRay.curveStrength = 0.00001f; // Tunable
 	// BB GRIN END
 
 	SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()] Exiting");
