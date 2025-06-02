@@ -180,9 +180,18 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	Ray ray(*initialRay);
 
 	// 🔥[GRIN] corruption
-	ray.d.x += 0.05f * sin(ray.o.y * 10.0f);
-	ray.d.y += 0.05f * cos(ray.o.x * 10.0f);
-	ray.d = Normalize(ray.d);
+	//ray.d.x += 0.05f * sin(ray.o.y * 10.0f);
+	//ray.d.y += 0.05f * cos(ray.o.x * 10.0f);
+	//ray.d = Normalize(ray.d);
+	// 🔥[GRIN] Curvature based on radial distance from global origin
+    const float gain = 0.75f;      // Increase for stronger visible effect
+    const float falloff = 0.001f;  // Prevent divide-by-zero
+
+    const float r = ray.o.Length() + falloff; // Radial distance from origin
+    const float yCurvature = gain / r;
+
+    ray.d.y += yCurvature;
+    ray.d = Normalize(ray.d);
 	// 🔥[GRIN] corruption
 
 	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
@@ -208,13 +217,13 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 				// 🔥[GRIN] corruption
 				// 🔥[GRIN] Spatial bending using ray origin (x, y) as basis
-				const float radius = sqrtf(ray.o.x * ray.o.x + ray.o.y * ray.o.y);
-				const float angle = atan2f(ray.o.y, ray.o.x);
+				//const float radius = sqrtf(ray.o.x * ray.o.x + ray.o.y * ray.o.y);
+				//const float angle = atan2f(ray.o.y, ray.o.x);
 				// Add a sinusoidal angular warping to bend rays based on radial distance
-				const float warpFactor = 0.25f * sinf(radius * 5.0f + angle * 3.0f); // play with these!
+				//const float warpFactor = 0.25f * sinf(radius * 5.0f + angle * 3.0f); // play with these!
 
-				b1 += warpFactor;
-				b2 += warpFactor * 0.5f;
+				//b1 += warpFactor;
+				//b2 += warpFactor * 0.5f;
 				// 🔥[GRIN] corruption
 
 				if (t < rayHit->t) {
