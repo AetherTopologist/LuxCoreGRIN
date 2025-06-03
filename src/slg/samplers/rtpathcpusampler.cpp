@@ -98,7 +98,7 @@ RTPathCPUSampler::RTPathCPUSampler(luxrays::RandomGenerator *rnd, Film *flm,
 	film = flm;
 	// Disable denoiser statistics collection
 	film->GetDenoiser().SetEnabled(false);
-	SLG_LOG("🔥GRIN [RTPathCPUSampler::RTPathCPUSampler()]");
+	//SLG_LOG("🔥GRIN [RTPathCPUSampler::RTPathCPUSampler()]");
 	// NOTE: The sampler can not be used until the call of SetRenderEngine()
 }
 
@@ -107,7 +107,7 @@ RTPathCPUSampler::~RTPathCPUSampler() {
 
 void RTPathCPUSampler::SetRenderEngine(RTPathCPURenderEngine *re) {
 	engine = re;
-	SLG_LOG("🔥GRIN [RTPathCPUSampler::SetRenderEngine()]");
+	//SLG_LOG("🔥GRIN [RTPathCPUSampler::SetRenderEngine()]");
 	Reset(film);
 }
 
@@ -125,7 +125,7 @@ void RTPathCPUSampler::Reset(Film *flm) {
 }
 
 void RTPathCPUSampler::NextPixel() {
-	SLG_LOG("🔥GRIN [RTPathCPUSampler::NextPixel()]");
+	//SLG_LOG("🔥GRIN [RTPathCPUSampler::NextPixel()]");
 	if (!firstFrameDone) {
 		// Render one pixel every engine->zoomFactor x engine->zoomFactor on the first frame
 		currentX += engine->zoomFactor;
@@ -175,7 +175,7 @@ void RTPathCPUSampler::NextPixel() {
 
 float RTPathCPUSampler::GetSample(const u_int index) {
 	assert (index < requestedSamples);
-	SLG_LOG("🔥GRIN [RTPathCPUSampler::GetSample()] Called");
+	//SLG_LOG("🔥GRIN [RTPathCPUSampler::GetSample()] Called");
 	float u;
 	switch (index) {
 		case 0: {
@@ -202,7 +202,7 @@ float RTPathCPUSampler::GetSample(const u_int index) {
 
 void RTPathCPUSampler::NextSample(const vector<SampleResult> &sampleResults) {
 	// film->AddSampleCount(1.0) is done in NextPixel()
-	SLG_LOG("🔥GRIN [RTPathCPUSampler::NextSample()] Called");
+	//SLG_LOG("🔥GRIN [RTPathCPUSampler::NextSample()] Called");
 	
 	const SampleResult *sr = &sampleResults[0];
 	

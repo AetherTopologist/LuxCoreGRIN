@@ -592,16 +592,16 @@ bool Scene::Intersect(IntersectionDevice *device,
 		// Inject a full override:
 
 		const bool ENABLE_GRIN_CURVED_PATH = false;
-		SLG_LOG("🔥 [Scene::Intersect] for loop iteration");
+		//SLG_LOG("🔥 [Scene::Intersect] for loop iteration");
 
 		//if (ENABLE_GRIN_CURVED_PATH && ray->isCurved) {
 		//if (grinCtx && grinCtx->enabled && volInfo && volInfo->GetCurrentVolume() == grinCtx->volume) {
 		if (grinCtx && grinCtx->enabled) {
-			SLG_LOG("🔥 [Scene::Intersect] GRIN context enabled");
+			//SLG_LOG("🔥 [Scene::Intersect] GRIN context enabled");
 			if (grinCtx->volume) {
-				SLG_LOG("🔥 [Scene::Intersect] GRIN Volume profile: %s" << grinCtx->profile.c_str());
+				//SLG_LOG("🔥 [Scene::Intersect] GRIN Volume profile: %s" << grinCtx->profile.c_str());
 			} else{
-				SLG_LOG("⚠️ [Scene::Intersect] GRIN Volume pointer was null!");
+				//SLG_LOG("⚠️ [Scene::Intersect] GRIN Volume pointer was null!");
 			}
 			// Curved ray logic goes here
 			const luxrays::Vector curveAxis = Normalize(ray->curveAxis);

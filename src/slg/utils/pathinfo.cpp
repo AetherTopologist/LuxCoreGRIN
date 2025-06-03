@@ -53,7 +53,7 @@ bool PathInfo::CanBeNearlySpecular(const BSDF &bsdf, const float glossinessThres
 EyePathInfo::EyePathInfo() : isPassThroughPath(true),
 		lastBSDFPdfW(1.f), lastGlossiness(0.f), lastFromVolume(false),
 		isTransmittedPath(true), isNearlyCaustic(false) {
-	SLG_LOG("🔥GRIN [EyePathInfo::EyePathInfo()]");
+	//SLG_LOG("🔥GRIN [EyePathInfo::EyePathInfo()]");
 }
 
 void EyePathInfo::AddVertex(const BSDF &bsdf,
@@ -62,7 +62,7 @@ void EyePathInfo::AddVertex(const BSDF &bsdf,
 	//--------------------------------------------------------------------------
 	// PathInfo::AddVertex() inlined here for performances
 	//--------------------------------------------------------------------------
-	SLG_LOG("🔥GRIN [EyePathInfo::AddVertex()]");
+	//SLG_LOG("🔥GRIN [EyePathInfo::AddVertex()]");
 	// Increment path depth information
 	depth.IncDepths(event);
 	
@@ -125,7 +125,7 @@ void LightPathInfo::AddVertex(const BSDF &bsdf, const BSDFEvent event,
 	//--------------------------------------------------------------------------
 	// PathInfo::AddVertex() inlined here for performances
 	//--------------------------------------------------------------------------
-	SLG_LOG("🔥GRIN [LightPathInfo::AddVertex()]");
+	//SLG_LOG("🔥GRIN [LightPathInfo::AddVertex()]");
 	// Increment path depth information
 	depth.IncDepths(event);
 	
@@ -151,7 +151,7 @@ void LightPathInfo::AddVertex(const BSDF &bsdf, const BSDFEvent event,
 bool LightPathInfo::IsCausticPath(const BSDFEvent event,
 		const float glossiness, const float glossinessThreshold) const {
 	// Note: the +1 is there for the event passed as method arguments
-	SLG_LOG("🔥GRIN [LightPathInfo::IsCausticPath()]");
+	//SLG_LOG("🔥GRIN [LightPathInfo::IsCausticPath()]");
 	return isNearlyS && (depth.depth + 1 > 1) &&
 			!IsNearlySpecular(event, glossiness, glossinessThreshold);
 }

@@ -33,7 +33,7 @@ using namespace slg;
 PathVolumeInfo::PathVolumeInfo() {
 	currentVolume = NULL;
 	volumeListSize = 0;
-	SLG_LOG("🔥GRIN [PathVolumeInfo::PathVolumeInfo()]");
+	//SLG_LOG("🔥GRIN [PathVolumeInfo::PathVolumeInfo()]");
 	scatteredStart = false;
 }
 
@@ -49,7 +49,7 @@ void PathVolumeInfo::AddVolume(const Volume *vol) {
 
 	// Add the volume to the list
 	volumeList[volumeListSize++] = vol;
-	SLG_LOG("🔥GRIN [PathVolumeInfo::AddVolume()] Called");
+	//SLG_LOG("🔥GRIN [PathVolumeInfo::AddVolume()] Called");
 }
 
 void PathVolumeInfo::RemoveVolume(const Volume *vol) {
@@ -119,7 +119,7 @@ const Volume *PathVolumeInfo::SimulateRemoveVolume(const Volume *vol) const {
 
 void PathVolumeInfo::Update(const BSDFEvent eventType, const BSDF &bsdf) {
 	// Update only if it isn't a volume scattering and the material can TRANSMIT
-	SLG_LOG("🔥GRIN [PathVolumeInfo::Update()] Called");
+	//SLG_LOG("🔥GRIN [PathVolumeInfo::Update()] Called");
 	if (bsdf.IsVolume())
 		scatteredStart = true;
 	else {
@@ -137,7 +137,7 @@ void PathVolumeInfo::Update(const BSDFEvent eventType, const BSDF &bsdf) {
 bool PathVolumeInfo::CompareVolumePriorities(const Volume *vol1, const Volume *vol2) {
 	// A volume wins over another if and only if it is the same volume or has an
 	// higher priority
-	SLG_LOG("🔥GRIN [PathVolumeInfo::CompareVolumePriorities()]");
+	//SLG_LOG("🔥GRIN [PathVolumeInfo::CompareVolumePriorities()]");
 	if (vol1) {
 		if (vol2) {
 			if (vol1 == vol2)
@@ -152,7 +152,7 @@ bool PathVolumeInfo::CompareVolumePriorities(const Volume *vol1, const Volume *v
 
 bool PathVolumeInfo::ContinueToTrace(const BSDF &bsdf) const {
 	// Check if the volume priority system has to be applied
-	SLG_LOG("🔥GRIN [PathVolumeInfo::ContinueToTrace()] Called");
+	//SLG_LOG("🔥GRIN [PathVolumeInfo::ContinueToTrace()] Called");
 
 	if (bsdf.GetEventTypes() & TRANSMIT) {
 		// Ok, the surface can transmit so check if volume priority
@@ -191,7 +191,7 @@ void  PathVolumeInfo::SetHitPointVolumes(HitPoint &hitPoint,
 		const Volume *defaultWorldVolume) const {
 	// Set interior and exterior volumes
 	
-	SLG_LOG("🔥GRIN [PathVolumeInfo::SetHitPointVolumes()] Called");
+	//SLG_LOG("🔥GRIN [PathVolumeInfo::SetHitPointVolumes()] Called");
 
 	if (hitPoint.intoObject) {
 		// From outside to inside the object

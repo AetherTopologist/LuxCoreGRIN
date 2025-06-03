@@ -31,7 +31,7 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	// Get the scene object
 	sceneObject = scene.objDefs.GetSceneObject(rayHit.meshIndex);
 
-	SLG_LOG("🔥GRIN [BSDF::Init()] Surface");
+	//SLG_LOG("🔥GRIN [BSDF::Init()] Surface");
 
 	// Get the mesh
 	const ExtMesh *mesh = sceneObject->GetExtMesh();
@@ -75,7 +75,7 @@ void BSDF::Init(const Scene &scene,
 	// Get the scene object
 	sceneObject = scene.objDefs.GetSceneObject(meshIndex);
 
-	SLG_LOG("🔥GRIN [BSDF::Init()] Point of Surface");
+	//SLG_LOG("🔥GRIN [BSDF::Init()] Point of Surface");
 
 	// Get the mesh
 	const ExtMesh *mesh = sceneObject->GetExtMesh();
@@ -117,7 +117,7 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	hitPoint.throughShadowTransparency = throughShadowTransparency;
 	hitPoint.passThroughEvent = passThroughEvent;
 
-	SLG_LOG("🔥GRIN [BSDF::Init()] Volume Scatter Point");
+	//SLG_LOG("🔥GRIN [BSDF::Init()] Volume Scatter Point");
 
 	hitPoint.p = ray(t);
 	hitPoint.fixedDir = -ray.d;
@@ -188,14 +188,14 @@ bool BSDF::IsCameraInvisible() const {
 }
 
 u_int BSDF::GetObjectID() const {
-	SLG_LOG("🔥GRIN [BSDF::GetObjectID())] ");
+	//SLG_LOG("🔥GRIN [BSDF::GetObjectID())] ");
 	return (sceneObject) ? sceneObject->GetID() : std::numeric_limits<u_int>::max();
 }
 
 static string MaterialNULLptrName = "NULL pointer";
 
 const string &BSDF::GetMaterialName() const {
-	SLG_LOG("🔥GRIN [BSDF::GetMaterialName())] ");
+	//SLG_LOG("🔥GRIN [BSDF::GetMaterialName())] ");
 	if (material)
 		return material->GetName();
 	else
@@ -303,7 +303,7 @@ Spectrum BSDF::Evaluate(const Vector &generatedDir,
 			return Spectrum();
 	}
 
-	SLG_LOG("🔥GRIN [BSDF::Evaluate()]");
+	//SLG_LOG("🔥GRIN [BSDF::Evaluate()]");
 
 	const Vector localLightDir = frame.ToLocal(lightDir);
 	const Vector localEyeDir = frame.ToLocal(eyeDir);
@@ -361,7 +361,7 @@ Spectrum BSDF::Sample(Vector *sampledDir,
 	if (result.Black())
 		return result;
 
-	SLG_LOG("🔥GRIN [BSDF::Sample()]");
+	//SLG_LOG("🔥GRIN [BSDF::Sample()]");
 
 	*absCosSampledDir = fabsf(CosTheta(localSampledDir));
 	*sampledDir = frame.ToWorld(localSampledDir);
@@ -393,13 +393,13 @@ void BSDF::Pdf(const Vector &sampledDir, float *directPdfW, float *reversePdfW) 
 	Vector localEyeDir = frame.ToLocal(eyeDir);
 
 	material->Pdf(hitPoint, localLightDir, localEyeDir, directPdfW, reversePdfW);
-	SLG_LOG("🔥GRIN [BSDF::Pdf()]");
+	//SLG_LOG("🔥GRIN [BSDF::Pdf()]");
 }
 
 Spectrum BSDF::GetPassThroughTransparency(const bool backTracing) const {
 	const Vector localFixedDir = frame.ToLocal(hitPoint.fixedDir);
 	
-	SLG_LOG("🔥GRIN [BSDF::GetPassThroughTransparency()]");
+	//SLG_LOG("🔥GRIN [BSDF::GetPassThroughTransparency()]");
 
 	return material->GetPassThroughTransparency(hitPoint, localFixedDir,
 			hitPoint.passThroughEvent, backTracing);

@@ -43,7 +43,7 @@ PathTracerThreadState::PathTracerThreadState(IntersectionDevice *dev,
 	eyeSampleResults.resize(1);
 	PathTracer::InitEyeSampleResults(film, eyeSampleResults, useFilmSplat);
 	
-	SLG_LOG("🔥GRIN [PathTracerThreadState::PathTracerThreadState())]");
+	//SLG_LOG("🔥GRIN [PathTracerThreadState::PathTracerThreadState())]");
 
 	eyeSampleCount = 0.0;
 	// Using 1.0 instead of 0.0 to avoid a division by zero
@@ -140,7 +140,7 @@ PathTracer::DirectLightResult PathTracer::DirectLightSampling(
 		const EyePathInfo &pathInfo, const Spectrum &pathThroughput,
 		const BSDF &bsdf, SampleResult *sampleResult,
 		const bool useBSDFEVal) const {
-	SLG_LOG("🔥GRIN [PathTracer::DirectLightSampling()]");
+	//SLG_LOG("🔥GRIN [PathTracer::DirectLightSampling()]");
 	if (!bsdf.IsDelta()) {
 		// Select the light strategy to use
 		const LightStrategy *lightStrategy;
@@ -248,7 +248,7 @@ PathTracer::DirectLightResult PathTracer::DirectLightSampling(
 			}
 		}
 	}
-	SLG_LOG("🔥GRIN [PathTracer::DirectLightSampling()] Exiting");
+	//SLG_LOG("🔥GRIN [PathTracer::DirectLightSampling()] Exiting");
 	return NOT_VISIBLE;
 }
 
@@ -284,7 +284,7 @@ void PathTracer::DirectHitFiniteLight(const Scene *scene,
 	float directPdfA;
 	const Spectrum emittedRadiance = bsdf.GetEmittedRadiance(&directPdfA);
 	
-	SLG_LOG("🔥GRIN [PathTracer::DirectHitFiniteLight()] Exiting");
+	//SLG_LOG("🔥GRIN [PathTracer::DirectHitFiniteLight()] Exiting");
 
 	if (!emittedRadiance.Black()) {
 		float weight;
@@ -318,7 +318,7 @@ void PathTracer::DirectHitInfiniteLight(const Scene *scene,
 	if (bsdf && bsdf->hitPoint.throughShadowTransparency)
 		return;
 
-	SLG_LOG("🔥GRIN [PathTracer::DirectHitInfiniteLight()] Exiting");
+	//SLG_LOG("🔥GRIN [PathTracer::DirectHitInfiniteLight()] Exiting");
 
 	BOOST_FOREACH(EnvLightSource *envLight, scene->lightDefs.GetEnvLightSources()) {
 		// Check if the light source is visible according the settings
@@ -349,7 +349,7 @@ void PathTracer::GenerateEyeRay(const Camera *camera, const Film *film, Ray &eye
 	const float filmY = sampler->GetSample(1);
 
 	// Use fast pixel filtering, like the one used in TILEPATH.
-	SLG_LOG("🔥GRIN [PathTracer::GenerateEyeRay()]");
+	//SLG_LOG("🔥GRIN [PathTracer::GenerateEyeRay()]");
 
 	const u_int *subRegion = film->GetSubRegion();
 	sampleResult.pixelX = Min(Floor2UInt(filmX), subRegion[1]);
@@ -372,7 +372,7 @@ void PathTracer::GenerateEyeRay(const Camera *camera, const Film *film, Ray &eye
 	const float timeSample = sampler->GetSample(4);
 	const float time = camera->GenerateRayTime(timeSample);
 
-	SLG_LOG("🔥GRIN [PathTracer::GenerateEyeRay()] Exiting");
+	//SLG_LOG("🔥GRIN [PathTracer::GenerateEyeRay()] Exiting");
 
 	camera->GenerateRay(time, sampleResult.filmX, sampleResult.filmY, &eyeRay, &volInfo,
 		sampler->GetSample(2), sampler->GetSample(3));
@@ -392,7 +392,7 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 	// To keep track of the number of rays traced
 	const double deviceRayCount = device->GetTotalRaysCount();
 	
-	SLG_LOG("🔥GRIN [PathTracer::RenderEyePath()]");
+	//SLG_LOG("🔥GRIN [PathTracer::RenderEyePath()]");
 
 	// This is used by light strategy
 	pathInfo.lastShadeN = Normal(eyeRay.d);
@@ -416,14 +416,14 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 
 		const Volume *vol = pathInfo.volume.GetCurrentVolume();
 		if (vol) {
-			SLG_LOG("🔥 [Debug] Volume class name: " << typeid(*vol).name());
+			//SLG_LOG("🔥 [Debug] Volume class name: " << typeid(*vol).name());
 		} else{
-			SLG_LOG("🔥 [Debug] Volume is nullptr");
+			//SLG_LOG("🔥 [Debug] Volume is nullptr");
 		}
 
 		const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(vol);
 		if (grinVol) {
-			SLG_LOG("🔥 [PathTracer] GRIN Volume found with IOR range: " << grinCtx.iorMin << " - " << grinCtx.iorMax);
+			//SLG_LOG("🔥 [PathTracer] GRIN Volume found with IOR range: " << grinCtx.iorMin << " - " << grinCtx.iorMax);
 			grinCtx.enabled = true;
 			grinCtx.volume = grinVol;
 			grinCtx.rayOrigin = eyeRay.o;
@@ -703,7 +703,7 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 			!photonGIShowIndirectPathMixUsed)
 		sampleResult.radiance[0] = Spectrum(1.f, 0.f, 0.f);
 
-	SLG_LOG("🔥GRIN [PathTracer::RenderEyePath()] Exiting");
+	//SLG_LOG("🔥GRIN [PathTracer::RenderEyePath()] Exiting");
 }
 
 //------------------------------------------------------------------------------
@@ -720,23 +720,23 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	GenerateEyeRay(scene->camera, film, eyeRay, pathInfo.volume, sampler, sampleResults[0]);
 	
 	// 🔥 GRIN Corruption Test #3: Warp Ray Origin
-	eyeRay.o.x += 0.1f * sinf(eyeRay.o.y * 15.0f);
-	eyeRay.o.y += 0.1f * cosf(eyeRay.o.x * 5.0f);
+	//eyeRay.o.x += 0.1f * sinf(eyeRay.o.y * 15.0f);
+	//eyeRay.o.y += 0.1f * cosf(eyeRay.o.x * 5.0f);
 	// 🔥 GRIN Corruption Test #3: Warp Ray Origin
 
-	SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()]");	
+	//SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()]");	
 
 	// BB GRIN
 	// === FILE: pathtracer.cpp ===
 	// 📍 Function: PathTracer::RenderEyePath(...)
 	// Just after: GenerateEyeRay(...)
 	// Inject this to enable curved rays from the camera:
-	eyeRay.isCurved = true;
-	eyeRay.curveAxis = luxrays::Vector(0.0f, 0.0f, 1.0f); // Curve about Z axis
-	eyeRay.curveStrength = 0.00001f; // Tunable
+	//eyeRay.isCurved = true;
+	//eyeRay.curveAxis = luxrays::Vector(0.0f, 0.0f, 1.0f); // Curve about Z axis
+	//eyeRay.curveStrength = 0.00001f; // Tunable
 	// BB GRIN END
 
-	SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()] Exiting");
+	//SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()] Exiting");
 
 	RenderEyePath(device, scene, sampler, pathInfo, eyeRay, Spectrum(1.f), sampleResults);
 }
@@ -771,7 +771,7 @@ void PathTracer::ConnectToEye(IntersectionDevice *device,
 	const float eyeDistance = eyeDir.Length();
 	eyeDir /= eyeDistance;
 
-	SLG_LOG("🔥GRIN [PathTracer::ConnectToEye()]");
+	//SLG_LOG("🔥GRIN [PathTracer::ConnectToEye()]");
 
 	Ray eyeRay(pathInfo.lensPoint, eyeDir,
 			0.f,
@@ -844,7 +844,7 @@ void PathTracer::RenderLightSample(IntersectionDevice *device,
 
 	Spectrum lightPathFlux;
 
-	SLG_LOG("🔥GRIN [PathTracer::RenderLightSample()]");
+	//SLG_LOG("🔥GRIN [PathTracer::RenderLightSample()]");
 
 	const float timeSample = sampler->GetSample(8);
 	const float time = scene->camera->GenerateRayTime(timeSample);
@@ -966,7 +966,7 @@ void PathTracer::RenderLightSample(IntersectionDevice *device,
 //------------------------------------------------------------------------------
 
 bool PathTracer::HasToRenderEyeSample(PathTracerThreadState &state) const {
-	SLG_LOG("🔥GRIN [PathTracer::HasToRenderEyeSample] Start");
+	//SLG_LOG("🔥GRIN [PathTracer::HasToRenderEyeSample] Start");
 
 	// Check if I have to trace an eye or light path
 	if (hybridBackForwardEnable) {
@@ -1003,7 +1003,7 @@ void PathTracer::ApplyVarianceClamp(const PathTracerThreadState &state,
 }
 
 void PathTracer::RenderSample(PathTracerThreadState &state) const {
-	SLG_LOG("🔥GRIN Inside PathTracer::RenderSample()");
+	//SLG_LOG("🔥GRIN Inside PathTracer::RenderSample()");
 
 	// Check if I have to trace an eye or light path
 	Sampler *sampler;
@@ -1012,18 +1012,18 @@ void PathTracer::RenderSample(PathTracerThreadState &state) const {
 		// Trace an eye path
 		sampler = state.eyeSampler;
 		sampleResults = &state.eyeSampleResults;
-		SLG_LOG("[GRIN Trace] 📌 Rendering path type: EYE");
+		//SLG_LOG("[GRIN Trace] 📌 Rendering path type: EYE");
 	} else {
 		// Trace a light path
 		sampler = state.lightSampler;
 		sampleResults = &state.lightSampleResults;
-		SLG_LOG("[GRIN Trace] 📌 Rendering path type: LIGHT");
+		//SLG_LOG("[GRIN Trace] 📌 Rendering path type: LIGHT");
 	}
 
-	SLG_LOG("[GRIN Trace] 📊 SampleResults size: " << sampleResults->size());
+	//SLG_LOG("[GRIN Trace] 📊 SampleResults size: " << sampleResults->size());
 	for (size_t i = 0; i < sampleResults->size(); ++i) {
 		const SampleResult &sr = (*sampleResults)[i];
-		SLG_LOG("[GRIN Trace] ➤ Pixel (" << sr.pixelX << ", " << sr.pixelY << ")");
+		//SLG_LOG("[GRIN Trace] ➤ Pixel (" << sr.pixelX << ", " << sr.pixelY << ")");
 	}
 
 	if (sampler == state.eyeSampler)
@@ -1042,7 +1042,7 @@ void PathTracer::RenderSample(PathTracerThreadState &state) const {
 //------------------------------------------------------------------------------
 
 void PathTracer::ParseOptions(const luxrays::Properties &cfg, const luxrays::Properties &defaultProps) {
-	SLG_LOG("🔥GRIN [PathTracer::ParseOptions()]");
+	//SLG_LOG("🔥GRIN [PathTracer::ParseOptions()]");
 	// Path depth settings
 	maxPathDepth.depth = Max(0, cfg.Get(defaultProps.Get("path.pathdepth.total")).Get<int>());
 	maxPathDepth.diffuseDepth = Max(0, cfg.Get(defaultProps.Get("path.pathdepth.diffuse")).Get<int>());

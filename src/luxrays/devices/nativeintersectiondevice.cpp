@@ -46,7 +46,7 @@ NativeIntersectionDevice::~NativeIntersectionDevice() {
 
 void NativeIntersectionDevice::SetDataSet(DataSet *newDataSet) {
 	IntersectionDevice::SetDataSet(newDataSet);
-	SLG_LOG("🔥GRIN [NativeIntersectionDevice::SetDataSet]");
+	//SLG_LOG("🔥GRIN [NativeIntersectionDevice::SetDataSet]");
 	if (dataSet) {
 		const AcceleratorType accelType = dataSet->GetAcceleratorType();
 		if (accelType != ACCEL_AUTO)

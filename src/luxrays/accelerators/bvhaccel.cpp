@@ -171,7 +171,7 @@ void BVHAccel::Init(const deque<const Mesh *> &ms, const u_longlong totVert,
 bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	assert (initialized);
 
-	LR_LOG(ctx, "🔥GRIN [BVHAccel::Intersect] Entry");
+	//LR_LOG(ctx, "🔥GRIN [BVHAccel::Intersect] Entry");
 
 	rayHit->t = initialRay->maxt;
 	rayHit->SetMiss();
