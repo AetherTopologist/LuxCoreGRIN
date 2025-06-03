@@ -28,6 +28,7 @@
 #include "luxrays/accelerators/bvhaccel.h"
 #include "luxrays/utils/utils.h"
 #include "luxrays/core/context.h"
+#include "luxrays/core/geometry/vector.h"
 
 using namespace std;
 
@@ -188,7 +189,8 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
     const float falloff = 0.001f;  // Prevent divide-by-zero
 
     //const float r = ray.o.Length() + falloff; // Radial distance from origin
-	const float r = Length(ray.o) + falloff;
+	//const float r = Length(ray.o) + falloff;
+	const float r = Length(Vector(ray.o)) + falloff;
 
 	const float yCurvature = gain / r;
 
