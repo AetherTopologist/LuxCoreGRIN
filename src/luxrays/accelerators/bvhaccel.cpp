@@ -181,23 +181,14 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	Ray ray(*initialRay);
 
 	// 🔥[GRIN] corruption
-	//ray.d.x += 0.05f * sin(ray.o.y * 10.0f);
-	//ray.d.y += 0.05f * cos(ray.o.x * 10.0f);
-	//ray.d = Normalize(ray.d);
+
 	// 🔥[GRIN] Curvature based on radial distance from global origin
-    const float gain = 0.75f;      // Increase for stronger visible effect
-    const float falloff = 0.001f;  // Prevent divide-by-zero
-
-    //const float r = ray.o.Length() + falloff; // Radial distance from origin
-	//const float r = Length(ray.o) + falloff;
-	//const float r = Length(Vector(ray.o)) + falloff;
-	//const float r = luxrays::Length(Vector(ray.o)) + falloff;
-	const float r = Vector(ray.o).Length() + falloff;
-
-	const float yCurvature = gain / r;
-
-    ray.d.y += yCurvature;
-    ray.d = Normalize(ray.d);
+    //const float gain = 0.75f;      // Increase for stronger visible effect
+    //const float falloff = 0.001f;  // Prevent divide-by-zero
+	//const float r = Vector(ray.o).Length() + falloff;
+	//const float yCurvature = gain / r;
+    //ray.d.y += yCurvature;
+    //ray.d = Normalize(ray.d);
 	// 🔥[GRIN] corruption
 
 	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
