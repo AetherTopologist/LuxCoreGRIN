@@ -191,7 +191,8 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
     //const float r = ray.o.Length() + falloff; // Radial distance from origin
 	//const float r = Length(ray.o) + falloff;
 	//const float r = Length(Vector(ray.o)) + falloff;
-	const float r = luxrays::Length(Vector(ray.o)) + falloff;
+	//const float r = luxrays::Length(Vector(ray.o)) + falloff;
+	const float r = Vector(ray.o).Length() + falloff;
 
 	const float yCurvature = gain / r;
 
