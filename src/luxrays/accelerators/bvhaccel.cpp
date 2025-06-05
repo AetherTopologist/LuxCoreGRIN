@@ -181,14 +181,20 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	Ray ray(*initialRay);
 
 	// 🔥[GRIN] corruption
+	// 🔥[GRIN] Curvature effect: Rotate ray direction around Z axis based on radial origin distance
+	const Vector2 xy(ray.o.x, ray.o.y);
+	const float r = xy.Length() + 0.001f;
+	const float gain = 0.15f;
+	const float angle = gain / r;
 
-	// 🔥[GRIN] Curvature based on radial distance from global origin
-    //const float gain = 0.75f;      // Increase for stronger visible effect
-    //const float falloff = 0.001f;  // Prevent divide-by-zero
-	//const float r = Vector(ray.o).Length() + falloff;
-	//const float yCurvature = gain / r;
-    //ray.d.y += yCurvature;
-    //ray.d = Normalize(ray.d);
+	const float cosA = cosf(angle);
+	const float sinA = sinf(angle);
+	const float dx = ray.d.x;
+	const float dy = ray.d.y;
+
+	ray.d.x = dx * cosA - dy * sinA;
+	ray.d.y = dx * sinA + dy * cosA;
+	ray.d = Normalize(ray.d);
 	// 🔥[GRIN] corruption
 
 	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
