@@ -31,7 +31,72 @@
 #include "luxrays/core/geometry/vector.h"
 #include "luxrays/core/geometry/transform.h"
 
+// TEMP GRIN Includes
+#include <cmath>  // for sinf, cosf, etc.
+//#include "luxrays/core/geometry/vector.h"
+
 using namespace std;
+
+// Curved raymarching GRIN-based intersection
+// Add to: bvhaccel.cpp (temporarily scoped local function)
+
+#include <cmath>  // for sinf, cosf, etc.
+#include "luxrays/core/geometry/vector.h"
+
+// Curved raymarching GRIN-based intersection
+static bool GRINRK4_Intersect(const Ray &ray,
+                              const luxrays::Point &p0,
+                              const luxrays::Point &p1,
+                              const luxrays::Point &p2,
+                              const float stepSize,
+                              const int maxSteps,
+                              float *hitT,
+                              float *b1,
+                              float *b2) {
+
+    using namespace luxrays;
+
+    const float epsilon = 1e-3f;
+
+    Point currentPos = ray.o;
+    Vector currentDir = ray.d;
+
+    auto IndexOfRefractionAt = [](const Point &p) -> float {
+        const float r = Vector(p).Length();
+        return 1.0f + 0.15f / (r + 0.01f); // Radial GRIN field toward origin
+    };
+
+    for (int i = 0; i < maxSteps; ++i) {
+        // Sample index gradient numerically
+        const float n1 = IndexOfRefractionAt(currentPos);
+        const float n2 = IndexOfRefractionAt(currentPos + currentDir * stepSize);
+        const float dn = n2 - n1;
+
+        // Compute curved step direction (naive RK2 style)
+        Vector bend = -Normalize(Vector(currentPos)) * dn;
+        Vector nextDir = Normalize(currentDir + bend * stepSize);
+
+        Point nextPos = currentPos + nextDir * stepSize;
+
+        // Check triangle intersection (straight line segment)
+        Vector testDir = Normalize(nextPos - currentPos);
+        Ray segment(currentPos, testDir, epsilon, stepSize);
+
+        float localT, localB1, localB2;
+        if (Triangle::Intersect(segment, p0, p1, p2, &localT, &localB1, &localB2)) {
+            *hitT = (segment.mint + localT);
+            *b1 = localB1;
+            *b2 = localB2;
+            return true;
+        }
+
+        currentPos = nextPos;
+        currentDir = nextDir;
+    }
+
+    return false;
+}
+
 
 namespace luxrays {
 
@@ -183,21 +248,18 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 	// 🔥[GRIN] corruption
 	// 🔥[GRIN] rotation around Z-axis based on distance from world origin in XY plane
-	const float x = ray.o.x;
-	const float y = ray.o.y;
-	const float r = sqrtf(x * x + y * y) + 0.001f;  // Avoid divide by zero
-
-	const float gain = 0.15f;  // Tune this for visual effect
-	const float angle = gain / r;
-
-	const float cosA = cosf(angle);
-	const float sinA = sinf(angle);
-	const float dx = ray.d.x;
-	const float dy = ray.d.y;
-
-	ray.d.x = dx * cosA - dy * sinA;
-	ray.d.y = dx * sinA + dy * cosA;
-	ray.d = Normalize(ray.d);
+	//const float x = ray.o.x;
+	//const float y = ray.o.y;
+	//const float r = sqrtf(x * x + y * y) + 0.001f;  // Avoid divide by zero
+	//const float gain = 0.15f;  // Tune this for visual effect
+	//const float angle = gain / r;
+	//const float cosA = cosf(angle);
+	//const float sinA = sinf(angle);
+	//const float dx = ray.d.x;
+	//const float dy = ray.d.y;
+	//ray.d.x = dx * cosA - dy * sinA;
+	//ray.d.y = dx * sinA + dy * cosA;
+	//ray.d = Normalize(ray.d);
 	// 🔥[GRIN] corruption
 
 	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
@@ -220,18 +282,8 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[1]);
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
-			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-				// 🔥[GRIN] corruption
-				// 🔥[GRIN] Spatial bending using ray origin (x, y) as basis
-				//const float radius = sqrtf(ray.o.x * ray.o.x + ray.o.y * ray.o.y);
-				//const float angle = atan2f(ray.o.y, ray.o.x);
-				// Add a sinusoidal angular warping to bend rays based on radial distance
-				//const float warpFactor = 0.25f * sinf(radius * 5.0f + angle * 3.0f); // play with these!
-
-				//b1 += warpFactor;
-				//b2 += warpFactor * 0.5f;
-				// 🔥[GRIN] corruption
-
+			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
+			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.05f, 200, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
@@ -242,7 +294,6 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 					// Continue testing for closer intersections
 				}
 			}
-
 			++currentNode;
 		} else {
 			// It is a node, check the bounding box
