@@ -29,6 +29,7 @@
 #include "luxrays/utils/utils.h"
 #include "luxrays/core/context.h"
 #include "luxrays/core/geometry/vector.h"
+#include "luxrays/core/geometry/transform.h"
 
 using namespace std;
 
@@ -181,10 +182,12 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	Ray ray(*initialRay);
 
 	// 🔥[GRIN] corruption
-	// 🔥[GRIN] Curvature effect: Rotate ray direction around Z axis based on radial origin distance
-	const Vector2 xy(ray.o.x, ray.o.y);
-	const float r = xy.Length() + 0.001f;
-	const float gain = 0.15f;
+	// 🔥[GRIN] rotation around Z-axis based on distance from world origin in XY plane
+	const float x = ray.o.x;
+	const float y = ray.o.y;
+	const float r = sqrtf(x * x + y * y) + 0.001f;  // Avoid divide by zero
+
+	const float gain = 0.15f;  // Tune this for visual effect
 	const float angle = gain / r;
 
 	const float cosA = cosf(angle);
