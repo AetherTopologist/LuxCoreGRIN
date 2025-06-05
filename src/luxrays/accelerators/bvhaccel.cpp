@@ -37,68 +37,51 @@
 
 using namespace std;
 
-// Curved raymarching GRIN-based intersection
-// Add to: bvhaccel.cpp (temporarily scoped local function)
+namespace luxrays {
 
-#include <cmath>  // for sinf, cosf, etc.
-#include "luxrays/core/geometry/vector.h"
-
-// Curved raymarching GRIN-based intersection
-static bool GRINRK4_Intersect(const Ray &ray,
-                              const luxrays::Point &p0,
-                              const luxrays::Point &p1,
-                              const luxrays::Point &p2,
-                              const float stepSize,
-                              const int maxSteps,
-                              float *hitT,
-                              float *b1,
-                              float *b2) {
-
-    using namespace luxrays;
-
-    const float epsilon = 1e-3f;
-
-    Point currentPos = ray.o;
-    Vector currentDir = ray.d;
-
-    auto IndexOfRefractionAt = [](const Point &p) -> float {
-        const float r = Vector(p).Length();
-        return 1.0f + 0.15f / (r + 0.01f); // Radial GRIN field toward origin
-    };
+// 🔥[GRIN] Trial Function
+bool GRINRK4_Intersect(
+    const Ray &ray,
+    const Point &p0,
+    const Point &p1,
+    const Point &p2,
+    const float stepSize,
+    const int maxSteps,
+    float *hitT,
+    float *b1,
+    float *b2
+) {
+    const Vector dir0 = Normalize(ray.d);
+    Point pos = ray.o;
 
     for (int i = 0; i < maxSteps; ++i) {
-        // Sample index gradient numerically
-        const float n1 = IndexOfRefractionAt(currentPos);
-        const float n2 = IndexOfRefractionAt(currentPos + currentDir * stepSize);
-        const float dn = n2 - n1;
+        const float r = Max(0.001f, Distance(pos, Point(0.f, 0.f, 0.f)));
+        const Vector bend = Normalize(pos) * (0.1f / r);
 
-        // Compute curved step direction (naive RK2 style)
-        Vector bend = -Normalize(Vector(currentPos)) * dn;
-        Vector nextDir = Normalize(currentDir + bend * stepSize);
+        const Vector dir1 = Normalize(dir0 + bend * stepSize * 0.5f);
+        const Vector dir2 = Normalize(dir0 + bend * stepSize * 0.5f);
+        const Vector dir3 = Normalize(dir0 + bend * stepSize);
 
-        Point nextPos = currentPos + nextDir * stepSize;
+        const Vector avgDir = Normalize((dir0 + 2.f * dir1 + 2.f * dir2 + dir3) / 6.f);
+        const Point next = pos + avgDir * stepSize;
 
-        // Check triangle intersection (straight line segment)
-        Vector testDir = Normalize(nextPos - currentPos);
-        Ray segment(currentPos, testDir, epsilon, stepSize);
+        const Ray segment(pos, next - pos, 0.f, 1.f);
 
         float localT, localB1, localB2;
         if (Triangle::Intersect(segment, p0, p1, p2, &localT, &localB1, &localB2)) {
-            *hitT = (segment.mint + localT);
-            *b1 = localB1;
-            *b2 = localB2;
+            if (hitT) *hitT = localT;
+            if (b1) *b1 = localB1;
+            if (b2) *b2 = localB2;
             return true;
         }
 
-        currentPos = nextPos;
-        currentDir = nextDir;
+        pos = next;
     }
 
     return false;
 }
+// 🔥[GRIN] Trial Function
 
-
-namespace luxrays {
 
 // BVHAccel Method Definitions
 
@@ -282,8 +265,9 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[1]);
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
+
 			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.05f, 200, &t, &b1, &b2)) {
+			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.05f, 100, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
