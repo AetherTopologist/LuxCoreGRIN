@@ -56,7 +56,8 @@ bool GRINRK4_Intersect(
 
     for (int i = 0; i < maxSteps; ++i) {
         const float r = Max(0.001f, Distance(pos, Point(0.f, 0.f, 0.f)));
-        const Vector bend = Normalize(pos) * (0.1f / r);
+        //const Vector bend = Normalize(pos) * (0.1f / r);
+		const Vector bend = Normalize(Vector(pos)) * (0.1f / r);
 
         const Vector dir1 = Normalize(dir0 + bend * stepSize * 0.5f);
         const Vector dir2 = Normalize(dir0 + bend * stepSize * 0.5f);
