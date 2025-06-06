@@ -238,7 +238,7 @@ void  PathVolumeInfo::SetHitPointVolumes(HitPoint &hitPoint,
 }
 
 // 🔥[GRIN] Volume Check
-bool PathVolumeInfo::IsInsideVolume(const Point &p, const Scene *scene) const {
+bool PathVolumeInfo::IsInsideVolume(const luxrays::Point &p, const slg::Scene *scene) const {
 	if (!scene || volumeListSize == 0)
 		return false;
 
