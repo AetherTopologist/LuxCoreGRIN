@@ -48,6 +48,10 @@ public:
 	const Volume *GetVolume(const u_int i) const { return volumeList[i]; }
 	const u_int GetListSize() const { return volumeListSize; }
 
+	// 🔥[GRIN] Volume Check
+	bool IsInsideVolume(const Point &p, const Scene *scene) const;
+	// 🔥[GRIN] Volume Check
+
 	void AddVolume(const Volume *vol);
 	void RemoveVolume(const Volume *vol);
 

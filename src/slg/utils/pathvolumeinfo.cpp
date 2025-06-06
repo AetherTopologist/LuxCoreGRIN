@@ -232,6 +232,32 @@ void  PathVolumeInfo::SetHitPointVolumes(HitPoint &hitPoint,
 	}
 }
 
+// 🔥[GRIN] Volume Check
+bool PathVolumeInfo::IsInsideVolume(const Point &p, const Scene *scene) const {
+	if (!scene || volumeListSize == 0)
+		return false;
+
+	// Loop through current volumes and check if the point is inside any volume object
+	for (u_int i = 0; i < volumeListSize; ++i) {
+		const Volume *vol = volumeList[i];
+		const luxrays::ExtMesh *mesh = vol->GetVolumeRegionMesh();
+		if (!mesh)
+			continue;
+
+		// Crude bounding box test first
+		if (!mesh->GetBBox().Inside(p))
+			continue;
+
+		// If available, a proper point-in-mesh test should be used here.
+		// For now we just assume bounding box inclusion is enough.
+		return true;
+	}
+
+	return false;
+}
+// 🔥[GRIN] Volume Check
+
+
 namespace slg {
 
 ostream &operator<<(ostream &os, const PathVolumeInfo &pvi) {
