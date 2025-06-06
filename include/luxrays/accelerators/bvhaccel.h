@@ -25,7 +25,6 @@
 #include "luxrays/luxrays.h"
 #include "luxrays/core/accelerator.h"
 #include "luxrays/core/bvh/bvhbuild.h"
-#include "slg/utils/pathvolumeinfo.h"	// GRIN Addition
 
 namespace luxrays {
 
@@ -50,8 +49,6 @@ public:
 		const u_longlong totalTriangleCount);
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const;
-	// Optional GRIN-enabled intersect
-	bool IntersectGRINRK4(const Ray *ray, RayHit *hit, const slg::PathVolumeInfo *volInfo) const;
 
 	static BVHParams ToBVHParams(const Properties &props);
 

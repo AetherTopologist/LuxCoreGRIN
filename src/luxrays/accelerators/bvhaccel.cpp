@@ -30,7 +30,6 @@
 #include "luxrays/core/context.h"
 #include "luxrays/core/geometry/vector.h"
 #include "luxrays/core/geometry/transform.h"
-#include "slg/utils/pathvolumeinfo.h"
 
 // TEMP GRIN Includes
 #include <cmath>  // for sinf, cosf, etc.
@@ -50,9 +49,7 @@ bool GRINRK4_Intersect(
     const int maxSteps,
     float *hitT,
     float *b1,
-    float *b2,
-	const slg::PathVolumeInfo *pathVol,
-	const slg::Scene *scene
+    float *b2
 ) {
     const Vector dir0 = Normalize(ray.d);
     Point pos = ray.o;
@@ -231,28 +228,55 @@ void BVHAccel::Init(const deque<const Mesh *> &ms, const u_longlong totVert,
 
 bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	assert (initialized);
+
 	//LR_LOG(ctx, "🔥GRIN [BVHAccel::Intersect] Entry");
+
 	rayHit->t = initialRay->maxt;
 	rayHit->SetMiss();
 	if (!nNodes)
 		return false;
+
 	Ray ray(*initialRay);
-	//LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
+
+	// 🔥[GRIN] corruption
+	// 🔥[GRIN] rotation around Z-axis based on distance from world origin in XY plane
+	//const float x = ray.o.x;
+	//const float y = ray.o.y;
+	//const float r = sqrtf(x * x + y * y) + 0.001f;  // Avoid divide by zero
+	//const float gain = 0.15f;  // Tune this for visual effect
+	//const float angle = gain / r;
+	//const float cosA = cosf(angle);
+	//const float sinA = sinf(angle);
+	//const float dx = ray.d.x;
+	//const float dy = ray.d.y;
+	//ray.d.x = dx * cosA - dy * sinA;
+	//ray.d.y = dx * sinA + dy * cosA;
+	//ray.d = Normalize(ray.d);
+	// 🔥[GRIN] corruption
+
+	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
+
 	u_int currentNode = 0; // Root Node
 	const u_int stopNode = BVHNodeData_GetSkipIndex(bvhTree[0].nodeData); // Non-existent
+
 	float t, b1, b2;
 	while (currentNode < stopNode) {
 		const luxrays::ocl::BVHArrayNode &node = bvhTree[currentNode];
+
 		const u_int nodeData = node.nodeData;
 		if (BVHNodeData_IsLeaf(nodeData)) {
 			// It is a leaf, check the triangle
 			const Mesh *mesh = meshes[node.triangleLeaf.meshIndex];
+
 			// This is a fast path because I know Mesh can be only TYPE_TRIANGLE/TYPE_EXT_TRIANGLE
 			// in BVH
 			const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[0]);
 			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[1]);
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
-			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
+
+
+			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
+			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.10f, 15, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
@@ -261,81 +285,6 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 					rayHit->meshIndex = node.triangleLeaf.meshIndex;
 					rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
 					// Continue testing for closer intersections
-				}
-			}
-			++currentNode;
-		} else {
-			// It is a node, check the bounding box
-			if (BBox::IntersectP(ray,
-					*reinterpret_cast<const Point *>(&node.bvhNode.bboxMin[0]),
-					*reinterpret_cast<const Point *>(&node.bvhNode.bboxMax[0])))
-				++currentNode;
-			else {
-				// I don't need to use BVHNodeData_GetSkipIndex() here because
-				// I already know the leaf flag is 0
-				currentNode = nodeData;
-			}
-		}
-	}
-
-	return !rayHit->Miss();
-}
-
-bool BVHAccel::IntersectGRINRK4(const Ray *ray, RayHit *hit, const slg::PathVolumeInfo *volInfo) const {
-	assert (initialized);
-	//LR_LOG(ctx, "🔥GRIN [BVHAccel::GRINIntersect] Entry");
-	rayHit->t = initialRay->maxt;
-	rayHit->SetMiss();
-	if (!nNodes)
-		return false;
-
-	Ray ray(*initialRay);
-	//LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
-
-	u_int currentNode = 0; // Root Node
-	const u_int stopNode = BVHNodeData_GetSkipIndex(bvhTree[0].nodeData); // Non-existent
-
-	float t, b1, b2;
-	while (currentNode < stopNode) {
-		const luxrays::ocl::BVHArrayNode &node = bvhTree[currentNode];
-
-		const u_int nodeData = node.nodeData;
-		if (BVHNodeData_IsLeaf(nodeData)) {
-			// It is a leaf, check the triangle
-			const Mesh *mesh = meshes[node.triangleLeaf.meshIndex];
-
-			// This is a fast path because I know Mesh can be only TYPE_TRIANGLE/TYPE_EXT_TRIANGLE
-			// in BVH
-			const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[0]);
-			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[1]);
-			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
-
-			// Optional: Only do special GRIN logic if in a GRIN volume
-			if (volInfo && volInfo->InGRINVolume()) {
-				// Call your GRINRK4_Intersect here
-				// return true/false depending on hit
-				if (GRINRK4_Intersect(ray, p0, p1, p2, 0.02f, 30, &t, &b1, &b2, volInfo, scene)) {
-					if (t < rayHit->t) {
-						ray.maxt = t;
-						rayHit->t = t;
-						rayHit->b1 = b1;
-						rayHit->b2 = b2;
-						rayHit->meshIndex = node.triangleLeaf.meshIndex;
-						rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
-						// Continue testing for closer intersections
-					}
-				}
-			} else{
-				if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-					if (t < rayHit->t) {
-						ray.maxt = t;
-						rayHit->t = t;
-						rayHit->b1 = b1;
-						rayHit->b2 = b2;
-						rayHit->meshIndex = node.triangleLeaf.meshIndex;
-						rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
-						// Continue testing for closer intersections
-					}
 				}
 			}
 			++currentNode;

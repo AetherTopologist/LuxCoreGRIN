@@ -30,7 +30,6 @@ using namespace slg;
 //------------------------------------------------------------------------------
 
 BBox Camera::ComputeBBox(const Point &orig) const {
-	SLG_LOG("🔥GRIN [Camera::ComputeBBox]");
 	if (motionSystem)
 		return motionSystem->Bound(BBox(orig), false);
 	else
@@ -85,9 +84,7 @@ void Camera::UpdateAuto(const Scene *scene) {
 		RayHit rayHit;
 		SLG_LOG("🔥GRIN [Camera::UpdateAuto]");
 		//if (scene->dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(&ray, &rayHit)) {
-		//if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit)) {
-		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->IntersectGRINRK4(&ray, &rayHit, volInfo))
-
+		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit)) {
 			/* I can not use BSDF::Init() here because Camera::UpdateAuto()
 			 * can be called before light preprocessing
 

@@ -68,8 +68,7 @@ void ProjectiveCamera::UpdateAuto(const Scene *scene) {
 		// focal distance
 		RayHit rayHit;
 		//if (scene->dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(&ray, &rayHit))
-		//if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit))
-		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit, volInfo))
+		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit))
 			focalDistance = rayHit.t;
 	}
 
