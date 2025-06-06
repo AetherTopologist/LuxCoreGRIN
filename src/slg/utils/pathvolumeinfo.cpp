@@ -22,11 +22,6 @@
 #include "slg/volumes/volume.h"
 #include "slg/utils/pathvolumeinfo.h"
 
-#include "luxrays/core/geometry/point.h"     // For Point
-#include "luxrays/core/extmesh.h"            // For ExtMesh
-#include "slg/core/scene.h"                  // For Scene
-
-
 using namespace std;
 using namespace luxrays;
 using namespace slg;

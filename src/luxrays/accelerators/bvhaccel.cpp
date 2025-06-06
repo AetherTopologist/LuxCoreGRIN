@@ -30,9 +30,7 @@
 #include "luxrays/core/context.h"
 #include "luxrays/core/geometry/vector.h"
 #include "luxrays/core/geometry/transform.h"
-
 #include "slg/utils/pathvolumeinfo.h"
-#include "slg/scene/scene.h"
 
 // TEMP GRIN Includes
 #include <cmath>  // for sinf, cosf, etc.
@@ -283,7 +281,7 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	return !rayHit->Miss();
 }
 
-bool BVHAccel::IntersectGRINRK4(const Ray *initialRay, RayHit *rayHit, const Scene *scene,  const slg::PathVolumeInfo *volInfo) const {
+bool BVHAccel::IntersectGRINRK4(const Ray *ray, RayHit *hit, const slg::PathVolumeInfo *volInfo) const {
 	assert (initialized);
 	//LR_LOG(ctx, "🔥GRIN [BVHAccel::GRINIntersect] Entry");
 	rayHit->t = initialRay->maxt;
@@ -313,7 +311,7 @@ bool BVHAccel::IntersectGRINRK4(const Ray *initialRay, RayHit *rayHit, const Sce
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
 			// Optional: Only do special GRIN logic if in a GRIN volume
-			if (volInfo && volInfo->IsInsideVolume(ray->o, scene)) {
+			if (volInfo && volInfo->InGRINVolume()) {
 				// Call your GRINRK4_Intersect here
 				// return true/false depending on hit
 				if (GRINRK4_Intersect(ray, p0, p1, p2, 0.02f, 30, &t, &b1, &b2, volInfo, scene)) {
