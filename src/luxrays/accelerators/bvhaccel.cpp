@@ -57,14 +57,16 @@ bool GRINRK4_Intersect(
 
 	for (int i = 0; i < maxSteps; ++i) {
 		const Vector posVec = Vector(pos);
-		const float r = Max(0.001f, Length(posVec));
+		const float r = luxrays::Max(0.001f, posVec.Length());
+
 		const Vector bend = Normalize(posVec) * (bendScale / r);
 
 		const Vector k1 = dir0;
 		const Vector k2 = Normalize(dir0 + bend * stepSize * 0.5f);
 
 		const Point midPos = pos + k2 * (stepSize * 0.5f);
-		const float r2 = Max(0.001f, Length(Vector(midPos)));
+		const float r2 = luxrays::Max(0.001f, Vector(midPos).Length());
+
 		const Vector bend2 = Normalize(Vector(midPos)) * (bendScale / r2);
 		const Vector k3 = Normalize(dir0 + bend2 * stepSize * 0.5f);
 
