@@ -22,9 +22,6 @@
 #include <ostream>
 
 #include "slg/slg.h"
-#include "luxrays/core/geometry/point.h"
-#include "slg/scene/scene.h"
-
 
 namespace slg {
 
@@ -52,7 +49,7 @@ public:
 	const u_int GetListSize() const { return volumeListSize; }
 
 	// 🔥[GRIN] Volume Check
-	bool IsInsideVolume(const luxrays::Point &p, const slg::Scene *scene) const;
+	bool IsInsideVolume(const Point &p, const Scene *scene) const;
 	// 🔥[GRIN] Volume Check
 
 	void AddVolume(const Volume *vol);
