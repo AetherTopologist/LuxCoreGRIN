@@ -55,17 +55,17 @@ bool GRINRK4_Intersect(
     Point pos = ray.o;
 
     for (int i = 0; i < maxSteps; ++i) {
-        const float r = Max(0.001f, Distance(pos, Point(0.f, 0.f, 0.f)));
-        //const Vector bend = Normalize(pos) * (0.1f / r);
-		const Vector bend = Normalize(Vector(pos)) * (0.1f / r);
+        const float r = Max(0.001f, pos.Length());
+        const Vector normPos = Normalize(Vector(pos));
+        const Vector bend = normPos * (0.1f / r);
 
-        const Vector dir1 = Normalize(dir0 + bend * stepSize * 0.5f);
-        const Vector dir2 = Normalize(dir0 + bend * stepSize * 0.5f);
-        const Vector dir3 = Normalize(dir0 + bend * stepSize);
+        const Vector k1 = dir0;
+        const Vector k2 = Normalize(dir0 + bend * stepSize * 0.5f);
+        const Vector k3 = k2; // same as k2
+        const Vector k4 = Normalize(dir0 + bend * stepSize);
+        const Vector avgDir = Normalize((k1 + 2.f * k2 + 2.f * k3 + k4) / 6.f);
 
-        const Vector avgDir = Normalize((dir0 + 2.f * dir1 + 2.f * dir2 + dir3) / 6.f);
         const Point next = pos + avgDir * stepSize;
-
         const Ray segment(pos, next - pos, 0.f, 1.f);
 
         float localT, localB1, localB2;
@@ -268,7 +268,7 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 
 			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.05f, 100, &t, &b1, &b2)) {
+			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.10f, 15, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
