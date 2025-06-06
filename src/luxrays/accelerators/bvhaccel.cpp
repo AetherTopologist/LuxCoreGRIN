@@ -53,7 +53,7 @@ bool GRINRK4_Intersect(
 ) {
     const Vector dir0 = Normalize(ray.d);
     Point pos = ray.o;
-	const float bendScale = 0.05f; // or 0.05f for less curvature
+	const float bendScale = 0.01f; // or 0.05f for less curvature
 
 	for (int i = 0; i < maxSteps; ++i) {
 		const Vector posVec = Vector(pos);
@@ -238,22 +238,6 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 	Ray ray(*initialRay);
 
-	// 🔥[GRIN] corruption
-	// 🔥[GRIN] rotation around Z-axis based on distance from world origin in XY plane
-	//const float x = ray.o.x;
-	//const float y = ray.o.y;
-	//const float r = sqrtf(x * x + y * y) + 0.001f;  // Avoid divide by zero
-	//const float gain = 0.15f;  // Tune this for visual effect
-	//const float angle = gain / r;
-	//const float cosA = cosf(angle);
-	//const float sinA = sinf(angle);
-	//const float dx = ray.d.x;
-	//const float dy = ray.d.y;
-	//ray.d.x = dx * cosA - dy * sinA;
-	//ray.d.y = dx * sinA + dy * cosA;
-	//ray.d = Normalize(ray.d);
-	// 🔥[GRIN] corruption
-
 	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
 
 	u_int currentNode = 0; // Root Node
@@ -276,7 +260,7 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 
 			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.10f, 15, &t, &b1, &b2)) {
+			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.01f, 50, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
