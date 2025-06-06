@@ -53,32 +53,38 @@ bool GRINRK4_Intersect(
 ) {
     const Vector dir0 = Normalize(ray.d);
     Point pos = ray.o;
+	const float bendScale = 0.05f; // or 0.05f for less curvature
 
-    for (int i = 0; i < maxSteps; ++i) {
-        const float r = Max(0.001f, pos.Length());
-        const Vector normPos = Normalize(Vector(pos));
-        const Vector bend = normPos * (0.1f / r);
+	for (int i = 0; i < maxSteps; ++i) {
+		const Vector posVec = Vector(pos);
+		const float r = Max(0.001f, Length(posVec));
+		const Vector bend = Normalize(posVec) * (bendScale / r);
 
-        const Vector k1 = dir0;
-        const Vector k2 = Normalize(dir0 + bend * stepSize * 0.5f);
-        const Vector k3 = k2; // same as k2
-        const Vector k4 = Normalize(dir0 + bend * stepSize);
-        const Vector avgDir = Normalize((k1 + 2.f * k2 + 2.f * k3 + k4) / 6.f);
+		const Vector k1 = dir0;
+		const Vector k2 = Normalize(dir0 + bend * stepSize * 0.5f);
 
-        const Point next = pos + avgDir * stepSize;
-        const Ray segment(pos, next - pos, 0.f, 1.f);
+		const Point midPos = pos + k2 * (stepSize * 0.5f);
+		const float r2 = Max(0.001f, Length(Vector(midPos)));
+		const Vector bend2 = Normalize(Vector(midPos)) * (bendScale / r2);
+		const Vector k3 = Normalize(dir0 + bend2 * stepSize * 0.5f);
 
-        float localT, localB1, localB2;
-        if (Triangle::Intersect(segment, p0, p1, p2, &localT, &localB1, &localB2)) {
-            if (hitT) *hitT = localT;
-            if (b1) *b1 = localB1;
-            if (b2) *b2 = localB2;
-            return true;
-        }
+		const Vector k4 = Normalize(dir0 + bend * stepSize);
 
-        pos = next;
-    }
+		const Vector avgDir = Normalize((k1 + 2.f * k2 + 2.f * k3 + k4) / 6.f);
+		const Point next = pos + avgDir * stepSize;
 
+		const Ray segment(pos, next - pos, 0.f, 1.f);
+
+		float localT, localB1, localB2;
+		if (Triangle::Intersect(segment, p0, p1, p2, &localT, &localB1, &localB2)) {
+			if (hitT) *hitT = localT;
+			if (b1) *b1 = localB1;
+			if (b2) *b2 = localB2;
+			return true;
+		}
+
+		pos = next;
+	}
     return false;
 }
 // 🔥[GRIN] Trial Function
