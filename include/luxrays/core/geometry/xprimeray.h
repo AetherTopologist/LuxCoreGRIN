@@ -41,8 +41,8 @@ public:
 	// Default constructor
 	xPRIMEray()
 		: origin(Point()), direction(Vector(0, 0, 1)),
-		  center(Point()), beta(1.f),
-		  gamma(Vector(1.f, 1.f, 1.f)),
+		  center(Point()), beta(2.f),
+		  gamma(Vector(1.f, 1.4f, 1.f)),
 		  type(xPRIMErayType::POWER), mint(0.0001f), maxt(1e30f) { }
 
 };
