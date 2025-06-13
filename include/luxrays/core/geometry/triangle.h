@@ -69,7 +69,8 @@ public:
 		// Step 1: Triangle plane definition
 		const Vector edge1 = p1 - p0;
 		const Vector edge2 = p2 - p0;
-		const Normal N = Normalize(Cross(edge1, edge2));
+		//const Normal N = Normalize(Cross(edge1, edge2));
+		const Vector N = Normalize(Cross(edge1, edge2));
 
 		// Step 2: Solve intersection with curved ray path R(t)
 		// R(t) = O + beta * D * t^gamma  ⇒ we solve Dot(R(t) - p0, N) = 0
