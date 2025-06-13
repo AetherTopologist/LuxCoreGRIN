@@ -31,6 +31,8 @@
 #include "luxrays/core/geometry/vector.h"
 #include "luxrays/core/geometry/transform.h"
 
+#include "luxrays/core/geometry/xprimeray.h"
+
 // TEMP GRIN Includes
 #include <cmath>  // for sinf, cosf, etc.
 //#include "luxrays/core/geometry/vector.h"
@@ -230,13 +232,23 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	assert (initialized);
 
 	//LR_LOG(ctx, "🔥GRIN [BVHAccel::Intersect] Entry");
-
 	rayHit->t = initialRay->maxt;
 	rayHit->SetMiss();
 	if (!nNodes)
 		return false;
 
 	Ray ray(*initialRay);
+	// -- Convert Ray to xPRIMEray --
+	xPRIMEray xPRIMEray(
+		initialRay->o,                 // origin
+		initialRay->d,                 // direction
+		luxrays::Point(0.f, 0.f, 0.f), // center of curvature (can customize)
+		1.0f,                          // beta (GRIN intensity scalar)
+		luxrays::Vector(1.f, 1.f, 1.f),// gamma (exponents per axis)
+		xPRIMErayType::POWER,          // curvature model
+		initialRay->mint,
+		initialRay->maxt
+	);
 
 	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
 
@@ -260,7 +272,9 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 
 			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-			if (GRINRK4_Intersect(ray, p0, p1, p2, 0.01f, 50, &t, &b1, &b2)) {
+			//if (GRINRK4_Intersect(ray, p0, p1, p2, 0.01f, 50, &t, &b1, &b2)) {
+			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
+			
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;

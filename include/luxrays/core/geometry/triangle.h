@@ -28,6 +28,9 @@
 #include "luxrays/utils/mc.h"
 #include "luxrays/utils/serializationutils.h"
 
+#include "luxrays/core/geometry/xprimeray.h" // GRIN PRIME Ray Class
+
+
 namespace luxrays {
 
 // OpenCL data types
@@ -51,6 +54,97 @@ public:
 
 		return Union(BBox(p0, p1), p2);
 	}
+
+	
+	// 🔥[GRIN] Curved Path Additions
+	static bool xPRIMEIntersect(
+		const xPRIMEray &ray,
+		const Point &p0,
+		const Point &p1,
+		const Point &p2,
+		float *tHit,
+		float *b1,
+		float *b2) {
+
+		// Step 1: Triangle plane definition
+		const Vector edge1 = p1 - p0;
+		const Vector edge2 = p2 - p0;
+		const Normal N = Normalize(Cross(edge1, edge2));
+
+		// Step 2: Solve intersection with curved ray path R(t)
+		// R(t) = O + beta * D * t^gamma  ⇒ we solve Dot(R(t) - p0, N) = 0
+		// Let R(t) = origin + beta * vec(t^gamma.x, t^gamma.y, t^gamma.z)
+
+		const Point &O = ray.origin;
+		const Vector &D = ray.direction;
+		const float beta = ray.beta;
+		const Vector &gamma = ray.gamma;
+
+		// Build vector-valued power-law ray term
+		auto CurveAt = [&](float t) -> Point {
+			return O + beta * Vector(
+				D.x * std::pow(t, gamma.x),
+				D.y * std::pow(t, gamma.y),
+				D.z * std::pow(t, gamma.z)
+			);
+		};
+
+		// Step 3: Numerical root-finding: Solve f(t) = Dot(R(t) - p0, N) = 0
+		float t = 1e-4f; // initial guess
+		const float tMax = 100.f;
+		const int maxIter = 50;
+		const float epsilon = 1e-5f;
+
+		bool solved = false;
+		for (int i = 0; i < maxIter; ++i) {
+			const Point Rt = CurveAt(t);
+			const Vector diff = Rt - p0;
+			const float f = Dot(diff, N);
+
+			// Derivative estimate via finite difference
+			const float dt = t * 0.001f + 1e-6f;
+			const Point Rt2 = CurveAt(t + dt);
+			const float f2 = Dot(Rt2 - p0, N);
+			const float dfdt = (f2 - f) / dt;
+
+			if (std::fabs(f) < epsilon) {
+				solved = true;
+				break;
+			}
+
+			if (dfdt == 0.f)
+				break;
+
+			t = t - f / dfdt;
+			if (t < 0.f || t > tMax)
+				break;
+		}
+
+		if (!solved)
+			return false;
+
+		// Step 4: Compute hit point and barycentric coordinates
+		const Point hitPoint = CurveAt(t);
+		const Vector u = p1 - p0;
+		const Vector v = p2 - p0;
+		const Vector w = hitPoint - p0;
+
+		const float denom = Dot(u, u) * Dot(v, v) - Dot(u, v) * Dot(u, v);
+		if (denom == 0.f)
+			return false;
+
+		const float s = (Dot(u, u) * Dot(w, v) - Dot(u, v) * Dot(w, u)) / denom;
+		const float t_param = (Dot(v, v) * Dot(w, u) - Dot(u, v) * Dot(w, v)) / denom;
+
+		if (s < 0.f || t_param < 0.f || (s + t_param) > 1.f)
+			return false;
+
+		*b1 = s;
+		*b2 = t_param;
+		*tHit = t;
+		return true;
+	}
+
 
 	static bool Intersect(const Ray &ray, const Point &p0, const Point &p1, const Point &p2,
 		float *t, float *b1, float *b2) {
