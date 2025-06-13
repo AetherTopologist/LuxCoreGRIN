@@ -243,8 +243,8 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 		initialRay->o,                 // origin
 		initialRay->d,                 // direction
 		luxrays::Point(0.f, 0.f, 0.f), // center of curvature (can customize)
-		1.0f,                          // beta (GRIN intensity scalar)
-		luxrays::Vector(1.f, 1.f, 1.f),// gamma (exponents per axis)
+		2.0f,                          // beta (GRIN intensity scalar)
+		luxrays::Vector(1.f, 1.f, 1.6f),// gamma (exponents per axis)
 		xPRIMErayType::POWER,          // curvature model
 		initialRay->mint,
 		initialRay->maxt
