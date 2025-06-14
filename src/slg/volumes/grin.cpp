@@ -30,9 +30,10 @@ using namespace slg;
 //------------------------------------------------------------------------------
 GRINVolume::GRINVolume(const Texture *iorTex, const Texture *emiTex, const Texture *a,
                        const luxrays::Spectrum &minIor, const luxrays::Spectrum &maxIor,
-                       const luxrays::Vector &stretchVec, const std::string &profileType)
+                       const luxrays::Vector &stretchVec, const std::string &profileType,
+					   const float beta, const Vector &gamma)
     : Volume(iorTex, emiTex), iorMin(minIor), iorMax(maxIor),
-      stretch(stretchVec), profile(profileType) {
+      stretch(stretchVec), profile(profileType), beta(beta), gamma(gamma) {
     sigmaA = a;
 }
 
@@ -57,6 +58,7 @@ float GRINVolume::Scatter(const Ray &ray, const float u,
 	// TODO BB GRIN
 
 	SLG_LOG("🔥GRIN [GRINVolume::Scatter()]");
+	SLG_LOG("💡 [GRINVolume::Scatter()] Using beta: " << beta << ", gamma: (" << gamma.x << ", " << gamma.y << ", " << gamma.z << ")");
 
 	// Point where to evaluate the volume
 	HitPoint hitPoint;
@@ -129,6 +131,9 @@ Properties GRINVolume::ToProperties() const {
 	props.Set(Property("scene.volumes." + name + ".type")("grin"));
 	props.Set(Property("scene.volumes." + name + ".absorption")(sigmaA->GetSDLValue()));
 	props.Set(Volume::ToProperties());
+	props.Set(Property("scene.volumes." + name + ".grin.beta")(beta));
+	props.Set(Property("scene.volumes." + name + ".grin.gamma")(gamma));
+
 
 	return props;
 }

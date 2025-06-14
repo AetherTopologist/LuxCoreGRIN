@@ -34,7 +34,10 @@
 #include <boost/unordered_set.hpp>
 
 #include "luxrays/core/randomgen.h"
+#include "luxrays/core/geometry/xprimeray.h"
+#include "luxrays/core/geometry/xprimeraycontext.h"
 #include "luxrays/utils/properties.h"
+
 #include "slg/core/sphericalfunction/sphericalfunction.h"
 #include "slg/editaction.h"
 #include "slg/samplers/sampler.h"

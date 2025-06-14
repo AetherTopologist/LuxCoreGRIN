@@ -152,13 +152,18 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		const Spectrum iorMax = props.Get(Property(propName + ".grin.iormax")(1.5f)).Get<Spectrum>();
 		const Vector stretch = props.Get(Property(propName + ".grin.stretch")(1.f, 1.f, 1.f)).Get<Vector>();
 		const string profile = props.Get(Property(propName + ".grin.profile")("radial")).Get<string>();
+		const float beta = props.Get(Property(prefix + "grin.beta")(1.f));
+		const Vector gamma = props.Get(Property(prefix + "grin.gamma")(Vector(1.f, 1.f, 1.f)));
 
 		SLG_LOG("🔥 [parsevolumes] Created GRIN volume: " << volName);
 		SLG_LOG("🔥 [parsevolumes] GRIN IOR Range: " << iorMin.c[0] << " - " << iorMax.c[0]);
 		SLG_LOG("🔥 [parsevolumes] GRIN Stretch: (" << stretch.x << ", " << stretch.y << ", " << stretch.z << ")");
 		SLG_LOG("🔥 [parsevolumes] GRIN Profile: " << profile);
+		SLG_LOG("🔥 [parsevolumes] GRIN beta: " << beta);
+		SLG_LOG("🔥 [parsevolumes] GRIN gamma: (" << gamma.x << ", " << gamma.y << ", " << gamma.z << ")");
 
-		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile);
+		//vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile);
+		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile, beta, gamma);
 	} else
 		throw runtime_error("Unknown volume type: " + volType);
 
