@@ -30,7 +30,8 @@ class GRINVolume : public Volume {
 public:
 	GRINVolume(const Texture *iorTex, const Texture *emiTex, const Texture *a,
 			const luxrays::Spectrum &minIor, const luxrays::Spectrum &maxIor,
-			const luxrays::Vector &stretchVec, const std::string &profileType);
+			const luxrays::Vector &stretchVec, const std::string &profileType,
+			const float beta, const Vector &gamma);
 
 	virtual float Scatter(const luxrays::Ray &ray, const float u, const bool scatteredStart,
 		luxrays::Spectrum *connectionThroughput, luxrays::Spectrum *connectionEmission) const;
@@ -72,12 +73,19 @@ public:
     float beta;
     luxrays::Vector gamma;
 
+    // Accessors
+    float GetBeta() const { return beta; }
+    const luxrays::Vector &GetGamma() const { return gamma; }
+
 protected:
 	virtual luxrays::Spectrum SigmaA(const HitPoint &hitPoint) const;
 	virtual luxrays::Spectrum SigmaS(const HitPoint &hitPoint) const;
 
 private:
 	const Texture *sigmaA;
+    // Existing members...
+    float beta;                   // NEW
+    luxrays::Vector gamma;        // NEW
 };
 
 }
