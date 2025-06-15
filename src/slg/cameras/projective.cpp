@@ -74,7 +74,7 @@ void ProjectiveCamera::UpdateAuto(const Scene *scene) {
 
         // 🔁 1. Determine which volume the ray is in
 		//const slg::Volume *volPtr = nullptr;
-		const slg::Volume *volPtr = volInfo->volume;
+		const slg::Volume *volPtr = volInfo.GetCurrentVolume;
 
 		// 🔁 2. Check if it's a GRIN volume
         const slg::GRINVolume *grinVol = dynamic_cast<const slg::GRINVolume *>(volPtr);
@@ -98,7 +98,7 @@ void ProjectiveCamera::UpdateAuto(const Scene *scene) {
         // 🔁 5. Call the correct Intersect overload with GRIN context
 		//if (scene->dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(&ray, &rayHit))
 		//if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit))
-		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit, grinCtx);)
+		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->GRINIntersect(&ray, &rayHit, grinCtx);)
 			focalDistance = rayHit.t;
 	}
 
