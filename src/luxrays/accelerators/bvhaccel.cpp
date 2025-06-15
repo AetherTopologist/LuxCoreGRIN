@@ -304,14 +304,14 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 }
 
 // New method to handle curved GRIN rays
-bool BVHAccel::GRINIntersect(const Ray *initialRay, RayHit *rayHit, const luxrays::xPRIMErayContext &ctx) const {
+bool BVHAccel::GRINIntersect(const Ray *initialRay, RayHit *rayHit, const xPRIMErayContext &ctx) const {
 	assert (initialized);
 
 	//LR_LOG(ctx, "🔥GRIN [BVHAccel::Intersect] Entry");
 	rayHit->t = initialRay->maxt;
 	rayHit->SetMiss();
-	if (!nNodes)
-		return false;
+	if (this->nNodes == 0) return false;
+	//if (!nNodes) return false;
 
 	Ray ray(*initialRay);
 	// -- Convert Ray to xPRIMEray --

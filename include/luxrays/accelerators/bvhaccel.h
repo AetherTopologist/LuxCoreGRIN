@@ -53,8 +53,8 @@ public:
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const;
 	
 	// New method to handle curved GRIN rays
-	bool GRINIntersect(const luxrays::Ray &ray, luxrays::RayHit *hit, const luxrays::xPRIMErayContext &ctx) const;
-
+	bool GRINIntersect(const Ray *initialRay, RayHit *rayHit, const xPRIMErayContext &ctx) const;
+	
 	static BVHParams ToBVHParams(const Properties &props);
 
 	friend class BVHKernel;
