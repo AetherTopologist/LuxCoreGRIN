@@ -13,16 +13,18 @@ public:
 	bool enabled;
 	Point fieldCenter;
 	float beta;
-	Vector gamma;
+	//Vector gamma;
+	luxrays::Vector gamma;
 	xPRIMErayType type;
 
-	xPRIMErayContext()
-		: enabled(false), fieldCenter(Point(0, 0, 0)),
-		  beta(2.f), gamma(Vector(1.f, 1.f, 1.6f)),
-		  type(xPRIMErayType::POWER) { }
+	//xPRIMErayContext(): enabled(false), fieldCenter(Point(0, 0, 0)), beta(2.f), gamma(Vector(1.f, 1.f, 1.6f)), type(xPRIMErayType::POWER) { }
+	//xPRIMErayContext() : enabled(false), beta(1.f), gamma(1.f,1.f,1.f) {}
+	xPRIMErayContext(): enabled(false), fieldCenter(Point(0,0,0)), beta(1.f), gamma(1.f,1.f,1.f), type(xPRIMErayType::POWER) {}	
 
-	xPRIMErayContext(const Point &c, float b, const Vector &g, xPRIMErayType t)
-		: enabled(true), fieldCenter(c), beta(b), gamma(g), type(t) { }
+	//xPRIMErayContext(const Point &c, float b, const Vector &g, xPRIMErayType t): enabled(true), fieldCenter(c), beta(b), gamma(g), type(t) { }
+	// NEW constructor: directly from GRIN parameters
+	//xPRIMErayContext(float b, const luxrays::Vector &g): enabled(true), beta(b), gamma(g) { }
+	xPRIMErayContext(float b, const luxrays::Vector &g): enabled(true), fieldCenter(Point(0,0,0)), beta(b), gamma(g), type(xPRIMErayType::POWER) {}
 
 	// Optional: convert to actual xPRIMEray
 	xPRIMEray GenerateRay(const Point &origin, const Vector &direction) const {

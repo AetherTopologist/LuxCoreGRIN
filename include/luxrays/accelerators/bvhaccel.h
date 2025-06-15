@@ -25,6 +25,8 @@
 #include "luxrays/luxrays.h"
 #include "luxrays/core/accelerator.h"
 #include "luxrays/core/bvh/bvhbuild.h"
+#include "luxrays/core/geometry/xprimeraycontext.h"
+
 
 namespace luxrays {
 
@@ -49,6 +51,9 @@ public:
 		const u_longlong totalTriangleCount);
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const;
+	
+	// New method to handle curved GRIN rays
+	bool GRINIntersect(const luxrays::Ray &ray, luxrays::RayHit *hit, const luxrays::xPRIMErayContext &ctx) const;
 
 	static BVHParams ToBVHParams(const Properties &props);
 
