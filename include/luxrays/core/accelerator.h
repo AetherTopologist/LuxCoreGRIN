@@ -56,7 +56,7 @@ public:
 	virtual void Update() { throw new std::runtime_error("Internal error in Accelerator::Update()"); }
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const = 0;
-	bool GRINIntersect(const Ray *ray, RayHit *hit, const xPRIMErayContext &grinCtx) const = 0;
+	virtual bool GRINIntersect(const Ray *ray, RayHit *hit, const xPRIMErayContext &grinCtx) const = 0;
 
 	static std::string AcceleratorType2String(const AcceleratorType type);
 	static AcceleratorType String2AcceleratorType(const std::string &type);
