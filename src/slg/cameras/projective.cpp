@@ -74,7 +74,7 @@ void ProjectiveCamera::UpdateAuto(const Scene *scene) {
 
         // 🔁 1. Determine which volume the ray is in
 		//const slg::Volume *volPtr = nullptr;
-		const slg::Volume *volPtr = volInfo.GetCurrentVolume;
+		const slg::Volume *volPtr = volInfo.GetCurrentVolume();
 
 		// 🔁 2. Check if it's a GRIN volume
         const slg::GRINVolume *grinVol = dynamic_cast<const slg::GRINVolume *>(volPtr);
@@ -245,28 +245,6 @@ void ProjectiveCamera::GenerateRay(const float  time,
 	// World arbitrary clipping plane support
 	if (enableClippingPlane)
 		ApplyArbitraryClippingPlane(ray);
-
-	// 🔁 Inject GRIN curved-ray context here
-	// 1. Retrieve the active volume (if any) via volInfo
-	const slg::Volume *volumePtr = nullptr;
-	if (!volInfo->volumeIds.empty()) {
-		const u_int lastVolId = volInfo->volumeIds.back();
-		volumePtr = scene->volumes[lastVolId];
-	}
-	
-	// 2. See if it's a GRINVolume
-	const slg::GRINVolume *grinVol = dynamic_cast<const slg::GRINVolume *>(volumePtr);
-	
-	// 3. Create the curvature context
-	luxrays::xPRIMErayContext grinCtx(grinVol);
-	
-	// 4. Debug-log the parameters
-	SLG_LOG("🔥GRIN Camera Context → beta="
-			<< (grinVol ? grinVol->GetBeta() : 1.f)
-			<< " gamma=("
-			<< (grinVol ? grinVol->GetGamma().x : 1.f) << ","
-			<< (grinVol ? grinVol->GetGamma().y : 1.f) << ","
-			<< (grinVol ? grinVol->GetGamma().z : 1.f) << ")");
 }
 
 void ProjectiveCamera::Rotate(const float angle, const luxrays::Vector &axis) {
