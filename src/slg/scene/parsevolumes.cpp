@@ -152,7 +152,7 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		const Spectrum iorMax = props.Get(Property(propName + ".grin.iormax")(1.5f)).Get<Spectrum>();
 		const Vector stretch = props.Get(Property(propName + ".grin.stretch")(1.f, 1.f, 1.f)).Get<Vector>();
 		const string profile = props.Get(Property(propName + ".grin.profile")("radial")).Get<string>();
-		const float beta = props.Get(Property(propName + ".grin.beta")(1.0f));
+		const float beta = props.Get(Property(propName + ".grin.beta")(1.0f)).Get<float>();
 		const Vector gamma = props.Get(Property(propName + ".grin.gamma")(1.f, 1.f, 1.f)).Get<Vector>();
 
 		SLG_LOG("🔥 [parsevolumes] Created GRIN volume: " << volName);
