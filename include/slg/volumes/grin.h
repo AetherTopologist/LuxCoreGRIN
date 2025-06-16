@@ -72,7 +72,7 @@ public:
 	const luxrays::Vector &GetStretch() const { return stretch; }
 	const std::string &GetProfile() const { return profile; }
 	//const std::string &GetBeta() const { return ; }
-	const float &GetBeta() const { return ; }
+	const float &GetBeta() const { return beta; }
 	//const std::string &GetGamma() const { return gamma; }
 	const luxrays::Vector &GetGamma() const { return gamma; }
 
