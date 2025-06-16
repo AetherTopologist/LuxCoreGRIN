@@ -69,8 +69,7 @@ public:
 	const luxrays::Spectrum &GetIORMax() const { return iorMax; }
 	const luxrays::Vector &GetStretch() const { return stretch; }
 	const std::string &GetProfile() const { return profile; }
-    float beta;
-    luxrays::Vector gamma;
+
 
 protected:
 	virtual luxrays::Spectrum SigmaA(const HitPoint &hitPoint) const;
