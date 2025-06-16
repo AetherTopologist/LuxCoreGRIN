@@ -73,19 +73,16 @@ void ProjectiveCamera::UpdateAuto(const Scene *scene) {
 		RayHit rayHit;
 
         // 🔁 1. Determine which volume the ray is in
-		//const slg::Volume *volPtr = nullptr;
-		const slg::Volume *volPtr = volInfo->volume;
+        const slg::Volume *volPtr = nullptr;
+        if (!volInfo.volumeIds.empty()) {
+            volPtr = scene->volumes[volInfo.volumeIds.back()];
+        }
 
-		// 🔁 2. Check if it's a GRIN volume
+        // 🔁 2. Check if it's a GRIN volume
         const slg::GRINVolume *grinVol = dynamic_cast<const slg::GRINVolume *>(volPtr);
 
-		// 🔁 3. Create the curved-ray context
-		luxrays::xPRIMErayContext grinCtx;
-		if (grinVol)
-			grinCtx = luxrays::xPRIMErayContext(grinVol->GetBeta(), grinVol->GetGamma());
-		else
-			grinCtx = luxrays::xPRIMErayContext();
-		SLG_LOG("🔥GRIN [UpdateAuto] beta=" << grinCtx.beta);
+        // 🔁 3. Create the curved-ray context
+        luxrays::xPRIMErayContext grinCtx(grinVol);
 
         // 🔁 4. Debug log to verify
         SLG_LOG("🔥GRIN [UpdateAuto] Checking hit with beta="
@@ -96,9 +93,12 @@ void ProjectiveCamera::UpdateAuto(const Scene *scene) {
                 << (grinVol ? grinVol->GetGamma().z : 1.f) << ")");
 
         // 🔁 5. Call the correct Intersect overload with GRIN context
+        //if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, grinCtx, &rayHit)) {
+            //focalDistance = rayHit.t;
+        //}
+
 		//if (scene->dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(&ray, &rayHit))
-		//if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit))
-		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit, grinCtx);)
+		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit))
 			focalDistance = rayHit.t;
 	}
 
