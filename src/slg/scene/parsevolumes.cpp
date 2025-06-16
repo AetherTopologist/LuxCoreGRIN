@@ -163,7 +163,7 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		SLG_LOG("🔥 [parsevolumes] GRIN Gamma: (" << gamma.x << ", " << gamma.y << ", " << gamma.z << ")");
 
 		// TODO add GRINVolume additional properties for beta gamma
-		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile);
+		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile, beta, gamma);
 	} else
 		throw runtime_error("Unknown volume type: " + volType);
 
