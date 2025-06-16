@@ -71,8 +71,10 @@ public:
 	const luxrays::Spectrum &GetIORMax() const { return iorMax; }
 	const luxrays::Vector &GetStretch() const { return stretch; }
 	const std::string &GetProfile() const { return profile; }
-	const std::string &GetBeta() const { return beta; }
-	const std::string &GetGamma() const { return gamma; }
+	//const std::string &GetBeta() const { return ; }
+	const float &GetBeta() const { return ; }
+	//const std::string &GetGamma() const { return gamma; }
+	const luxrays::Vector &GetGamma() const { return gamma; }
 
 
 protected:
