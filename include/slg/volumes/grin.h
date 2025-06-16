@@ -64,11 +64,15 @@ public:
 	luxrays::Spectrum iorMax;
 	luxrays::Vector stretch; // e.g., Vector(1.0f, 2.0f, 1.0f)
 	std::string profile; // "radial", "axial", "shell", etc.
+    float beta;
+    luxrays::Vector gamma;
 
 	const luxrays::Spectrum &GetIORMin() const { return iorMin; }
 	const luxrays::Spectrum &GetIORMax() const { return iorMax; }
 	const luxrays::Vector &GetStretch() const { return stretch; }
 	const std::string &GetProfile() const { return profile; }
+	const std::string &GetBeta() const { return beta; }
+	const std::string &GetGamma() const { return gamma; }
 
 
 protected:
