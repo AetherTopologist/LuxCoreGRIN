@@ -271,10 +271,9 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
 
-			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 			//if (GRINRK4_Intersect(ray, p0, p1, p2, 0.01f, 50, &t, &b1, &b2)) {
 			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
-			
+			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;

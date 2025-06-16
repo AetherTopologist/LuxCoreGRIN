@@ -67,8 +67,8 @@ void ProjectiveCamera::UpdateAuto(const Scene *scene) {
 		// Trace the ray. If there isn't an intersection just use the current
 		// focal distance
 		RayHit rayHit;
-		//if (scene->dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(&ray, &rayHit))
-		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit))
+		if (scene->dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(&ray, &rayHit))
+		//if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit))
 			focalDistance = rayHit.t;
 	}
 

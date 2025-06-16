@@ -584,57 +584,9 @@ bool Scene::Intersect(IntersectionDevice *device,
 	SLG_LOG("🔥 [Scene::Intersect] Entry");
 
 	for (;;) {
-		// BB GRIN – placeholder for curved primary ray override
-		// === FILE: scene.cpp ===
-		// 📍 Function: Scene::Intersect(...)
-		// Just BEFORE the line:
-		// bool hit = device ? device->TraceRay(...) : ...;
-		// Inject a full override:
-
-		const bool ENABLE_GRIN_CURVED_PATH = false;
-		//SLG_LOG("🔥 [Scene::Intersect] for loop iteration");
-
-		//if (ENABLE_GRIN_CURVED_PATH && ray->isCurved) {
-		//if (grinCtx && grinCtx->enabled && volInfo && volInfo->GetCurrentVolume() == grinCtx->volume) {
-		if (grinCtx && grinCtx->enabled) {
-			//SLG_LOG("🔥 [Scene::Intersect] GRIN context enabled");
-			if (grinCtx->volume) {
-				//SLG_LOG("🔥 [Scene::Intersect] GRIN Volume profile: %s" << grinCtx->profile.c_str());
-			} else{
-				//SLG_LOG("⚠️ [Scene::Intersect] GRIN Volume pointer was null!");
-			}
-			// Curved ray logic goes here
-			const luxrays::Vector curveAxis = Normalize(ray->curveAxis);
-			const float curveStrength = ray->curveStrength;
-			const float stepSize = 0.05f;
-			const int maxSteps = 500;
-
-			luxrays::Point pos = ray->o;
-			luxrays::Vector dir = Normalize(ray->d);
-			
-			std::ofstream log;
-			log.open("C:/LuxCoreBB/logs/ray_log.csv", std::ios::app);  // Set to a writable path
-			if (!log.is_open()) std::cerr << "[GRIN Debug] ❌ Failed to open ray_log.csv — check path!\n";
-
-			for (int i = 0; i < maxSteps; ++i) {
-				dir += Cross(curveAxis, dir) * curveStrength * stepSize;
-				dir = Normalize(dir);
-				pos += dir * stepSize;
-				const float maxRayDistance = 10.0f; // or scene bounding box estimate
-				if ((pos - ray->o).LengthSquared() > maxRayDistance * maxRayDistance)
-					break;
-
-				// Write debug log for Blender viz
-				log << pos.x << "," << pos.y << "," << pos.z << std::endl;
-			}
-
-			log.close();
-			return false; // No hit found manually
-		}
-		// === END OF INJECTION ===
-		// BB GRIN END
-
-		bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
+		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
+		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+		bool hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();

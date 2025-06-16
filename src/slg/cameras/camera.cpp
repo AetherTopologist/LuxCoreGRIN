@@ -20,6 +20,7 @@
 #include "slg/core/sdl.h"
 #include "slg/bsdf/bsdf.h"
 #include "slg/scene/scene.h"
+#include "slg/volumes/grin.h"
 
 using namespace std;
 using namespace luxrays;
@@ -79,12 +80,29 @@ void Camera::UpdateAuto(const Scene *scene) {
 		PathVolumeInfo volInfo;
 		GenerateRay(0.f, filmWidth / 2.f, filmHeight / 2.f, &ray, &volInfo, 0.f, 0.f);
 
+		// 🔥GRIN BB: 2025-06-16 addition
+		//********************************* */
+		// Determine starting volume and setup curved ray if needed
+		const Volume *startVol = volInfo.GetCurrentVolume();
+		if (!startVol)
+				startVol = scene->defaultWorldVolume;
+		const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(startVol);
+		if (grinVol) {
+				ray.isCurved = true;
+				ray.curveAxis = grinVol->GetStretch();
+				ray.curveStrength = grinVol->GetBeta();
+		} else {
+				ray.isCurved = false;
+		}
+		// 🔥GRIN BB: 2025-06-16 addition
+		//********************************* */
+
 		// Trace the ray. If there isn't an intersection just use the current
 		// focal distance
 		RayHit rayHit;
 		SLG_LOG("🔥GRIN [Camera::UpdateAuto]");
-		//if (scene->dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(&ray, &rayHit)) {
-		if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit)) {
+		if (scene->dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(&ray, &rayHit)) {
+		//if (scene->dataSet->GetAccelerator(ACCEL_BVH)->Intersect(&ray, &rayHit)) {
 			/* I can not use BSDF::Init() here because Camera::UpdateAuto()
 			 * can be called before light preprocessing
 
