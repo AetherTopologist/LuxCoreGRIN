@@ -83,6 +83,9 @@ protected:
 
 private:
 	const Texture *sigmaA;
+    // Existing members...
+    float beta;                   // NEW
+    luxrays::Vector gamma;        // NEW
 };
 
 }
