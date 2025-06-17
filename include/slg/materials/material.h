@@ -47,6 +47,7 @@ typedef enum {
 	TWOSIDED,
 
 	// Volumes
+	// 🔥GRIN TEST
 	HOMOGENEOUS_VOL, CLEAR_VOL, HETEROGENEOUS_VOL, GRIN_VOL
 } MaterialType;
 

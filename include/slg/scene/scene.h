@@ -75,6 +75,7 @@ typedef int SceneRayType;
 
 class SampleResult;
 
+// 🔥GRIN TEST
 //------------------------------------------------------------------------------
 // GRIN Volume Context (optional curved-ray override context)
 //------------------------------------------------------------------------------
@@ -101,10 +102,17 @@ public:
 	Scene(const luxrays::Properties &scnProps, const luxrays::Properties *resizePolicyProps = nullptr);
 	~Scene();
 
+	// 🔥GRIN - Added input GRINRayContext can remove for now..
 	bool Intersect(luxrays::IntersectionDevice *device, const SceneRayType rayType, PathVolumeInfo *volInfo,
 		const float passThrough, luxrays::Ray *ray, luxrays::RayHit *rayHit, BSDF *bsdf,
 		luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
+		SampleResult *sampleResult = nullptr, const bool backTracing = false) const;
+
+	bool xPRIMEIntersect(luxrays::IntersectionDevice *device, const SceneRayType rayType, PathVolumeInfo *volInfo,
+		const float passThrough, luxrays::Ray *ray, luxrays::RayHit *rayHit, BSDF *bsdf,
+		luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
 		SampleResult *sampleResult = nullptr, const bool backTracing = false, const GRINRayContext *grinCtx= nullptr) const;
+
 
 	void PreprocessCamera(const u_int filmWidth, const u_int filmHeight, const u_int *filmSubRegion);
 	void Preprocess(luxrays::Context *ctx,

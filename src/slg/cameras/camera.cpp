@@ -20,6 +20,8 @@
 #include "slg/core/sdl.h"
 #include "slg/bsdf/bsdf.h"
 #include "slg/scene/scene.h"
+
+// 🔥GRIN
 #include "slg/volumes/grin.h"
 
 using namespace std;
@@ -43,7 +45,7 @@ bool Camera::GetSamplePosition(const luxrays::Point &p,
 	if (!SampleLens(0.f, 0.f, 0.f, &lensPoint))
 		return false;
 	
-	SLG_LOG("🔥GRIN [Camera::GetSamplePosition]");
+	//SLG_LOG("🔥GRIN [Camera::GetSamplePosition]");
 
 	Vector eyeDir = p - lensPoint;
 	const float eyeDistance = eyeDir.Length();
@@ -83,17 +85,17 @@ void Camera::UpdateAuto(const Scene *scene) {
 		// 🔥GRIN BB: 2025-06-16 addition
 		//********************************* */
 		// Determine starting volume and setup curved ray if needed
-		const Volume *startVol = volInfo.GetCurrentVolume();
-		if (!startVol)
-				startVol = scene->defaultWorldVolume;
-		const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(startVol);
-		if (grinVol) {
-				ray.isCurved = true;
-				ray.curveAxis = grinVol->GetStretch();
-				ray.curveStrength = grinVol->GetBeta();
-		} else {
-				ray.isCurved = false;
-		}
+		//const Volume *startVol = volInfo.GetCurrentVolume();
+		//if (!startVol)
+				//startVol = scene->defaultWorldVolume;
+		//const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(startVol);
+		//if (grinVol) {
+				//ray.isCurved = true;
+				//ray.curveAxis = grinVol->GetStretch();
+				//ray.curveStrength = grinVol->GetBeta();
+		//} else {
+				//ray.isCurved = false;
+		//}
 		// 🔥GRIN BB: 2025-06-16 addition
 		//********************************* */
 

@@ -102,9 +102,14 @@ void PathCPURenderThread::RenderFunc() {
 			if (boost::this_thread::interruption_requested())
 				break;
 		}
-		SLG_LOG("[GRIN Trace] [Thread " << threadIndex << "] Entering RenderSample()");
+		//SLG_LOG("[GRIN Trace] [Thread " << threadIndex << "] Entering RenderSample()");
+		// 🔥GRIN
+		std::cout << "[🔥GRIN Trace] [Thread " << threadIndex << "] Entering RenderSample()" << std::endl;
 		pathTracer.RenderSample(pathTracerThreadState);
-		SLG_LOG("[GRIN Trace] [Thread " << threadIndex << "] Finished RenderSample()");
+		//SLG_LOG("[GRIN Trace] [Thread " << threadIndex << "] Finished RenderSample()");
+		// 🔥GRIN
+		std::cout << "[🔥GRIN Trace] [Thread " << threadIndex << "] Finished RenderSample()" << std::endl;
+		
 
 #ifdef WIN32
 		// Work around Windows bad scheduling

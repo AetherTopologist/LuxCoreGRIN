@@ -1,3 +1,4 @@
+// 🔥GRIN XPRIMERAY Header
 #ifndef _LUXRAYS_XPRIMERAY_H
 #define _LUXRAYS_XPRIMERAY_H
 

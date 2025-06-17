@@ -553,11 +553,153 @@ void Scene::DeleteLights(vector<string> &lightNames) {
 }
 
 //------------------------------------------------------------------------------
-// BB GRIN
-// Ray Tracing Straight Line Assumption – GRIN Evaluation TODO
-// Scene::Intersect critical terms "luxrays::Point pos" and "luxrays::Vector dir"
-// BB GRIN
+// 🔥GRIN Note added GRINRayContext can potentially remove
 bool Scene::Intersect(IntersectionDevice *device,
+		const SceneRayType rayType, PathVolumeInfo *volInfo,
+		const float initialPassThrough, Ray *ray, RayHit *rayHit, BSDF *bsdf,
+		Spectrum *connectionThroughput, const Spectrum *pathThroughput,
+		SampleResult *sampleResult, const bool backTracing
+	) const {
+	*connectionThroughput = Spectrum(1.f);
+
+	// I need a sequence of pseudo-random numbers starting form a floating point
+	// pseudo-random number
+	TauswortheRandomGenerator rng(initialPassThrough);
+
+	float passThrough = rng.floatValue();
+	const float originalMaxT = ray->maxt;
+
+	const bool fromLight = rayType & LIGHT_RAY;
+	const bool cameraRay = rayType & CAMERA_RAY;
+	const bool shadowRay = rayType & SHADOW_RAY;
+	bool throughShadowTransparency = false;
+
+	// This field can be checked by the calling code even if there was no
+	// intersection (and not BSDF initialization)
+	bsdf->hitPoint.throughShadowTransparency = false;
+	
+	// 🔥GRIN
+	std::cout << "🔥GRIN [Scene::Intersect] Entry" << std::endl;
+	//SLG_LOG("🔥 [Scene::Intersect] Entry");
+
+	for (;;) {
+		// 🔥GRIN Straight Line Hit Decision Path
+		bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
+		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+		//bool hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+
+		bool bevelContinueToTrace = !hit;
+		const Volume *rayVolume = volInfo->GetCurrentVolume();
+		if (hit) {		
+			bsdf->Init(fromLight, throughShadowTransparency, *this, *ray, *rayHit, passThrough, volInfo);
+			rayVolume = bsdf->hitPoint.intoObject ? bsdf->hitPoint.exteriorVolume : bsdf->hitPoint.interiorVolume;
+
+			// Check if it a triangle with bevel edges
+			const ExtMesh *mesh = objDefs.GetSceneObject(rayHit->meshIndex)->GetExtMesh();
+			if (mesh->GetBevelRadius() > 0.f) {
+				float t;
+				Point p;
+				Normal n;
+				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n)) {
+					rayHit->t = t;
+
+					// Update the BSDF with the new intersection point and normal
+					bsdf->MoveHitPoint(p, n);
+				}
+			}
+
+			ray->maxt = rayHit->t;
+		} else if (!rayVolume) {
+			// No volume information, I use the default volume
+			rayVolume = defaultWorldVolume;
+		}
+
+		// Check if there is volume scatter event
+		if (rayVolume) {
+			// This applies volume transmittance too
+			//
+			// Note: by using passThrough here, I introduce subtle correlation
+			// between scattering events and pass-through events
+			Spectrum emis;
+			const float t = rayVolume->Scatter(*ray, passThrough, volInfo->IsScatteredStart(),
+					connectionThroughput, &emis);
+
+			// Add the volume emitted light to the appropriate light group
+			if (!emis.Black()) {
+				if (sampleResult)
+					sampleResult->AddEmission(rayVolume->GetVolumeLightID(), *pathThroughput, emis);
+			}
+
+			if (t > 0.f) {
+				// There was a volume scatter event
+
+				// I have to set RayHit fields even if there wasn't a real
+				// ray hit
+				rayHit->t = t;
+				// This is a trick in order to have RayHit::Miss() return
+				// false. I assume 0xfffffffeu will trigger a memory fault if
+				// used (and the bug will be noticed)
+				rayHit->meshIndex = 0xfffffffeu;
+
+				bsdf->Init(fromLight, throughShadowTransparency, *this, *ray, *rayVolume, t, passThrough);
+				volInfo->SetScatteredStart(true);
+
+				return true;
+			}
+		}
+
+		if (hit) {
+			bool continueToTrace =
+					// Check if was a false hit because of a bevel triangle edge
+					bevelContinueToTrace ||
+					// Check if the volume priority system tells me to continue to trace the ray
+					volInfo->ContinueToTrace(*bsdf) ||
+					// Check if it is a camera invisible object and we are a tracing a camera ray
+					(cameraRay && objDefs.GetSceneObject(rayHit->meshIndex)->IsCameraInvisible());
+
+			// Check if it is a pass through point
+			if (!continueToTrace) {
+				const Spectrum transp = bsdf->GetPassThroughTransparency(backTracing);
+				if (!transp.Black()) {
+					*connectionThroughput *= transp;
+					continueToTrace = true;
+				}
+			}
+
+			if (!continueToTrace && shadowRay) {
+				const Spectrum &shadowTransparency = bsdf->GetPassThroughShadowTransparency();
+				
+				if (!shadowTransparency.Black()) {
+					*connectionThroughput *= shadowTransparency;
+					throughShadowTransparency = true;
+					continueToTrace = true;
+				}
+			}
+
+			if (continueToTrace) {
+				// Update volume information
+				volInfo->Update(bsdf->GetEventTypes(), *bsdf);
+
+				// It is a transparent material, continue to trace the ray
+				ray->mint = rayHit->t + MachineEpsilon::E(rayHit->t);
+				ray->maxt = originalMaxT;
+
+				// A safety check in case of not enough numerical precision
+				if ((ray->mint == rayHit->t) || (ray->mint >= ray->maxt))
+					return false;
+			} else
+				return true;
+		} else {
+			// Nothing was hit
+			return false;
+		}
+
+		passThrough = rng.floatValue();
+	}
+}
+
+
+bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 		const SceneRayType rayType, PathVolumeInfo *volInfo,
 		const float initialPassThrough, Ray *ray, RayHit *rayHit, BSDF *bsdf,
 		Spectrum *connectionThroughput, const Spectrum *pathThroughput,
@@ -581,12 +723,16 @@ bool Scene::Intersect(IntersectionDevice *device,
 	// This field can be checked by the calling code even if there was no
 	// intersection (and not BSDF initialization)
 	bsdf->hitPoint.throughShadowTransparency = false;
-	SLG_LOG("🔥 [Scene::Intersect] Entry");
+	
+	// 🔥GRIN
+	std::cout << "🔥GRIN [Scene::xPRIMEIntersect] Entry" << std::endl;
+	//SLG_LOG("🔥 [Scene::Intersect] Entry");
 
 	for (;;) {
-		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
+		// 🔥GRIN Straight Line Hit Decision Path
+		bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
 		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-		bool hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+		//bool hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();

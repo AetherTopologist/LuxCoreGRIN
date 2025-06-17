@@ -226,11 +226,14 @@ bool EmbreeAccel::MeshPtrCompare(const Mesh *p0, const Mesh *p1) {
 	return p0 < p1;
 }
 
+// 🔥GRIN Straight-Line Path Intersector Accelerator
 bool EmbreeAccel::Intersect(const Ray *ray, RayHit *hit) const {
 	RTCIntersectContext context;
 	rtcInitIntersectContext(&context);
 
-	LR_LOG(ctx, "[GRIN Trace] 🌌 EmbreeAccel::Intersect called");
+	//LR_LOG(ctx, "[GRIN Trace] 🌌 EmbreeAccel::Intersect called");
+	// 🔥GRIN
+	std::cout <<  "[GRIN Trace] 🌌 EmbreeAccel::Intersect called" << std::endl;
 	RTCRayHit embreeRayHit;
 
 	if (isnan(ray->o.x) || isnan(ray->o.y) || isnan(ray->o.z) || isnan(ray->d.x) || isnan(ray->d.y) || isnan(ray->d.z))
@@ -254,6 +257,7 @@ bool EmbreeAccel::Intersect(const Ray *ray, RayHit *hit) const {
 	embreeRayHit.hit.primID = RTC_INVALID_GEOMETRY_ID;
 	embreeRayHit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
 	
+	// 🔥GRIN Straight-Line Intersection Entry Point
 	rtcIntersect1(embreeScene, &context, &embreeRayHit);
 
 	if ((embreeRayHit.hit.geomID != RTC_INVALID_GEOMETRY_ID) &&

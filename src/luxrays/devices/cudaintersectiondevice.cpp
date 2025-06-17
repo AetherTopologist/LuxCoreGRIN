@@ -43,12 +43,12 @@ CUDAIntersectionDevice::~CUDAIntersectionDevice() {
 void CUDAIntersectionDevice::SetDataSet(DataSet *newDataSet) {
 	IntersectionDevice::SetDataSet(newDataSet);
 
-	SLG_LOG("🔥GRIN [CUDAIntersectionDevice::SetDataSet]");
+	SLG_LOG("🔥GRIN [CUDAIntersectionDevice::SetDataSet] AcceleratorType selector GetAccelerator Calls");
 	if (dataSet) {
 		const AcceleratorType accelType = dataSet->GetAcceleratorType();
 		if (accelType != ACCEL_AUTO) {
-			//accel = dataSet->GetAccelerator(accelType);
-			accel = dataSet->GetAccelerator(ACCEL_BVH);
+			accel = dataSet->GetAccelerator(accelType);
+			//accel = dataSet->GetAccelerator(ACCEL_BVH);
 		} else {
 			if (optixContext)
 				accel = dataSet->GetAccelerator(ACCEL_OPTIX);

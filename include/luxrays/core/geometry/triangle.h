@@ -56,7 +56,7 @@ public:
 	}
 
 	
-	// 🔥[GRIN] Curved Path Additions 
+	// 🔥GRIN Curved Path Additions 
 	static bool xPRIMEIntersect(
 		const xPRIMEray &ray,
 		const Point &p0,

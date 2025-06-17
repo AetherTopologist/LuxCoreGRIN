@@ -31,17 +31,17 @@
 #include "luxrays/core/geometry/vector.h"
 #include "luxrays/core/geometry/transform.h"
 
+// 🔥GRIN
 #include "luxrays/core/geometry/xprimeray.h"
-
-// TEMP GRIN Includes
+// 🔥GRIN
 #include <cmath>  // for sinf, cosf, etc.
-//#include "luxrays/core/geometry/vector.h"
+
 
 using namespace std;
 
 namespace luxrays {
 
-// 🔥[GRIN] Trial Function
+// 🔥GRIN Trial Function
 bool GRINRK4_Intersect(
     const Ray &ray,
     const Point &p0,
@@ -91,7 +91,7 @@ bool GRINRK4_Intersect(
 	}
     return false;
 }
-// 🔥[GRIN] Trial Function
+// 🔥GRIN Trial Function
 
 
 // BVHAccel Method Definitions
@@ -228,10 +228,11 @@ void BVHAccel::Init(const deque<const Mesh *> &ms, const u_longlong totVert,
 	initialized = true;
 }
 
+
+// 🔥GRIN Straight-Line Ray Decisions
 bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	assert (initialized);
 
-	//LR_LOG(ctx, "🔥GRIN [BVHAccel::Intersect] Entry");
 	rayHit->t = initialRay->maxt;
 	rayHit->SetMiss();
 	if (!nNodes)
@@ -251,6 +252,8 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	);
 
 	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
+	// 🔥GRIN
+	std::cout <<  "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt << std::endl;
 
 	u_int currentNode = 0; // Root Node
 	const u_int stopNode = BVHNodeData_GetSkipIndex(bvhTree[0].nodeData); // Non-existent
@@ -271,9 +274,9 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
 
-			//if (GRINRK4_Intersect(ray, p0, p1, p2, 0.01f, 50, &t, &b1, &b2)) {
-			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
-			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
+			// 🔥GRIN Straight-Line Hit Operation
+			//if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
+			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;

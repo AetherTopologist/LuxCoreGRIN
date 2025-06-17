@@ -160,11 +160,6 @@ OPENCL_FORCE_INLINE float ClearVolume_Scatter(__global const Volume *vol,
 }
 
 //------------------------------------------------------------------------------
-// GRINVolume scatter
-//------------------------------------------------------------------------------
-// TODO
-
-//------------------------------------------------------------------------------
 // HomogeneousVolume scatter
 //------------------------------------------------------------------------------
 
@@ -343,6 +338,7 @@ OPENCL_FORCE_NOT_INLINE float Volume_Scatter(__global const Volume *vol,
 					passThrough, scatteredStart,
 					connectionThroughput, connectionEmission, tmpHitPoint
 					TEXTURES_PARAM);
+		// 🔥GRIN TEST
 		case GRIN_VOL:
 			return ClearVolume_Scatter(vol, ray, hitT,
 					passThrough, scatteredStart,

@@ -22,6 +22,8 @@
 #include "slg/engines/caches/photongi/photongicache.h"
 #include "slg/samplers/metropolis.h"
 #include "slg/utils/varianceclamping.h"
+
+// 🔥GRIN
 #include "slg/volumes/grin.h"
 
 using namespace std;
@@ -350,7 +352,8 @@ void PathTracer::GenerateEyeRay(const Camera *camera, const Film *film, Ray &eye
 
 	// Use fast pixel filtering, like the one used in TILEPATH.
 	//SLG_LOG("🔥GRIN [PathTracer::GenerateEyeRay()]");
-
+	// 🔥GRIN
+	std::cout <<  "🔥GRIN [PathTracer::GenerateEyeRay()]" << std::endl;
 	const u_int *subRegion = film->GetSubRegion();
 	sampleResult.pixelX = Min(Floor2UInt(filmX), subRegion[1]);
 	sampleResult.pixelY = Min(Floor2UInt(filmY), subRegion[3]);
@@ -393,6 +396,8 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 	const double deviceRayCount = device->GetTotalRaysCount();
 	
 	//SLG_LOG("🔥GRIN [PathTracer::RenderEyePath()]");
+	// 🔥GRIN
+	std::cout <<  "🔥GRIN [PathTracer::RenderEyePath()]" << std::endl;
 
 	// This is used by light strategy
 	pathInfo.lastShadeN = Normal(eyeRay.d);
@@ -410,43 +415,40 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		sampleResult.firstPathVertex = (pathInfo.depth.depth == 0);
 		const u_int sampleOffset = eyeSampleBootSize + pathInfo.depth.depth * eyeSampleStepSize;
 
-		// 🔥 Inject GRIN context setup
-		GRINRayContext grinCtx;
-		grinCtx.enabled = false;
-
-		const Volume *vol = pathInfo.volume.GetCurrentVolume();
-		if (vol) {
+		// 🔥GRIN Inject GRIN context setup
+		//GRINRayContext grinCtx;
+		//grinCtx.enabled = false;
+		//const Volume *vol = pathInfo.volume.GetCurrentVolume();
+		//if (vol) {
 			//SLG_LOG("🔥 [Debug] Volume class name: " << typeid(*vol).name());
-		} else{
+		//} else{
 			//SLG_LOG("🔥 [Debug] Volume is nullptr");
-		}
+		//}
 
-		const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(vol);
-		if (grinVol) {
+		//const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(vol);
+		//if (grinVol) {
 			//SLG_LOG("🔥 [PathTracer] GRIN Volume found with IOR range: " << grinCtx.iorMin << " - " << grinCtx.iorMax);
-			grinCtx.enabled = true;
-			grinCtx.volume = grinVol;
-			grinCtx.rayOrigin = eyeRay.o;
-			grinCtx.rayDir = eyeRay.d;
-			grinCtx.rayMinT = eyeRay.mint;
-			grinCtx.rayMaxT = eyeRay.maxt;
-			grinCtx.iorMin = grinVol->GetIORMin().Filter();  // optional: use .Average() if preferred
-			grinCtx.iorMax = grinVol->GetIORMax().Filter();
-			grinCtx.stretchAxis = grinVol->GetStretch();
-			grinCtx.profile = grinVol->GetProfile();
+			//grinCtx.enabled = true;
+			//grinCtx.volume = grinVol;
+			//grinCtx.rayOrigin = eyeRay.o;
+			//grinCtx.rayDir = eyeRay.d;
+			//grinCtx.rayMinT = eyeRay.mint;
+			//grinCtx.rayMaxT = eyeRay.maxt;
+			//grinCtx.iorMin = grinVol->GetIORMin().Filter();  // optional: use .Average() if preferred
+			//grinCtx.iorMax = grinVol->GetIORMax().Filter();
+			//grinCtx.stretchAxis = grinVol->GetStretch();
+			//grinCtx.profile = grinVol->GetProfile();
 			// grinCtx.center and grinCtx.radius could be passed during volume parsing if needed
-		}
+		//}
 
 		RayHit eyeRayHit;
 		Spectrum connectionThroughput;
 		const float passThrough = sampler->GetSample(sampleOffset);
 		// 💥 Pass GRIN context to Intersect
 		bool hit;
-		if (grinVol) {
-			hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult, &grinCtx);
-		} else{
-			hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult);
-		}
+		// 🔥GRIN
+		//hit = scene->xPRIMEIntersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult, &grinCtx);
+		hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult);
 
 		pathThroughput *= connectionThroughput;
 		// Note: pass-through check is done inside Scene::Intersect()

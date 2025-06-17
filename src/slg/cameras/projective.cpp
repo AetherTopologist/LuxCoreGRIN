@@ -166,9 +166,8 @@ void ProjectiveCamera::GenerateRay(const float  time,
 	InitRay(ray, filmX, filmY);
 	volInfo->AddVolume(volume);
 
-	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay]");
-	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay] filmX: " << filmX << " filmY: " << filmY);
-	
+	//SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay]");
+
 	// Modify ray for depth of field
 	if ((lensRadius > 0.f) && (focalDistance > 0.f)) {
 		// Sample point on lens
