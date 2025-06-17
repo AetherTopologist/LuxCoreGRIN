@@ -104,11 +104,11 @@ void PathCPURenderThread::RenderFunc() {
 		}
 		//SLG_LOG("[GRIN Trace] [Thread " << threadIndex << "] Entering RenderSample()");
 		// 🔥GRIN
-		std::cout << "[🔥GRIN Trace] [Thread " << threadIndex << "] Entering RenderSample()" << std::endl;
+		//std::cout << "[🔥GRIN Trace] [Thread " << threadIndex << "] Entering RenderSample()" << std::endl;
 		pathTracer.RenderSample(pathTracerThreadState);
 		//SLG_LOG("[GRIN Trace] [Thread " << threadIndex << "] Finished RenderSample()");
 		// 🔥GRIN
-		std::cout << "[🔥GRIN Trace] [Thread " << threadIndex << "] Finished RenderSample()" << std::endl;
+		//std::cout << "[🔥GRIN Trace] [Thread " << threadIndex << "] Finished RenderSample()" << std::endl;
 		
 
 #ifdef WIN32

@@ -579,13 +579,13 @@ bool Scene::Intersect(IntersectionDevice *device,
 	bsdf->hitPoint.throughShadowTransparency = false;
 	
 	// 🔥GRIN
-	std::cout << "🔥GRIN [Scene::Intersect] Entry" << std::endl;
+	//std::cout << "🔥GRIN [Scene::Intersect] Entry" << std::endl;
 	//SLG_LOG("🔥 [Scene::Intersect] Entry");
 
 	for (;;) {
 		// 🔥GRIN Straight Line Hit Decision Path
-		bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
-		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
+		bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 		//bool hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
 		bool bevelContinueToTrace = !hit;
@@ -725,7 +725,7 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 	bsdf->hitPoint.throughShadowTransparency = false;
 	
 	// 🔥GRIN
-	std::cout << "🔥GRIN [Scene::xPRIMEIntersect] Entry" << std::endl;
+	//std::cout << "🔥GRIN [Scene::xPRIMEIntersect] Entry" << std::endl;
 	//SLG_LOG("🔥 [Scene::Intersect] Entry");
 
 	for (;;) {

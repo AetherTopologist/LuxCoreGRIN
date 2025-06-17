@@ -351,9 +351,9 @@ void PathTracer::GenerateEyeRay(const Camera *camera, const Film *film, Ray &eye
 	const float filmY = sampler->GetSample(1);
 
 	// Use fast pixel filtering, like the one used in TILEPATH.
-	//SLG_LOG("🔥GRIN [PathTracer::GenerateEyeRay()]");
 	// 🔥GRIN
-	std::cout <<  "🔥GRIN [PathTracer::GenerateEyeRay()]" << std::endl;
+	//std::cout <<  "🔥GRIN [PathTracer::GenerateEyeRay()]" << std::endl;
+
 	const u_int *subRegion = film->GetSubRegion();
 	sampleResult.pixelX = Min(Floor2UInt(filmX), subRegion[1]);
 	sampleResult.pixelY = Min(Floor2UInt(filmY), subRegion[3]);
@@ -397,7 +397,7 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 	
 	//SLG_LOG("🔥GRIN [PathTracer::RenderEyePath()]");
 	// 🔥GRIN
-	std::cout <<  "🔥GRIN [PathTracer::RenderEyePath()]" << std::endl;
+	//std::cout <<  "🔥GRIN [PathTracer::RenderEyePath()]" << std::endl;
 
 	// This is used by light strategy
 	pathInfo.lastShadeN = Normal(eyeRay.d);

@@ -251,9 +251,10 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 		initialRay->maxt
 	);
 
-	LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
+	
 	// 🔥GRIN
-	std::cout <<  "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt << std::endl;
+	//std::cout <<  "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt << std::endl;
+	//LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
 
 	u_int currentNode = 0; // Root Node
 	const u_int stopNode = BVHNodeData_GetSkipIndex(bvhTree[0].nodeData); // Non-existent
