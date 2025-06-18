@@ -43,6 +43,7 @@
 #include "slg/materials/materialdefs.h"
 #include "slg/bsdf/bsdf.h"
 #include "slg/volumes/volume.h"
+#include "slg/volumes/grin.h"	// 🔥GRIN TEST
 #include "slg/scene/sceneobjectdefs.h"
 #include "slg/scene/extmeshcache.h"
 #include "slg/scene/colorspaceconverters.h"
@@ -94,6 +95,21 @@ struct GRINRayContext {
 	float rayMinT, rayMaxT;
 };
 
+// 🔥GRIN WORLD TEST
+//------------------------------------------------------------------------------
+// Parsed World GRIN information
+//------------------------------------------------------------------------------
+struct WorldGRINInfo {
+       bool enabled = false;
+       const GRINVolume *volume = nullptr;
+       luxrays::Spectrum iorMin;
+       luxrays::Spectrum iorMax;
+       luxrays::Vector stretch;
+       std::string profile;
+       float beta = 0.f;
+       luxrays::Vector gamma;
+};
+
 class Scene {
 public:
 	// Constructor used to create a scene by calling methods
@@ -102,12 +118,12 @@ public:
 	Scene(const luxrays::Properties &scnProps, const luxrays::Properties *resizePolicyProps = nullptr);
 	~Scene();
 
-	// 🔥GRIN - Added input GRINRayContext can remove for now..
 	bool Intersect(luxrays::IntersectionDevice *device, const SceneRayType rayType, PathVolumeInfo *volInfo,
 		const float passThrough, luxrays::Ray *ray, luxrays::RayHit *rayHit, BSDF *bsdf,
 		luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
 		SampleResult *sampleResult = nullptr, const bool backTracing = false) const;
 
+	// 🔥GRIN - Added input GRINRayContext can remove for now..
 	bool xPRIMEIntersect(luxrays::IntersectionDevice *device, const SceneRayType rayType, PathVolumeInfo *volInfo,
 		const float passThrough, luxrays::Ray *ray, luxrays::RayHit *rayHit, BSDF *bsdf,
 		luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
@@ -193,6 +209,10 @@ public:
 
 	// This volume is applied to rays hitting nothing
 	const Volume *defaultWorldVolume;
+
+	// 🔥GRIN WORLD TEST
+	// Parsed GRIN information if default world volume is a GRIN volume
+	WorldGRINInfo worldGrinInfo;
 
 	Camera *camera;
 

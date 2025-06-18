@@ -85,6 +85,29 @@ void Scene::ParseVolumes(const Properties &props) {
 			// Check also the world default volume
 			if (defaultWorldVolume == oldMat)
 				defaultWorldVolume = static_cast<const Volume *>(newMat);
+					const GRINVolume *gv = dynamic_cast<const GRINVolume *>(defaultWorldVolume);
+					if (gv) {
+							worldGrinInfo.enabled = true;
+							SDL_LOG("World/Scene GRIN Volume Enabled.");
+							worldGrinInfo.volume = gv;
+							worldGrinInfo.iorMin = gv->GetIORMin();
+							SDL_LOG("worldGrinInfo.iorMin = " << worldGrinInfo.iorMin);
+							worldGrinInfo.iorMax = gv->GetIORMax();
+							SDL_LOG("worldGrinInfo.iorMax = " << worldGrinInfo.iorMax);
+							worldGrinInfo.stretch = gv->GetStretch();
+							SDL_LOG("worldGrinInfo.stretch = " << worldGrinInfo.stretch);
+							worldGrinInfo.profile = gv->GetProfile();
+							SDL_LOG("worldGrinInfo.profile = " << worldGrinInfo.profile);
+							worldGrinInfo.beta = gv->GetBeta();
+							SDL_LOG("worldGrinInfo.beta = " << worldGrinInfo.beta);
+							worldGrinInfo.gamma = gv->GetGamma();
+							SDL_LOG("worldGrinInfo.gamma = " << worldGrinInfo.gamma);
+							
+							worldGrinInfo.volume
+					} else
+							worldGrinInfo.enabled = false;
+							SDL_LOG("World/Scene GRIN Volume Disabled.");
+			}
 
 			// Check if the old material was or the new material is a light source
 			//if (wasLightSource || newMat->IsLightSource())
@@ -94,16 +117,36 @@ void Scene::ParseVolumes(const Properties &props) {
 			matDefs.DefineMaterial(newMat);
 		}
 	}
-
+	
 	if (props.IsDefined("scene.world.volume.default")) {
 		const string volName = props.Get("scene.world.volume.default").Get<string>();
-		const Material *m = matDefs.GetMaterial(volName);
-		const Volume *v = dynamic_cast<const Volume *>(m);
-		if (!v)
-			throw runtime_error(volName + " is not a volume and can not be used for default world volume");
-		defaultWorldVolume = v;
+			const Material *m = matDefs.GetMaterial(volName);
+			const Volume *v = dynamic_cast<const Volume *>(m);
+			if (!v)
+					throw runtime_error(volName + " is not a volume and can not be used for default world volume");
+			defaultWorldVolume = v;
+			const GRINVolume *gv = dynamic_cast<const GRINVolume *>(v);
+			if (gv) {
+				worldGrinInfo.enabled = true;
+				SDL_LOG("World/Scene GRIN Volume Enabled.");
+				worldGrinInfo.volume = gv;
+				worldGrinInfo.iorMin = gv->GetIORMin();
+				SDL_LOG("worldGrinInfo.iorMin = " << worldGrinInfo.iorMin);
+				worldGrinInfo.iorMax = gv->GetIORMax();
+				SDL_LOG("worldGrinInfo.iorMax = " << worldGrinInfo.iorMax);
+				worldGrinInfo.stretch = gv->GetStretch();
+				SDL_LOG("worldGrinInfo.stretch = " << worldGrinInfo.stretch);
+				worldGrinInfo.profile = gv->GetProfile();
+				SDL_LOG("worldGrinInfo.profile = " << worldGrinInfo.profile);
+				worldGrinInfo.beta = gv->GetBeta();
+				SDL_LOG("worldGrinInfo.beta = " << worldGrinInfo.beta);
+				worldGrinInfo.gamma = gv->GetGamma();
+				SDL_LOG("worldGrinInfo.gamma = " << worldGrinInfo.gamma);
+			} else
+					worldGrinInfo.enabled = false;
+					SDL_LOG("World/Scene GRIN Volume Disabled.");
 
-		editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);
+			editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);
 	}
 
 	if (matKeys.size() > 0)

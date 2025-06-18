@@ -49,6 +49,8 @@ public:
 		const u_longlong totalTriangleCount);
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const;
+	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit) const;
+	bool xPRIMEIntersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const;
 
 	static BVHParams ToBVHParams(const Properties &props);
 

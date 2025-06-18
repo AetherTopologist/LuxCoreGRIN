@@ -306,4 +306,79 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	return !rayHit->Miss();
 }
 
+bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit, const float beta, const luxrays::Vector &gamma) const {
+	assert (initialized);
+
+	rayHit->t = initialRay->maxt;
+	rayHit->SetMiss();
+	if (!nNodes)
+		return false;
+
+	Ray ray(*initialRay);
+	// -- Convert Ray to xPRIMEray --
+	xPRIMEray xPRIMEray(
+		initialRay->o,                 // origin
+		initialRay->d,                 // direction
+		luxrays::Point(0.f, 0.f, 0.f), // center of curvature (can customize)
+		beta,                          // beta (GRIN intensity scalar)
+		gamma,						   // gamma (exponents per axis)
+		xPRIMErayType::POWER,          // curvature model
+		initialRay->mint,
+		initialRay->maxt
+	);
+
+	// 🔥GRIN
+	//std::cout <<  "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt << std::endl;
+	//LR_LOG(ctx, "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt);
+
+	u_int currentNode = 0; // Root Node
+	const u_int stopNode = BVHNodeData_GetSkipIndex(bvhTree[0].nodeData); // Non-existent
+
+	float t, b1, b2;
+	while (currentNode < stopNode) {
+		const luxrays::ocl::BVHArrayNode &node = bvhTree[currentNode];
+
+		const u_int nodeData = node.nodeData;
+		if (BVHNodeData_IsLeaf(nodeData)) {
+			// It is a leaf, check the triangle
+			const Mesh *mesh = meshes[node.triangleLeaf.meshIndex];
+
+			// This is a fast path because I know Mesh can be only TYPE_TRIANGLE/TYPE_EXT_TRIANGLE
+			// in BVH
+			const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[0]);
+			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[1]);
+			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
+
+
+			// 🔥GRIN Straight-Line Hit Operation
+			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
+			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
+				if (t < rayHit->t) {
+					ray.maxt = t;
+					rayHit->t = t;
+					rayHit->b1 = b1;
+					rayHit->b2 = b2;
+					rayHit->meshIndex = node.triangleLeaf.meshIndex;
+					rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
+					// Continue testing for closer intersections
+				}
+			}
+			++currentNode;
+		} else {
+			// It is a node, check the bounding box
+			if (BBox::IntersectP(ray,
+					*reinterpret_cast<const Point *>(&node.bvhNode.bboxMin[0]),
+					*reinterpret_cast<const Point *>(&node.bvhNode.bboxMax[0])))
+				++currentNode;
+			else {
+				// I don't need to use BVHNodeData_GetSkipIndex() here because
+				// I already know the leaf flag is 0
+				currentNode = nodeData;
+			}
+		}
+	}
+
+	return !rayHit->Miss();
+}
+
 }
