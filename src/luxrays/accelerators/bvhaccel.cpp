@@ -230,6 +230,7 @@ void BVHAccel::Init(const deque<const Mesh *> &ms, const u_longlong totVert,
 
 
 // 🔥GRIN Straight-Line Ray Decisions
+//bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit, const float beta, const luxrays::Vector &gamma) const {
 bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	assert (initialized);
 
@@ -244,13 +245,12 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 		initialRay->o,                 // origin
 		initialRay->d,                 // direction
 		luxrays::Point(0.f, 0.f, 0.f), // center of curvature (can customize)
-		2.0f,                          // beta (GRIN intensity scalar)
-		luxrays::Vector(1.f, 1.f, 1.6f),// gamma (exponents per axis)
+		1.0f,                          // beta (GRIN intensity scalar)
+		luxrays::Vector(1.f,1.f,1.f),  // gamma (exponents per axis)
 		xPRIMErayType::POWER,          // curvature model
 		initialRay->mint,
 		initialRay->maxt
 	);
-
 	
 	// 🔥GRIN
 	//std::cout <<  "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt << std::endl;
@@ -276,6 +276,7 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 
 			// 🔥GRIN Straight-Line Hit Operation
+			//if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
 			//if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
 			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 				if (t < rayHit->t) {

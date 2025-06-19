@@ -83,32 +83,30 @@ void Scene::ParseVolumes(const Properties &props) {
 			lightDefs.UpdateVolumeReferences(static_cast<const Volume *>(oldMat), static_cast<const Volume *>(newMat));
 
 			// Check also the world default volume
-			if (defaultWorldVolume == oldMat)
+			if (defaultWorldVolume == oldMat) {
 				defaultWorldVolume = static_cast<const Volume *>(newMat);
-					const GRINVolume *gv = dynamic_cast<const GRINVolume *>(defaultWorldVolume);
-					if (gv) {
-							worldGrinInfo.enabled = true;
-							SDL_LOG("World/Scene GRIN Volume Enabled.");
-							worldGrinInfo.volume = gv;
-							worldGrinInfo.iorMin = gv->GetIORMin();
-							SDL_LOG("worldGrinInfo.iorMin = " << worldGrinInfo.iorMin);
-							worldGrinInfo.iorMax = gv->GetIORMax();
-							SDL_LOG("worldGrinInfo.iorMax = " << worldGrinInfo.iorMax);
-							worldGrinInfo.stretch = gv->GetStretch();
-							SDL_LOG("worldGrinInfo.stretch = " << worldGrinInfo.stretch);
-							worldGrinInfo.profile = gv->GetProfile();
-							SDL_LOG("worldGrinInfo.profile = " << worldGrinInfo.profile);
-							worldGrinInfo.beta = gv->GetBeta();
-							SDL_LOG("worldGrinInfo.beta = " << worldGrinInfo.beta);
-							worldGrinInfo.gamma = gv->GetGamma();
-							SDL_LOG("worldGrinInfo.gamma = " << worldGrinInfo.gamma);
-							
-							worldGrinInfo.volume
-					} else
-							worldGrinInfo.enabled = false;
-							SDL_LOG("World/Scene GRIN Volume Disabled.");
+				const GRINVolume *gv = dynamic_cast<const GRINVolume *>(defaultWorldVolume);
+				if (gv) {
+						worldGrinInfo.enabled = true;
+						SDL_LOG("World/Scene GRIN Volume Enabled.");
+						worldGrinInfo.volume = gv;
+						worldGrinInfo.iorMin = gv->GetIORMin();
+						SDL_LOG("worldGrinInfo.iorMin = " << worldGrinInfo.iorMin);
+						worldGrinInfo.iorMax = gv->GetIORMax();
+						SDL_LOG("worldGrinInfo.iorMax = " << worldGrinInfo.iorMax);
+						worldGrinInfo.stretch = gv->GetStretch();
+						SDL_LOG("worldGrinInfo.stretch = " << worldGrinInfo.stretch);
+						worldGrinInfo.profile = gv->GetProfile();
+						SDL_LOG("worldGrinInfo.profile = " << worldGrinInfo.profile);
+						worldGrinInfo.beta = gv->GetBeta();
+						SDL_LOG("worldGrinInfo.beta = " << worldGrinInfo.beta);
+						worldGrinInfo.gamma = gv->GetGamma();
+						SDL_LOG("worldGrinInfo.gamma = " << worldGrinInfo.gamma);
+				} else {
+						worldGrinInfo.enabled = false;
+						SDL_LOG("World/Scene GRIN Volume Disabled.");
+				}
 			}
-
 			// Check if the old material was or the new material is a light source
 			//if (wasLightSource || newMat->IsLightSource())
 			//	editActions.AddAction(LIGHTS_EDIT);
