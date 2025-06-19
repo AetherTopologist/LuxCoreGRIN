@@ -56,49 +56,37 @@ public:
 	}
 
 	// Analytic intersection of POWER curved rays with a plane
-	static bool IntersectPlaneSymbolic(
-			const xPRIMEray &ray,
-			const Point &p0,
-			const Vector &normal,
-			float *tHit,
-			Point *hitPoint);
+	static bool IntersectPlaneSymbolic(const xPRIMEray &ray, const Point &p0, const Vector &normal,	float *tHit, Point *hitPoint) {
+		if (ray.type != xPRIMErayType::POWER)
+				return false;
 
-	static bool IntersectPlaneSymbolic(
-			const xPRIMEray &ray,
-			const Point &p0,
-			const Vector &normal,
-			float *tHit,
-			Point *hitPoint) {
-			if (ray.type != xPRIMErayType::POWER)
-					return false;
+		const Vector rayToPlane = ray.origin - p0;
+		const float A = Dot(rayToPlane, normal);
+		const float B = Dot(ray.direction, normal);
+		const float beta = ray.beta;
 
-			const Vector rayToPlane = ray.origin - p0;
-			const float A = Dot(rayToPlane, normal);
-			const float B = Dot(ray.direction, normal);
-			const float beta = ray.beta;
+		const float gammaAvg = (ray.gamma.x + ray.gamma.y + ray.gamma.z) / 3.f;
 
-			const float gammaAvg = (ray.gamma.x + ray.gamma.y + ray.gamma.z) / 3.f;
+		const float denom = beta * B;
+		if (std::fabs(denom) < 1e-6f)
+				return false;
 
-			const float denom = beta * B;
-			if (std::fabs(denom) < 1e-6f)
-					return false;
+		const float tPower = -A / denom;
+		if (tPower < 0.f)
+				return false;
 
-			const float tPower = -A / denom;
-			if (tPower < 0.f)
-					return false;
+		const float t = std::pow(tPower, 1.f / gammaAvg);
+		if (t < ray.mint || t > ray.maxt)
+				return false;
 
-			const float t = std::pow(tPower, 1.f / gammaAvg);
-			if (t < ray.mint || t > ray.maxt)
-					return false;
+		const Vector curveOffset(
+				ray.direction.x * std::pow(t, ray.gamma.x),
+				ray.direction.y * std::pow(t, ray.gamma.y),
+				ray.direction.z * std::pow(t, ray.gamma.z));
+		*hitPoint = ray.origin + beta * curveOffset;
+		*tHit = t;
 
-			const Vector curveOffset(
-					ray.direction.x * std::pow(t, ray.gamma.x),
-					ray.direction.y * std::pow(t, ray.gamma.y),
-					ray.direction.z * std::pow(t, ray.gamma.z));
-			*hitPoint = ray.origin + beta * curveOffset;
-			*tHit = t;
-
-			return true;
+		return true;
 	}
 	
 	// 🔥GRIN Curved Path Additions 
