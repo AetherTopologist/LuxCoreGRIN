@@ -55,41 +55,48 @@ public:
 		return Union(BBox(p0, p1), p2);
 	}
 
-	// Analytic intersection of POWER curved rays with a plane
-	static bool IntersectPlaneSymbolic(const xPRIMEray &ray, const Point &p0, const Vector &normal,	float *tHit, Point *hitPoint) {
+	// Analytic intersection of POWER curved rays with a triangle's plane using symbolic per-axis gamma
+	static bool IntersectPlaneSymbolic(const xPRIMEray &ray, const Point &p0, const Vector &normal,
+		float *tHit, Point *hitPoint) {
+
 		if (ray.type != xPRIMErayType::POWER)
-				return false;
+			return false;
 
 		const Vector rayToPlane = ray.origin - p0;
 		const float A = Dot(rayToPlane, normal);
 		const float B = Dot(ray.direction, normal);
 		const float beta = ray.beta;
 
-		const float gammaAvg = (ray.gamma.x + ray.gamma.y + ray.gamma.z) / 3.f;
-
+		// Early out: Avoid division by zero or negligible curvature
 		const float denom = beta * B;
 		if (std::fabs(denom) < 1e-6f)
-				return false;
+			return false;
 
-		const float tPower = -A / denom;
-		if (tPower < 0.f)
-				return false;
+		const float tBase = -A / denom;
+		if (tBase <= 0.f)
+			return false;
 
-		const float t = std::pow(tPower, 1.f / gammaAvg);
-		if (t < ray.mint || t > ray.maxt)
-				return false;
+		// Use axis of maximum curvature to determine t exponent
+		const float gammaMax = std::max(ray.gamma.x, std::max(ray.gamma.y, ray.gamma.z));
+		const float t = std::pow(tBase, 1.f / gammaMax);
 
+		if (!std::isfinite(t) || t < ray.mint || t > ray.maxt)
+			return false;
+
+		// Compute curved offset from origin using per-axis gamma
 		const Vector curveOffset(
-				ray.direction.x * std::pow(t, ray.gamma.x),
-				ray.direction.y * std::pow(t, ray.gamma.y),
-				ray.direction.z * std::pow(t, ray.gamma.z));
+			ray.direction.x * std::pow(t, ray.gamma.x),
+			ray.direction.y * std::pow(t, ray.gamma.y),
+			ray.direction.z * std::pow(t, ray.gamma.z));
+
 		*hitPoint = ray.origin + beta * curveOffset;
 		*tHit = t;
 
 		return true;
 	}
-	
+
 	// 🔥GRIN Curved Path Additions 
+	// GRIN Curved Path Intersection using symbolic curved rays
 	static bool xPRIMEIntersect(
 		const xPRIMEray &ray,
 		const Point &p0,
@@ -99,22 +106,26 @@ public:
 		float *b1,
 		float *b2) {
 
-		// Step 1: Triangle plane definition
+		// Define triangle's geometric plane
 		const Vector edge1 = p1 - p0;
 		const Vector edge2 = p2 - p0;
 		const Vector N = Normalize(Cross(edge1, edge2));
 
 		Point hitPoint;
 		float t;
+
+		// Step 1: Plane intersection using symbolic curved ray
 		if (!IntersectPlaneSymbolic(ray, p0, N, &t, &hitPoint))
-				return false;
+			return false;
 
+		// Step 2: Check if hit point is within triangle (barycentric)
 		if (!GetBaryCoords(p0, p1, p2, hitPoint, b1, b2))
-				return false;
-			*tHit = t;
-			return true;
-	}
+			return false;
 
+		*tHit = t;
+		return true;
+	}
+	
 	static bool Intersect(const Ray &ray, const Point &p0, const Point &p1, const Point &p2,
 		float *t, float *b1, float *b2) {
 		const Vector e1 = p1 - p0;
