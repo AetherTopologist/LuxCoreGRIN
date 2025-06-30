@@ -95,9 +95,8 @@ public:
 		return true;
 	}
 
-	// 🔥GRIN Curved Path Additions 
 	// GRIN Curved Path Intersection using symbolic curved rays
-	static bool xPRIMEIntersect(
+	static bool xPRIMEIntersectOBS(
 		const xPRIMEray &ray,
 		const Point &p0,
 		const Point &p1,
@@ -125,7 +124,161 @@ public:
 		*tHit = t;
 		return true;
 	}
-	
+
+
+	static Vector ComputeGRINField(
+		const Point &pos,
+		const float beta,
+		const Vector &gamma) {
+
+		const float r = Length(pos);
+		if (r < 1e-6f) return Vector(0.f, 0.f, 0.f);
+
+		return Vector(
+			beta * std::pow(r, gamma.x) * pos.x / r,
+			beta * std::pow(r, gamma.y) * pos.y / r,
+			beta * std::pow(r, gamma.z) * pos.z / r);
+	}
+
+	static bool IntersectINSIGHT(
+		const xPRIMEray &ray,
+		const Point &p0,
+		const Vector &normal,
+		float *tINSIGHT,
+		Point *approxHit) {
+		
+		if (ray.type != xPRIMErayType::POWER)
+			return false;
+
+		const Vector rayToPlane = ray.origin - p0;
+		const float A = Dot(rayToPlane, normal);
+		const float B = Dot(ray.direction, normal);
+		const float beta = ray.beta;
+
+		// Early out for negligible curvature
+		const float denom = beta * B;
+		if (std::fabs(denom) < 1e-6f)
+			return false;
+
+		const float tBase = -A / denom;
+		if (tBase <= 0.f)
+			return false;
+
+		// Use strongest curvature axis for exponent
+		const float gammaMax = std::max(ray.gamma.x, std::max(ray.gamma.y, ray.gamma.z));
+		const float t = std::pow(tBase, 1.f / gammaMax);
+
+		if (!std::isfinite(t) || t < ray.mint || t > ray.maxt)
+			return false;
+
+		// Compute approximate curved hit point
+		const Vector curveOffset(
+			ray.direction.x * std::pow(t, ray.gamma.x),
+			ray.direction.y * std::pow(t, ray.gamma.y),
+			ray.direction.z * std::pow(t, ray.gamma.z));
+
+		*approxHit = ray.origin + beta * curveOffset;
+		*tINSIGHT = t;
+
+		return true;
+	}
+
+	static bool RK4_GRINIntersect(
+		const xPRIMEray &ray,
+		const Point &p0,
+		const Point &p1,
+		const Point &p2,
+		float *tHit,
+		Point *rk4Hit,
+		float *b1,
+		float *b2) {
+
+		// Triangle plane setup
+		const Vector edge1 = p1 - p0;
+		const Vector edge2 = p2 - p0;
+		const Vector N = Normalize(Cross(edge1, edge2));
+
+		// RK4 setup
+		const float stepSize = ray.stepSize;
+		const int maxSteps = ray.numSteps;
+
+		Point pos = ray.origin;
+		Vector dir = ray.direction;
+
+		float tAccum = 0.f;
+
+		// For sign-change detection
+		float prevDist = Dot(pos - p0, N);
+
+		for (int i = 0; i < maxSteps; ++i) {
+			// Compute GRIN curvature at current position
+			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma);
+			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma);
+			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma);
+			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma);
+
+			// RK4 update
+			dir += (stepSize / 6.f) * (k1 + 2.f * k2 + 2.f * k3 + k4);
+			pos += stepSize * dir;
+			tAccum += stepSize;
+
+			// Current signed distance to plane
+			float currDist = Dot(pos - p0, N);
+
+			// 🔥 Two tests: crossing the plane OR direct near-plane hit
+			if ((prevDist * currDist < 0.f) || (std::fabs(currDist) < 1e-4f)) {
+				if (GetBaryCoords(p0, p1, p2, pos, b1, b2)) {
+					*tHit = tAccum;
+					*rk4Hit = pos;
+					return true;
+				}
+			}
+
+			prevDist = currDist;
+		}
+
+		return false; // No intersection found
+	}
+
+
+
+	// 🔥GRIN Curved Path Additions 
+	static bool xPRIMEIntersect(
+		const xPRIMEray &ray,
+		const Point &p0,
+		const Point &p1,
+		const Point &p2,
+		float *tHit,
+		float *b1,
+		float *b2) {
+
+		// Compute plane normal
+		const Vector edge1 = p1 - p0;
+		const Vector edge2 = p2 - p0;
+		const Vector N = Normalize(Cross(edge1, edge2));
+
+		Point approxHit;
+		float tINSIGHT;
+
+		// STEP 1: Do INSIGHT symbolic intersection with the triangle's plane
+		if (!IntersectINSIGHT(ray, p0, N, &tINSIGHT, &approxHit))
+			return false;
+
+		// STEP 2: Quick barycentric test
+		if (!GetBaryCoords(p0, p1, p2, approxHit, b1, b2))
+			return false;
+
+		// STEP 3: RK4 refinement through GRIN field (like your Blender)
+		Point rk4Hit;
+		float tRK4;
+
+		if (!RK4_GRINIntersect(ray, p0, p1, p2, &tRK4, &rk4Hit, b1, b2))
+			return false;
+
+		*tHit = tRK4;
+		return true;
+	}
+
 	static bool Intersect(const Ray &ray, const Point &p0, const Point &p1, const Point &p2,
 		float *t, float *b1, float *b2) {
 		const Vector e1 = p1 - p0;
