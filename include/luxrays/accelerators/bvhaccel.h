@@ -50,7 +50,10 @@ public:
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const;
 	//virtual bool Intersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const;
-	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const;
+	//virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const;
+	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,
+					const float beta, const luxrays::Vector &gamma,
+					const float stepSize, const int numSteps) const;
 
 	static BVHParams ToBVHParams(const Properties &props);
 

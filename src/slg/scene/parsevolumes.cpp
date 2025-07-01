@@ -102,6 +102,10 @@ void Scene::ParseVolumes(const Properties &props) {
 						SDL_LOG("worldGrinInfo.beta = " << worldGrinInfo.beta);
 						worldGrinInfo.gamma = gv->GetGamma();
 						SDL_LOG("worldGrinInfo.gamma = " << worldGrinInfo.gamma);
+						worldGrinInfo.stepSize = gv->GetStepSize();
+						SDL_LOG("worldGrinInfo.stepSize = " << worldGrinInfo.stepSize);
+						worldGrinInfo.numSteps = gv->GetNumSteps();
+						SDL_LOG("worldGrinInfo.numSteps = " << worldGrinInfo.numSteps);
 				} else {
 						worldGrinInfo.enabled = false;
 						SDL_LOG("World/Scene GRIN Volume Disabled.");
@@ -140,9 +144,14 @@ void Scene::ParseVolumes(const Properties &props) {
 				SDL_LOG("worldGrinInfo.beta = " << worldGrinInfo.beta);
 				worldGrinInfo.gamma = gv->GetGamma();
 				SDL_LOG("worldGrinInfo.gamma = " << worldGrinInfo.gamma);
-			} else
+				worldGrinInfo.stepSize = gv->GetStepSize();
+				SDL_LOG("worldGrinInfo.stepSize = " << worldGrinInfo.stepSize);
+				worldGrinInfo.numSteps = gv->GetNumSteps();
+				SDL_LOG("worldGrinInfo.numSteps = " << worldGrinInfo.numSteps);
+			} else {
 					worldGrinInfo.enabled = false;
 					SDL_LOG("World/Scene GRIN Volume Disabled.");
+			}
 
 			editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);
 	}
@@ -195,6 +204,8 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		const string profile = props.Get(Property(propName + ".grin.profile")("radial")).Get<string>();
 		const float beta = props.Get(Property(propName + ".grin.beta")(1.0f)).Get<float>();
 		const Vector gamma = props.Get(Property(propName + ".grin.gamma")(1.f, 1.f, 1.f)).Get<Vector>();
+		const float stepSize = props.Get(Property(propName + ".grin.stepsize")(0.01f)).Get<float>();
+		const u_int numSteps = props.Get(Property(propName + ".grin.numsteps")(64u)).Get<u_int>();
 
 		SLG_LOG("🔥 [parsevolumes] Created GRIN volume: " << volName);
 		SLG_LOG("🔥 [parsevolumes] GRIN IOR Range: " << iorMin.c[0] << " - " << iorMax.c[0]);
@@ -202,9 +213,11 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		SLG_LOG("🔥 [parsevolumes] GRIN Profile: " << profile);
 		SLG_LOG("🔥 [parsevolumes] GRIN Beta: " << beta);
 		SLG_LOG("🔥 [parsevolumes] GRIN Gamma: (" << gamma.x << ", " << gamma.y << ", " << gamma.z << ")");
+		SLG_LOG("🔥 [parsevolumes] GRIN stepSize: (" << stepSize);
+		SLG_LOG("🔥 [parsevolumes] GRIN numSteps: (" << numSteps);
 
 		// TODO add GRINVolume additional properties for beta gamma
-		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile, beta, gamma);
+		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile, beta, gamma, stepSize, numSteps);
 	} else
 		throw runtime_error("Unknown volume type: " + volType);
 

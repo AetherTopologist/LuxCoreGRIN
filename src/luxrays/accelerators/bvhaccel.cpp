@@ -307,7 +307,9 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	return !rayHit->Miss();
 }
 
-bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit, const float beta, const luxrays::Vector &gamma) const {
+bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
+               const float beta, const luxrays::Vector &gamma,
+               const float stepSize, const int numSteps) const {
 	assert (initialized);
 
 	rayHit->t = initialRay->maxt;
@@ -325,7 +327,9 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit, const floa
 		gamma,						   // gamma (exponents per axis)
 		xPRIMErayType::POWER,          // curvature model
 		initialRay->mint,
-		initialRay->maxt
+		initialRay->maxt,
+		stepSize,
+		numSteps
 	);
 
 	// 🔥GRIN

@@ -31,9 +31,12 @@ using namespace slg;
 GRINVolume::GRINVolume(const Texture *iorTex, const Texture *emiTex, const Texture *a,
                        const luxrays::Spectrum &minIor, const luxrays::Spectrum &maxIor,
                        const luxrays::Vector &stretchVec, const std::string &profileType,
-					   const float beta, const Vector &gamma)
+                       const float beta, const Vector &gamma,
+                       const float ss, const u_int ns)
+
     : Volume(iorTex, emiTex), iorMin(minIor), iorMax(maxIor),
-      stretch(stretchVec), profile(profileType), beta(beta), gamma(gamma) {
+      stretch(stretchVec), profile(profileType), beta(beta), gamma(gamma),
+      stepSize(ss), numSteps(ns) {
     sigmaA = a;
 }
 
@@ -132,6 +135,8 @@ Properties GRINVolume::ToProperties() const {
 	props.Set(Volume::ToProperties());
 	props.Set(Property("scene.volumes." + name + ".grin.beta")(beta));
 	props.Set(Property("scene.volumes." + name + ".grin.gamma")(gamma));
+	props.Set(Property("scene.volumes." + name + ".grin.stepsize")(stepSize));
+	props.Set(Property("scene.volumes." + name + ".grin.numsteps")(numSteps));
 
 	return props;
 }

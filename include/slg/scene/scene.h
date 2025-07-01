@@ -108,6 +108,8 @@ struct WorldGRINInfo {
        std::string profile;
        float beta = 0.f;
        luxrays::Vector gamma;
+       float stepSize = 0.01f;
+       int numSteps = 64;
 };
 
 class Scene {
