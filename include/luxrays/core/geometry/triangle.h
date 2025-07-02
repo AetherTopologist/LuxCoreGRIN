@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 
+
 #include "luxrays/luxrays.h"
 #include "luxrays/core/geometry/point.h"
 #include "luxrays/core/geometry/vector.h"
