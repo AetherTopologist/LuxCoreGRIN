@@ -135,7 +135,8 @@ public:
 		const Vector &gamma) {
 
 		//const float r = Length(pos);
-		const float r = pos.Length();
+		//const float r = pos.Length();
+		const float r = Vector(pos).Length();
 
 		if (r < 1e-6f) return Vector(0.f, 0.f, 0.f);
 

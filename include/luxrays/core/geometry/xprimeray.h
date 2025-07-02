@@ -18,16 +18,6 @@ enum class xPRIMErayType {
 };
 
 
-struct xPRIMEray {
-    Point origin;
-    Vector direction;
-    float beta;
-    Vector gamma;
-    float mint, maxt;
-    xPRIMErayType type;
-
-};
-
 // GRIN-style curvature-aware ray definition
 class xPRIMEray {
 public:
@@ -37,8 +27,6 @@ public:
 	float beta;          // Scalar modulation (GRIN field intensity)
 	Vector gamma;        // Power or exponential scaling per axis
 	xPRIMErayType type;  // Curve type
-    float stepSize;		 // 🔥 Added for RK4
-    int numSteps;		 // 🔥 Added for RK4
 
 	// Optional t-range for validity (for compatibility with Ray)
 	float mint, maxt;
