@@ -99,37 +99,6 @@ public:
 		return true;
 	}
 
-	// GRIN Curved Path Intersection using symbolic curved rays
-	static bool xPRIMEIntersectOBS(
-		const xPRIMEray &ray,
-		const Point &p0,
-		const Point &p1,
-		const Point &p2,
-		float *tHit,
-		float *b1,
-		float *b2) {
-
-		// Define triangle's geometric plane
-		const Vector edge1 = p1 - p0;
-		const Vector edge2 = p2 - p0;
-		const Vector N = Normalize(Cross(edge1, edge2));
-
-		Point hitPoint;
-		float t;
-
-		// Step 1: Plane intersection using symbolic curved ray
-		if (!IntersectPlaneSymbolic(ray, p0, N, &t, &hitPoint))
-			return false;
-
-		// Step 2: Check if hit point is within triangle (barycentric)
-		if (!GetBaryCoords(p0, p1, p2, hitPoint, b1, b2))
-			return false;
-
-		*tHit = t;
-		return true;
-	}
-
-
 	static Vector ComputeGRINField(
 		const Point &pos,
 		const float beta,
@@ -246,8 +215,6 @@ public:
 
 		return false; // No intersection found
 	}
-
-
 
 	// 🔥GRIN Curved Path Additions 
 	static bool xPRIMEIntersect(

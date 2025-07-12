@@ -41,6 +41,7 @@
 #include "slg/textures/texturedefs.h"
 #include "slg/textures/mapping/mapping.h"
 #include "slg/materials/materialdefs.h"
+#include "slg/materials/material.h"
 #include "slg/bsdf/bsdf.h"
 #include "slg/volumes/volume.h"
 #include "slg/volumes/grin.h"	// 🔥GRIN TEST
@@ -215,6 +216,7 @@ public:
 	// 🔥GRIN WORLD TEST
 	// Parsed GRIN information if default world volume is a GRIN volume
 	WorldGRINInfo worldGrinInfo;
+	MaterialType worldVolumeType;
 
 	Camera *camera;
 
