@@ -99,7 +99,7 @@ public:
 		return true;
 	}
 
-	static Vector ComputeGRINField(
+	static Vector ComputeGRINField_obs(
 		const Point &pos,
 		const float beta,
 		const Vector &gamma) {
@@ -115,6 +115,24 @@ public:
 			beta * std::pow(r, gamma.y) * pos.y / r,
 			beta * std::pow(r, gamma.z) * pos.z / r);
 	}
+
+	static Vector ComputeGRINField(
+		const Point &pos,
+		const float beta,
+		const Vector &gamma,
+		const Point &GRINCenter) {
+
+		const Vector offset = pos - GRINCenter;
+		const float rMin = 1e-4f;
+		const float r = offset.Length();
+		const float rClamped = std::max(r, rMin);
+
+		return Vector(
+			beta * std::pow(rClamped, gamma.x) * offset.x / rClamped,
+			beta * std::pow(rClamped, gamma.y) * offset.y / rClamped,
+			beta * std::pow(rClamped, gamma.z) * offset.z / rClamped);
+	}
+
 
 	static bool IntersectINSIGHT(
 		const xPRIMEray &ray,
@@ -178,6 +196,8 @@ public:
 		const float stepSize = ray.stepSize;
 		const int maxSteps = ray.numSteps;
 
+		const Point GRINCenter = Point(0.f, 0.f, 0.f);
+
 		Point pos = ray.origin;
 		Vector dir = ray.direction;
 
@@ -188,10 +208,10 @@ public:
 
 		for (int i = 0; i < maxSteps; ++i) {
 			// Compute GRIN curvature at current position
-			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma);
-			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma);
-			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma);
-			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma);
+			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, GRINCenter);
+			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma, GRINCenter);
+			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma, GRINCenter);
+			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, GRINCenter);
 
 			// RK4 update
 			dir += (stepSize / 6.f) * (k1 + 2.f * k2 + 2.f * k3 + k4);
