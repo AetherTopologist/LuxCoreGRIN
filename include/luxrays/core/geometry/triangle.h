@@ -383,7 +383,7 @@ public:
 	}
 
 	static bool GetBaryCoordsSoft(const Point &p0, const Point &p1, const Point &p2,
-			const Point &hitPoint, float *b1, float *b2, const float epsilon = 0.01f) {
+			const Point &hitPoint, float *b1, float *b2, const float epsilon = 0.1f) {
 		const Vector u = p1 - p0;
 		const Vector v = p2 - p0;
 		const Vector w = hitPoint - p0;
