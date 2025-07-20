@@ -243,7 +243,7 @@ public:
 
 		// STEP 2: Quick barycentric test
 		//if (!GetBaryCoords(p0, p1, p2, approxHit, b1, b2))
-		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, 0.03f)) {
+		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, 0.03f))
 			return false;
 
 		// STEP 3: RK4 refinement through GRIN field (like your Blender)
