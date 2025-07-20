@@ -99,23 +99,6 @@ public:
 		return true;
 	}
 
-	static Vector ComputeGRINField_obs(
-		const Point &pos,
-		const float beta,
-		const Vector &gamma) {
-
-		//const float r = Length(pos);
-		//const float r = pos.Length();
-		const float r = Vector(pos).Length();
-
-		if (r < 1e-6f) return Vector(0.f, 0.f, 0.f);
-
-		return Vector(
-			beta * std::pow(r, gamma.x) * pos.x / r,
-			beta * std::pow(r, gamma.y) * pos.y / r,
-			beta * std::pow(r, gamma.z) * pos.z / r);
-	}
-
 	static Vector ComputeGRINField(
 		const Point &pos,
 		const float beta,
@@ -132,7 +115,6 @@ public:
 			beta * std::pow(rClamped, gamma.y) * offset.y / rClamped,
 			beta * std::pow(rClamped, gamma.z) * offset.z / rClamped);
 	}
-
 
 	static bool IntersectINSIGHT(
 		const xPRIMEray &ray,
@@ -223,7 +205,8 @@ public:
 
 			// 🔥 Two tests: crossing the plane OR direct near-plane hit
 			if ((prevDist * currDist < 0.f) || (std::fabs(currDist) < 1e-4f)) {
-				if (GetBaryCoords(p0, p1, p2, pos, b1, b2)) {
+				//if (GetBaryCoords(p0, p1, p2, pos, b1, b2)) {
+				if (GetBaryCoordsSoft(p0, p1, p2, pos, b1, b2, 0.03f)) {
 					*tHit = tAccum;
 					*rk4Hit = pos;
 					return true;
@@ -259,7 +242,8 @@ public:
 			return false;
 
 		// STEP 2: Quick barycentric test
-		if (!GetBaryCoords(p0, p1, p2, approxHit, b1, b2))
+		//if (!GetBaryCoords(p0, p1, p2, approxHit, b1, b2))
+		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, 0.03f)) {
 			return false;
 
 		// STEP 3: RK4 refinement through GRIN field (like your Blender)
@@ -349,16 +333,16 @@ public:
 		*p = (*b0) * p0 + (*b1) * p1 + (*b2) * p2;
 	}
 
+	static float Area(const Point &p0, const Point &p1, const Point &p2) {
+		return .5f * Cross(p1 - p0, p2 - p0).Length();
+	}
+
 	bool GetBaryCoords(const Point *verts, const Point &hitPoint, float *b1, float *b2) const {
 		const Point &p0 = verts[v[0]];
 		const Point &p1 = verts[v[1]];
 		const Point &p2 = verts[v[2]];
 
 		return GetBaryCoords(p0, p1, p2, hitPoint, b1, b2);
-	}
-
-	static float Area(const Point &p0, const Point &p1, const Point &p2) {
-		return .5f * Cross(p1 - p0, p2 - p0).Length();
 	}
 
 	static bool GetBaryCoords(const Point &p0, const Point &p1, const Point &p2,
@@ -388,7 +372,45 @@ public:
 
 		return ((r <= 1.f) && (t <= 1.f) && (r + t <= 1.f));
 	}
-	
+
+	bool GetBaryCoordsSoft(const Point *verts, const Point &hitPoint,
+			float *b1, float *b2, const float epsilon = 0.01f) const {
+		const Point &p0 = verts[v[0]];
+		const Point &p1 = verts[v[1]];
+		const Point &p2 = verts[v[2]];
+
+		return GetBaryCoordsSoft(p0, p1, p2, hitPoint, b1, b2, epsilon);
+	}
+
+	static bool GetBaryCoordsSoft(const Point &p0, const Point &p1, const Point &p2,
+			const Point &hitPoint, float *b1, float *b2, const float epsilon = 0.01f) {
+		const Vector u = p1 - p0;
+		const Vector v = p2 - p0;
+		const Vector w = hitPoint - p0;
+
+		const Vector vCrossW = Cross(v, w);
+		const Vector vCrossU = Cross(v, u);
+
+		if (Dot(vCrossW, vCrossU) < 0.f)
+			return false;
+
+		const Vector uCrossW = Cross(u, w);
+		const Vector uCrossV = Cross(u, v);
+
+		if (Dot(uCrossW, uCrossV) < 0.f)
+			return false;
+
+		const float denom = uCrossV.Length();
+		const float r = vCrossW.Length() / denom;
+		const float t = uCrossW.Length() / denom;
+
+		*b1 = r;
+		*b2 = t;
+
+		// Epsilon-softened bounds
+		return ((r >= -epsilon) && (t >= -epsilon) && ((r + t) <= (1.f + epsilon)));
+	}
+
 	
 	static float GetHeight(const float a, const float b, const float c) {
 		// Heron's formula for triangle area
