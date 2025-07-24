@@ -62,12 +62,13 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 		const Vector field = Triangle::ComputeGRINField(
 			hp,
 			scene.worldGrinInfo.beta,
-			scene.worldGrinInfo.gamma);
+			scene.worldGrinInfo.gamma,
+			Point(0.f, 0.f, 0.f));
 
 		// Project the distortion to be tangent to the surface
-		const Vector tangent = field - Dot(field, hitPoint.shadeN) * hitPoint.shadeN;
+		const Vector tangent = field -
+						Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
 
-		// Convert to UV offset using the geometry partial derivatives
 		const float du = Dot(tangent, hitPoint.dpdu) / hitPoint.dpdu.LengthSquared();
 		const float dv = Dot(tangent, hitPoint.dpdv) / hitPoint.dpdv.LengthSquared();
 
@@ -125,9 +126,11 @@ void BSDF::Init(const Scene &scene,
 		const Vector field = Triangle::ComputeGRINField(
 						surfacePoint,
 						scene.worldGrinInfo.beta,
-						scene.worldGrinInfo.gamma);
+						scene.worldGrinInfo.gamma,
+						Point(0.f, 0.f, 0.f));
 
-		const Vector tangent = field - Dot(field, hitPoint.shadeN) * hitPoint.shadeN;
+		const Vector tangent = field -
+						Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
 
 		const float du = Dot(tangent, hitPoint.dpdu) / hitPoint.dpdu.LengthSquared();
 		const float dv = Dot(tangent, hitPoint.dpdv) / hitPoint.dpdv.LengthSquared();
