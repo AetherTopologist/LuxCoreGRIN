@@ -59,22 +59,21 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	
 	// Apply GRIN-based UV distortion if enabled
 	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
-			const Vector field = Triangle::ComputeGRINField(
-					hp,
-					scene.worldGrinInfo.beta,
-					scene.worldGrinInfo.gamma);
+		const Vector field = Triangle::ComputeGRINField(
+			hp,
+			scene.worldGrinInfo.beta,
+			scene.worldGrinInfo.gamma);
 
-			const float distortionFactor = 0.05f;
+		// Project the distortion to be tangent to the surface
+		const Vector tangent = field - Dot(field, hitPoint.shadeN) * hitPoint.shadeN;
 
-			// Project the distortion to be tangent to the surface
-			const Vector tangent = field - Dot(field, hitPoint.shadeN) * hitPoint.shadeN;
+		// Convert to UV offset using the geometry partial derivatives
+		const float du = Dot(tangent, hitPoint.dpdu) / hitPoint.dpdu.LengthSquared();
+		const float dv = Dot(tangent, hitPoint.dpdv) / hitPoint.dpdv.LengthSquared();
 
-			// Convert to UV offset using the geometry partial derivatives
-			const float du = Dot(tangent, hitPoint.dpdu) / hitPoint.dpdu.LengthSquared();
-			const float dv = Dot(tangent, hitPoint.dpdv) / hitPoint.dpdv.LengthSquared();
-
-			hitPoint.defaultUV.u = Clamp(hitPoint.defaultUV.u + distortionFactor * du, 0.f, 1.f);
-			hitPoint.defaultUV.v = Clamp(hitPoint.defaultUV.v + distortionFactor * dv, 0.f, 1.f);
+		const float strength = scene.grinUVDistortionStrength;
+		hitPoint.grinUvDelta.u = strength * du;
+		hitPoint.grinUvDelta.v = strength * dv;
 	}
 
 	// Get the material
@@ -117,9 +116,26 @@ void BSDF::Init(const Scene &scene,
 
 	const Vector fixedDir = Vector(mesh->GetGeometryNormal(hitPoint.localToWorld, triangleIndex));
 	hitPoint.Init(false, false,
-			scene, meshIndex, triangleIndex,
-			surfacePoint, fixedDir,
-			surfacePointBary1, surfacePointBary2, passThroughEvent);
+				scene, meshIndex, triangleIndex,
+				surfacePoint, fixedDir,
+				surfacePointBary1, surfacePointBary2, passThroughEvent);
+
+	// Apply GRIN-based UV distortion if enabled
+	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
+		const Vector field = Triangle::ComputeGRINField(
+						surfacePoint,
+						scene.worldGrinInfo.beta,
+						scene.worldGrinInfo.gamma);
+
+		const Vector tangent = field - Dot(field, hitPoint.shadeN) * hitPoint.shadeN;
+
+		const float du = Dot(tangent, hitPoint.dpdu) / hitPoint.dpdu.LengthSquared();
+		const float dv = Dot(tangent, hitPoint.dpdv) / hitPoint.dpdv.LengthSquared();
+
+		const float strength = scene.grinUVDistortionStrength;
+		hitPoint.grinUvDelta.u = strength * du;
+		hitPoint.grinUvDelta.v = strength * dv;
+	}
 	
 	// Get the material
 	material = sceneObject->GetMaterial();
@@ -170,6 +186,8 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	triangleLightSource = NULL;
 
 	hitPoint.defaultUV = UV(0.f, 0.f);
+	hitPoint.grinUvDelta.u = 0.f;
+	hitPoint.grinUvDelta.v = 0.f;
 
 	CoordinateSystem(Vector(hitPoint.shadeN), &hitPoint.dpdu, &hitPoint.dpdv);
 	hitPoint.dndu = Normal();

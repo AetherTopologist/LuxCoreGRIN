@@ -217,6 +217,8 @@ public:
 	// Parsed GRIN information if default world volume is a GRIN volume
 	WorldGRINInfo worldGrinInfo;
 	MaterialType worldVolumeType;
+	// Strength of GRIN-induced UV distortion
+	float grinUVDistortionStrength;
 
 	Camera *camera;
 

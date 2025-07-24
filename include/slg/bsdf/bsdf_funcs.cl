@@ -128,6 +128,7 @@ OPENCL_FORCE_INLINE void BSDF_InitVolume(
 	bsdf->triangleLightSourceIndex = NULL_INDEX;
 
 	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &bsdf->hitPoint.defaultUV.u);
+	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &bsdf->hitPoint.grinUvDelta.u);
 
 	float3 dpdu, dpdv;
 	CoordinateSystem(geometryN, &dpdu, &dpdv);

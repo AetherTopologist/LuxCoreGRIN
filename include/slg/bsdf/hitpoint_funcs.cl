@@ -46,6 +46,7 @@ OPENCL_FORCE_INLINE void HitPoint_Init(__global HitPoint *hitPoint, const bool t
 	// Interpolate UV coordinates
 	const float2 defaultUV = ExtMesh_GetInterpolateUV(meshIndex, triIndex, b1, b2, 0 EXTMESH_PARAM);
 	VSTORE2F(defaultUV, &hitPoint->defaultUV.u);
+	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &hitPoint->grinUvDelta.u);
 
 	hitPoint->meshIndex = meshIndex;
 	hitPoint->triangleIndex = triIndex;
@@ -87,7 +88,8 @@ OPENCL_FORCE_INLINE void HitPoint_InitDefault(__global HitPoint *hitPoint) {
 	hitPoint->intoObject = true;
 
 	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &hitPoint->defaultUV.u);
-	
+	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &hitPoint->grinUvDelta.u);
+
 	VSTORE3F(MAKE_FLOAT3(0.f, 0.f, 0.f), &hitPoint->dpdu.x);
 	VSTORE3F(MAKE_FLOAT3(0.f, 0.f, 0.f), &hitPoint->dpdv.x);
 	VSTORE3F(MAKE_FLOAT3(0.f, 0.f, 0.f), &hitPoint->dndu.x);
@@ -122,7 +124,7 @@ OPENCL_FORCE_INLINE float2 HitPoint_GetUV(__global const HitPoint *hitPoint, con
 
 	if (meshIndex != NULL_INDEX) {
 		return (dataIndex == 0) ?
-			VLOAD2F(&hitPoint->defaultUV.u) :
+			(VLOAD2F(&hitPoint->defaultUV.u) + VLOAD2F(&hitPoint->grinUvDelta.u)) :
 			ExtMesh_GetInterpolateUV(meshIndex, hitPoint->triangleIndex, hitPoint->triangleBariCoord1, hitPoint->triangleBariCoord2, dataIndex EXTMESH_PARAM);
 	} else
 		return MAKE_FLOAT2(0.f, 0.f);

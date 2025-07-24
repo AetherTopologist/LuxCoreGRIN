@@ -62,6 +62,8 @@ void HitPoint::Init(const bool fixedFromLight, const bool throughShadowTransp,
 
 	// Interpolate UV coordinates
 	defaultUV = mesh->InterpolateTriUV(triangleIndex, b1, b2, 0);
+	grinUvDelta.u = 0.f;
+	grinUvDelta.v = 0.f;
 
 	// Compute geometry differentials (always with the first set of UVs)
 	mesh->GetDifferentials(localToWorld,
@@ -86,4 +88,7 @@ void HitPoint::Init() {
 	fromLight = false;
 	intoObject = true;
 	throughShadowTransparency = false;
+
+	grinUvDelta.u = 0.f;
+	grinUvDelta.v = 0.f;
 }

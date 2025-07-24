@@ -28,6 +28,7 @@ typedef struct {
 	Normal shadeN;
 
 	UV defaultUV;
+	UV grinUvDelta;
 
 	// Note: dpdu and dpdv are orthogonal to shading normal (i.e not geometry normal)
 	Vector dpdu, dpdv;

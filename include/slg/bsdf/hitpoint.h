@@ -54,6 +54,8 @@ typedef struct HitPoint_t {
 
 	// The "main" UV coordinate of the hit point (from UV set 0)
 	luxrays::UV defaultUV;
+	// UV offset caused by GRIN distortion
+	luxrays::UV grinUvDelta;
 
 	// Note: dpdu and dpdv are orthogonal to shading normal (i.e not geometry normal)
 	luxrays::Vector dpdu, dpdv;
@@ -98,7 +100,7 @@ typedef struct HitPoint_t {
 	const luxrays::UV GetUV(const u_int dataIndex) const {
 		if (mesh) {
 			return (dataIndex == 0) ?
-				defaultUV :
+				(defaultUV + grinUvDelta) :
 				mesh->InterpolateTriUV(triangleIndex, triangleBariCoord1, triangleBariCoord2, dataIndex);
 		} else
 			return luxrays::UV();

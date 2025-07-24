@@ -70,6 +70,7 @@ void Scene::Init(const luxrays::Properties *resizePolicyProps) {
 	worldGrinInfo.stepSize = 0.01f;
 	worldGrinInfo.numSteps = 64;
 	worldVolumeType = CLEAR_VOL;
+	grinUVDistortionStrength = 0.05f;
 
 	// Just in case there is an unexpected exception during the scene loading
     camera = NULL;
