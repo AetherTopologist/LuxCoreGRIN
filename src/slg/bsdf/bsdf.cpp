@@ -37,11 +37,24 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	const ExtMesh *mesh = sceneObject->GetExtMesh();
 	mesh->GetLocal2World(ray.time, hitPoint.localToWorld);
 
+	Point hp;
+	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
+			const Triangle *tris = mesh->GetTriangles();
+			const Point *verts = mesh->GetVertices();
+			const Triangle &tri = tris[rayHit.triangleIndex];
+			const float b0 = 1.f - rayHit.b1 - rayHit.b2;
+			const Point lp = b0 * verts[tri.v[0]] + rayHit.b1 * verts[tri.v[1]] + rayHit.b2 * verts[tri.v[2]];
+			hp = hitPoint.localToWorld * lp;
+	} else
+			hp = ray(rayHit.t);
+
 	hitPoint.Init(fixedFromLight, throughShadowTransparency,
-			scene, rayHit.meshIndex, rayHit.triangleIndex,
-			ray(rayHit.t), -ray.d,
-			rayHit.b1, rayHit.b2,
-			passThroughEvent);
+					scene, rayHit.meshIndex, rayHit.triangleIndex,
+					hp, -ray.d,
+					rayHit.b1, rayHit.b2,
+					passThroughEvent);
+
+	//hitPoint.Init(fixedFromLight, throughShadowTransparency, scene, rayHit.meshIndex, rayHit.triangleIndex, ray(rayHit.t), -ray.d, rayHit.b1, rayHit.b2, passThroughEvent);
 	
 	// Get the material
 	material = sceneObject->GetMaterial();

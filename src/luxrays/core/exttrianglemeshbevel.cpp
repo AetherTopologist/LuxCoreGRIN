@@ -496,19 +496,23 @@ bool ExtTriangleMesh::IntersectBevel(const Ray &ray, const RayHit &rayHit,
 
 	//--------------------------------------------------------------------------
 	// Some debug code to render only the BevelCylinder or the BevelBoundingCylinder
-//	continueToTrace = true;
-//	// NOTE: remember to update the bevelCylinders count according the object
-//	for (u_int i = 0; i < 120; ++i) {
-//		const float t = bevelCylinders[i].Intersect(ray, bevelRadius);
-//		//const float t = bevelBoundingCylinders[i].Intersect(ray, bevelRadius);
-//		if ((t > 0.f) && (t < minT)) {
-//			bevelCylinderIndex = i;
-//			minT = t;
-//		}
-//	}
+	//	continueToTrace = true;
+	//	// NOTE: remember to update the bevelCylinders count according the object
+	//	for (u_int i = 0; i < 120; ++i) {
+	//		const float t = bevelCylinders[i].Intersect(ray, bevelRadius);
+	//		//const float t = bevelBoundingCylinders[i].Intersect(ray, bevelRadius);
+	//		if ((t > 0.f) && (t < minT)) {
+	//			bevelCylinderIndex = i;
+	//			minT = t;
+	//		}
+	//	}
 	//--------------------------------------------------------------------------
 
-	const Point p = ray(rayHit.t);
+	const Triangle &tri = tris[rayHit.triangleIndex];
+	const float b0 = 1.f - rayHit.b1 - rayHit.b2;
+	const Point p = b0 * vertices[tri.v[0]] + rayHit.b1 * vertices[tri.v[1]] + rayHit.b2 * vertices[tri.v[2]];
+	//const Point p = ray(rayHit.t);
+
 	u_int currentNode = 0; // Root Node
 	const u_int stopNode = IndexBVHNodeData_GetSkipIndex(bevelBVHArrayNodes[0].nodeData); // Non-existent
 	while (currentNode < stopNode) {
