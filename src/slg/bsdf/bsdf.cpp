@@ -19,6 +19,7 @@
 #include "slg/bsdf/bsdf.h"
 #include "slg/scene/scene.h"
 #include "slg/materials/glass.h"
+#include "luxrays/core/geometry/triangle.h"
 
 using namespace luxrays;
 using namespace slg;
@@ -56,6 +57,26 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 
 	//hitPoint.Init(fixedFromLight, throughShadowTransparency, scene, rayHit.meshIndex, rayHit.triangleIndex, ray(rayHit.t), -ray.d, rayHit.b1, rayHit.b2, passThroughEvent);
 	
+	// Apply GRIN-based UV distortion if enabled
+	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
+			const Vector field = Triangle::ComputeGRINField(
+					hp,
+					scene.worldGrinInfo.beta,
+					scene.worldGrinInfo.gamma);
+
+			const float distortionFactor = 0.05f;
+
+			// Project the distortion to be tangent to the surface
+			const Vector tangent = field - Dot(field, hitPoint.shadeN) * hitPoint.shadeN;
+
+			// Convert to UV offset using the geometry partial derivatives
+			const float du = Dot(tangent, hitPoint.dpdu) / hitPoint.dpdu.LengthSquared();
+			const float dv = Dot(tangent, hitPoint.dpdv) / hitPoint.dpdv.LengthSquared();
+
+			hitPoint.defaultUV.u = Clamp(hitPoint.defaultUV.u + distortionFactor * du, 0.f, 1.f);
+			hitPoint.defaultUV.v = Clamp(hitPoint.defaultUV.v + distortionFactor * dv, 0.f, 1.f);
+	}
+
 	// Get the material
 	material = sceneObject->GetMaterial();
 
