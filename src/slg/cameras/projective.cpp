@@ -23,6 +23,7 @@
 #include "slg/film/film.h"
 #include "slg/core/sdl.h"
 #include "slg/scene/scene.h"
+#include "luxrays/core/geometry/triangle.h"
 
 using namespace std;
 using namespace luxrays;
@@ -193,6 +194,17 @@ void ProjectiveCamera::GenerateRay(const float  time,
 	if (type != ORTHOGRAPHIC)
 		ray->maxt /= ray->d.z;
 	ray->time = time;
+
+	// Apply GRIN-based warping before transforming the ray to world space
+	if (scene.worldGrinInfo.enabled && (scene.worldVolumeType == GRIN_VOL)) {
+		const Vector field = Triangle::ComputeGRINField(
+			ray->o,
+			scene.worldGrinInfo.beta,
+			scene.worldGrinInfo.gamma,
+			Point(0.f, 0.f, 0.f));
+
+		ray->d = Normalize(ray->d + field);
+	}
 
 	if (motionSystem) {
 		*ray = motionSystem->Sample(ray->time) * (camTrans.cameraToWorld * (*ray));
