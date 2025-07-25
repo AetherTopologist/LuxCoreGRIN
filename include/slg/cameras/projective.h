@@ -137,6 +137,9 @@ protected:
 	// Calculated values
 	luxrays::Vector dir, x, y;
 	CameraTransforms camTrans;
+
+	// Pointer to the scene for GRIN-based effects
+	const Scene *scene;
 };
 
 }

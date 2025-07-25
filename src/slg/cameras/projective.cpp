@@ -36,7 +36,8 @@ using namespace slg;
 ProjectiveCamera::ProjectiveCamera(const CameraType type, const float *sw,
 		const luxrays::Point &o, const luxrays::Point &t, const luxrays::Vector &u) :
 		Camera(type), orig(o), target(t), up(Normalize(u)),
-		lensRadius(0.f), focalDistance(10.f), autoFocus(false) {
+		lensRadius(0.f), focalDistance(10.f), autoFocus(false),
+		scene(nullptr) {
 	if (sw) {
 		autoUpdateScreenWindow = false;
 		screenWindow[0] = sw[0];
@@ -53,6 +54,9 @@ ProjectiveCamera::ProjectiveCamera(const CameraType type, const float *sw,
 
 void ProjectiveCamera::UpdateAuto(const Scene *scene) {
 	SLG_LOG("🔥GRIN [ProjectiveCamera::UpdateAuto]");
+	// Store scene pointer for later use (e.g. GRIN warping)
+	this->scene = scene;
+
 	if (autoFocus) {
 		// Save lens radius
 		const float lensR = lensRadius;
@@ -196,14 +200,15 @@ void ProjectiveCamera::GenerateRay(const float  time,
 	ray->time = time;
 
 	// Apply GRIN-based warping before transforming the ray to world space
-	if (scene.worldGrinInfo.enabled && (scene.worldVolumeType == GRIN_VOL)) {
-		const Vector field = Triangle::ComputeGRINField(
-			ray->o,
-			scene.worldGrinInfo.beta,
-			scene.worldGrinInfo.gamma,
-			Point(0.f, 0.f, 0.f));
+	if (this->scene && this->scene->worldGrinInfo.enabled &&
+					(this->scene->worldVolumeType == GRIN_VOL)) {
+			const Vector field = Triangle::ComputeGRINField(
+					ray->o,
+					this->scene->worldGrinInfo.beta,
+					this->scene->worldGrinInfo.gamma,
+					Point(0.f, 0.f, 0.f));
 
-		ray->d = Normalize(ray->d + field);
+			ray->d = Normalize(ray->d + field);
 	}
 
 	if (motionSystem) {
