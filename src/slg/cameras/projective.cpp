@@ -199,14 +199,21 @@ void ProjectiveCamera::GenerateRay(const float  time,
 		ray->maxt /= ray->d.z;
 	ray->time = time;
 
-	// Apply GRIN-based warping before transforming the ray to world space
-	if (this->scene && this->scene->worldGrinInfo.enabled &&
-					(this->scene->worldVolumeType == GRIN_VOL)) {
+	if (motionSystem) {
+			*ray = motionSystem->Sample(ray->time) * (camTrans.cameraToWorld * (*ray));
+			// I need to normalize the direction vector again because the motion
+			// system could include some kind of scale
+			ray->d = Normalize(ray->d);
+	} else
+			*ray = camTrans.cameraToWorld * (*ray);
+
+	// Apply GRIN-based warping after transforming to world space
+	if (scene && scene->worldGrinInfo.enabled && (scene->worldVolumeType == GRIN_VOL)) {
 			const Vector field = Triangle::ComputeGRINField(
 					ray->o,
-					this->scene->worldGrinInfo.beta,
-					this->scene->worldGrinInfo.gamma,
-					Point(0.f, 0.f, 0.f));
+					scene->worldGrinInfo.beta,
+					scene->worldGrinInfo.gamma,
+					scene->worldGrinInfo.center);
 
 			ray->d = Normalize(ray->d + field);
 	}

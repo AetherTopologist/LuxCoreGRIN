@@ -242,14 +242,14 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	Ray ray(*initialRay);
 	// -- Convert Ray to xPRIMEray --
 	xPRIMEray xPRIMEray(
-		initialRay->o,                 // origin
-		initialRay->d,                 // direction
-		luxrays::Point(0.f, 0.f, 0.f), // center of curvature (can customize)
-		1.0f,                          // beta (GRIN intensity scalar)
-		luxrays::Vector(1.f,1.f,1.f),  // gamma (exponents per axis)
-		xPRIMErayType::POWER,          // curvature model
-		initialRay->mint,
-		initialRay->maxt
+			initialRay->o,                 // origin
+			initialRay->d,                 // direction
+			luxrays::Point(0.f, 0.f, 0.f), // center of curvature (can customize)
+			1.0f,                          // beta (GRIN intensity scalar)
+			luxrays::Vector(1.f,1.f,1.f),  // gamma (exponents per axis)
+			xPRIMErayType::POWER,          // curvature model
+			initialRay->mint,
+			initialRay->maxt
 	);
 	
 	// 🔥GRIN
@@ -309,7 +309,8 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
                const float beta, const luxrays::Vector &gamma,
-               const float stepSize, const int numSteps) const {
+               const luxrays::Point &grinCenter,
+			   const float stepSize, const int numSteps) const {
 	assert (initialized);
 
 	rayHit->t = initialRay->maxt;
@@ -320,17 +321,19 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 	Ray ray(*initialRay);
 	// -- Convert Ray to xPRIMEray --
 	xPRIMEray xPRIMEray(
-		initialRay->o,                 // origin
-		initialRay->d,                 // direction
-		luxrays::Point(0.f, 0.f, 0.f), // center of curvature (can customize)
-		beta,                          // beta (GRIN intensity scalar)
-		gamma,						   // gamma (exponents per axis)
-		xPRIMErayType::POWER,          // curvature model
+		initialRay->o,              // origin
+		initialRay->d,				// direction
+		grinCenter,					// center of curvature (can customize)
+		beta,                       // beta (GRIN intensity scalar)
+		gamma,						// gamma (exponents per axis)
+		xPRIMErayType::POWER,       // curvature model
 		initialRay->mint,
 		initialRay->maxt,
 		stepSize,
 		numSteps
 	);
+
+	const BBox sweptBBox = ComputeSweptBBox(xPRIMEray);
 
 	// 🔥GRIN
 	//std::cout <<  "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt << std::endl;
@@ -354,9 +357,8 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[1]);
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
-
 			// 🔥GRIN Straight-Line Hit Operation
-			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
+			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, &t, &b1, &b2)) {
 			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
@@ -370,15 +372,16 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			}
 			++currentNode;
 		} else {
-			// It is a node, check the bounding box
-			if (BBox::IntersectP(ray,
-					*reinterpret_cast<const Point *>(&node.bvhNode.bboxMin[0]),
-					*reinterpret_cast<const Point *>(&node.bvhNode.bboxMax[0])))
-				++currentNode;
+			// It is a node, check against the curved-ray envelope
+			const BBox nodeBBox(
+							*reinterpret_cast<const Point *>(&node.bvhNode.bboxMin[0]),
+							*reinterpret_cast<const Point *>(&node.bvhNode.bboxMax[0]));
+			if (sweptBBox.Overlaps(nodeBBox))
+					++currentNode;
 			else {
-				// I don't need to use BVHNodeData_GetSkipIndex() here because
-				// I already know the leaf flag is 0
-				currentNode = nodeData;
+					// I don't need to use BVHNodeData_GetSkipIndex() here because
+					// I already know the leaf flag is 0
+					currentNode = nodeData;
 			}
 		}
 	}

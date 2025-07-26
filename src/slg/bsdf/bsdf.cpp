@@ -60,10 +60,10 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	// Apply GRIN-based UV distortion if enabled
 	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
 		const Vector field = Triangle::ComputeGRINField(
-			hp,
-			scene.worldGrinInfo.beta,
-			scene.worldGrinInfo.gamma,
-			Point(0.f, 0.f, 0.f));
+				hp,
+				scene.worldGrinInfo.beta,
+				scene.worldGrinInfo.gamma,
+				scene.worldGrinInfo.center);
 
 		// Project the distortion to be tangent to the surface
 		const Vector tangent = field -
@@ -124,10 +124,10 @@ void BSDF::Init(const Scene &scene,
 	// Apply GRIN-based UV distortion if enabled
 	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
 		const Vector field = Triangle::ComputeGRINField(
-						surfacePoint,
-						scene.worldGrinInfo.beta,
-						scene.worldGrinInfo.gamma,
-						Point(0.f, 0.f, 0.f));
+								surfacePoint,
+								scene.worldGrinInfo.beta,
+								scene.worldGrinInfo.gamma,
+								scene.worldGrinInfo.center);
 
 		const Vector tangent = field -
 						Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);

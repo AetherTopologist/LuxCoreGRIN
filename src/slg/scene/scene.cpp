@@ -67,6 +67,7 @@ void Scene::Init(const luxrays::Properties *resizePolicyProps) {
 	defaultWorldVolume = NULL;
 	worldGrinInfo.enabled = false;
 	worldGrinInfo.volume = NULL;
+	worldGrinInfo.center = Point(0.f, 0.f, 0.f);
 	worldGrinInfo.stepSize = 0.01f;
 	worldGrinInfo.numSteps = 64;
 	worldVolumeType = CLEAR_VOL;
@@ -597,8 +598,9 @@ bool Scene::Intersect(IntersectionDevice *device,
 		bool hit;
 		if ((worldVolumeType == GRIN_VOL) && worldGrinInfo.enabled)
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-					worldGrinInfo.beta, worldGrinInfo.gamma,
-					worldGrinInfo.stepSize, worldGrinInfo.numSteps);
+							worldGrinInfo.beta, worldGrinInfo.gamma,
+							worldGrinInfo.center,
+							worldGrinInfo.stepSize, worldGrinInfo.numSteps);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
@@ -745,8 +747,9 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 	for (;;) {
 		//bool hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit, worldGrinInfo.beta, worldGrinInfo.gamma);
 		bool hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-						worldGrinInfo.beta, worldGrinInfo.gamma,
-						worldGrinInfo.stepSize, worldGrinInfo.numSteps);
+									worldGrinInfo.beta, worldGrinInfo.gamma,
+									worldGrinInfo.center,
+									worldGrinInfo.stepSize, worldGrinInfo.numSteps);
 
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();

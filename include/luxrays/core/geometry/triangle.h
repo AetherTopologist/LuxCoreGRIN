@@ -160,14 +160,15 @@ public:
 	}
 
 	static bool RK4_GRINIntersect(
-		const xPRIMEray &ray,
-		const Point &p0,
-		const Point &p1,
-		const Point &p2,
-		float *tHit,
-		Point *rk4Hit,
-		float *b1,
-		float *b2) {
+			const xPRIMEray &ray,
+			const Point &p0,
+			const Point &p1,
+			const Point &p2,
+			const Point &grinCenter,
+			float *tHit,
+			Point *rk4Hit,
+			float *b1,
+			float *b2) {
 
 		// Triangle plane setup
 		const Vector edge1 = p1 - p0;
@@ -177,8 +178,6 @@ public:
 		// RK4 setup
 		const float stepSize = ray.stepSize;
 		const int maxSteps = ray.numSteps;
-
-		const Point GRINCenter = Point(0.f, 0.f, 0.f);
 
 		Point pos = ray.origin;
 		Vector dir = ray.direction;
@@ -190,10 +189,10 @@ public:
 
 		for (int i = 0; i < maxSteps; ++i) {
 			// Compute GRIN curvature at current position
-			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, GRINCenter);
-			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma, GRINCenter);
-			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma, GRINCenter);
-			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, GRINCenter);
+			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter);
+			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma, grinCenter);
+			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma, grinCenter);
+			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, grinCenter);
 
 			// RK4 update
 			dir += (stepSize / 6.f) * (k1 + 2.f * k2 + 2.f * k3 + k4);
@@ -225,6 +224,7 @@ public:
 		const Point &p0,
 		const Point &p1,
 		const Point &p2,
+		const Point &grinCenter,
 		float *tHit,
 		float *b1,
 		float *b2) {
@@ -250,8 +250,8 @@ public:
 		Point rk4Hit;
 		float tRK4;
 
-		if (!RK4_GRINIntersect(ray, p0, p1, p2, &tRK4, &rk4Hit, b1, b2))
-			return false;
+		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, &tRK4, &rk4Hit, b1, b2))
+						return false;
 
 		*tHit = tRK4;
 		return true;

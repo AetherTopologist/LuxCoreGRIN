@@ -58,11 +58,11 @@ public:
 	// accelerators that don't override this method still compile.
 	//virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const {return Intersect(ray, hit); }
 	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,
-					const float beta, const luxrays::Vector &gamma,
-					const float stepSize, const int numSteps) const {
-					return Intersect(ray, hit); // <== fallback behavior
+									const float beta, const luxrays::Vector &gamma,
+									const luxrays::Point &grinCenter,
+									const float stepSize, const int numSteps) const {
+									return Intersect(ray, hit); // <== fallback behavior
 	}
-
 
 	static std::string AcceleratorType2String(const AcceleratorType type);
 	static AcceleratorType String2AcceleratorType(const std::string &type);

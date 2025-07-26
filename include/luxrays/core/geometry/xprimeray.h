@@ -4,6 +4,8 @@
 
 #include "luxrays/core/geometry/point.h"
 #include "luxrays/core/geometry/vector.h"
+#include "luxrays/core/geometry/bbox.h"
+#include "luxrays/core/geometry/triangle.h"
 
 namespace luxrays {
 
@@ -48,12 +50,33 @@ public:
 	// Default constructor
 	xPRIMEray()
 		: origin(Point()), direction(Vector(0, 0, 1)),
-		  center(Point()), beta(2.f),
-		  gamma(Vector(1.f, 1.f, 1.6f)),
-		  type(xPRIMErayType::POWER), mint(0.0001f), maxt(1e30f),
-		  stepSize(0.01f), numSteps(64) { }
+			center(Point()), beta(2.f),
+			gamma(Vector(1.f, 1.f, 1.6f)),
+			type(xPRIMErayType::POWER), mint(0.0001f), maxt(1e30f),
+			stepSize(0.01f), numSteps(64) { }
 
 };
+
+//------------------------------------------------------------------------------
+// Utility helpers
+//------------------------------------------------------------------------------
+
+inline Point EvaluateCurvePoint(const xPRIMEray &ray, const float t) {
+    return ray.origin + ray.beta * Vector(
+            ray.direction.x * std::pow(t, ray.gamma.x),
+            ray.direction.y * std::pow(t, ray.gamma.y),
+            ray.direction.z * std::pow(t, ray.gamma.z));
+}
+
+inline BBox ComputeSweptBBox(const xPRIMEray &ray, const int steps = 16) {
+    BBox bbox(EvaluateCurvePoint(ray, ray.mint));
+    const float step = (ray.maxt - ray.mint) / static_cast<float>(steps);
+    for (int i = 1; i <= steps; ++i) {
+        const float t = ray.mint + step * i;
+        bbox = Union(bbox, EvaluateCurvePoint(ray, t));
+    }
+    return bbox;
+}
 
 } // namespace luxrays
 

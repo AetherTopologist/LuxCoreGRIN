@@ -106,7 +106,8 @@ struct WorldGRINInfo {
        luxrays::Spectrum iorMin;
        luxrays::Spectrum iorMax;
        luxrays::Vector stretch;
-       std::string profile;
+       luxrays::Point center;
+	   std::string profile;
        float beta = 0.f;
        luxrays::Vector gamma;
        float stepSize = 0.01f;
