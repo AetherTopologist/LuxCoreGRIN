@@ -333,7 +333,10 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 		numSteps
 	);
 
-	const BBox sweptBBox = ComputeSweptBBox(xPRIMEray);
+	// Use a scaled step count when computing the curved-ray envelope to
+	// capture sharper bends for long rays.
+	const int envelopeSteps = xPRIMEray.numSteps * 2;
+	const BBox sweptBBox = ComputeSweptBBox(xPRIMEray, envelopeSteps);
 
 	// 🔥GRIN
 	//std::cout <<  "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt << std::endl;
@@ -374,14 +377,14 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 		} else {
 			// It is a node, check against the curved-ray envelope
 			const BBox nodeBBox(
-							*reinterpret_cast<const Point *>(&node.bvhNode.bboxMin[0]),
-							*reinterpret_cast<const Point *>(&node.bvhNode.bboxMax[0]));
+						*reinterpret_cast<const Point *>(&node.bvhNode.bboxMin[0]),
+						*reinterpret_cast<const Point *>(&node.bvhNode.bboxMax[0]));
 			if (sweptBBox.Overlaps(nodeBBox))
-					++currentNode;
+				++currentNode;
 			else {
-					// I don't need to use BVHNodeData_GetSkipIndex() here because
-					// I already know the leaf flag is 0
-					currentNode = nodeData;
+				// I don't need to use BVHNodeData_GetSkipIndex() here because
+				// I already know the leaf flag is 0
+				currentNode = nodeData;
 			}
 		}
 	}

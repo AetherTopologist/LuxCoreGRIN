@@ -6,6 +6,7 @@
 #include "luxrays/core/geometry/vector.h"
 #include "luxrays/core/geometry/bbox.h"
 #include "luxrays/core/geometry/triangle.h"
+#include <algorithm>
 
 namespace luxrays {
 
@@ -54,9 +55,8 @@ public:
 			gamma(Vector(1.f, 1.f, 1.6f)),
 			type(xPRIMErayType::POWER), mint(0.0001f), maxt(1e30f),
 			stepSize(0.01f), numSteps(64) { }
-
+			
 };
-
 //------------------------------------------------------------------------------
 // Utility helpers
 //------------------------------------------------------------------------------
@@ -68,11 +68,19 @@ inline Point EvaluateCurvePoint(const xPRIMEray &ray, const float t) {
             ray.direction.z * std::pow(t, ray.gamma.z));
 }
 
-inline BBox ComputeSweptBBox(const xPRIMEray &ray, const int steps = 16) {
+inline BBox ComputeSweptBBox(const xPRIMEray &ray, int steps = -1,
+                             const float stepScale = 1.f) {
+    // Allow callers to provide a custom number of steps. When a negative value
+    // is supplied, fall back to the ray's integration count.
+    if (steps <= 0)
+        steps = ray.numSteps;
+
+    steps = std::max(1, static_cast<int>(std::ceil(stepScale * steps)));
+
     BBox bbox(EvaluateCurvePoint(ray, ray.mint));
-    const float step = (ray.maxt - ray.mint) / static_cast<float>(steps);
+    const float dt = (ray.maxt - ray.mint) / static_cast<float>(steps);
     for (int i = 1; i <= steps; ++i) {
-        const float t = ray.mint + step * i;
+        const float t = ray.mint + dt * i;
         bbox = Union(bbox, EvaluateCurvePoint(ray, t));
     }
     return bbox;
