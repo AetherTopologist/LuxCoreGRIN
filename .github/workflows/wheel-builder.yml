@@ -290,6 +290,8 @@ jobs:
             CONAN_PRESET
             M4
           CIBW_BEFORE_ALL_LINUX: |
+            set -ex
+
             # Install toolchain and required Perl modules
             apt-get update
             apt-get install -y ccache perl libdigest-sha-perl libipc-cmd-perl wget
@@ -302,15 +304,16 @@ jobs:
             source miniconda3/bin/activate
             conda init --all
             conda install gh --channel conda-forge -y
-            echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+            echo "$GH_TOKEN" | gh auth login --with-token
 
             # Manylinux_2_34 compatibility (for future use)
-            if [[ ${{ env.GLIBC_VERSION }} != 2_28 ]]; then
+            if [ "$GLIBC_VERSION" != "2_28" ]; then
               apt-get install -y libfindbin-libs-perl
             fi
 
             # Install dependencies
             pip install conan && make deps
+
 
           CIBW_BEFORE_ALL_MACOS: |
             pip install conan && make deps
