@@ -290,14 +290,11 @@ jobs:
             CONAN_PRESET
             M4
           CIBW_BEFORE_ALL_LINUX: |
-            # Install toolchain (gcc, ccache...)
-            dnf install -y epel-release
-            dnf install -y almalinux-release-devel
-            dnf install -y ccache
-            dnf install -y perl-IPC-Cmd perl-Digest-SHA
+            # Install toolchain and required Perl modules
+            apt-get update
+            apt-get install -y ccache perl libdigest-sha-perl libipc-cmd-perl wget
 
             # Install gh (via conda)
-            dnf install -y wget
             mkdir -p miniconda3
             wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda3/miniconda.sh
             bash miniconda3/miniconda.sh -b -u -p miniconda3
@@ -309,7 +306,7 @@ jobs:
 
             # Manylinux_2_34 compatibility (for future use)
             if [[ ${{ env.GLIBC_VERSION }} != 2_28 ]]; then
-              dnf install -y perl-FindBin perl-lib
+              apt-get install -y libfindbin-libs-perl
             fi
 
             # Install dependencies
