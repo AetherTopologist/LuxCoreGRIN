@@ -30,10 +30,11 @@ namespace slg {
 class GRINVolume : public Volume {
 public:
 	GRINVolume(const Texture *iorTex, const Texture *emiTex, const Texture *a,
-			const luxrays::Spectrum &minIor, const luxrays::Spectrum &maxIor,
-			const luxrays::Vector &stretchVec, const std::string &profileType,
-			const float beta, const Vector &gamma,
-			const float stepSize, const u_int numSteps);
+					const float iorInner, const float iorOuter,
+					const float rInner, const float rOuter,
+					const std::string &profileType,
+					const float beta, const Vector &gamma,
+					const float stepSize, const u_int numSteps);
 
 	virtual float Scatter(const luxrays::Ray &ray, const float u, const bool scatteredStart,
 		luxrays::Spectrum *connectionThroughput, luxrays::Spectrum *connectionEmission) const;
@@ -63,23 +64,25 @@ public:
 
 	const Texture *GetSigmaA() const { return sigmaA; }
 
-	luxrays::Spectrum iorMin;
-	luxrays::Spectrum iorMax;
-	luxrays::Vector stretch; // e.g., Vector(1.0f, 2.0f, 1.0f)
+	float iorInner;
+	float iorOuter;
 	std::string profile; // "radial", "axial", "shell", etc.
 	float beta;
 	luxrays::Vector gamma;
+	float rInner;
+	float rOuter;
 	float stepSize;
 	u_int numSteps;
 
-	const luxrays::Spectrum &GetIORMin() const { return iorMin; }
-	const luxrays::Spectrum &GetIORMax() const { return iorMax; }
-	const luxrays::Vector &GetStretch() const { return stretch; }
+	float GetIORInner() const { return iorInner; }
+	float GetIOROuter() const { return iorOuter; }
 	const std::string &GetProfile() const { return profile; }
 	//const std::string &GetBeta() const { return ; }
 	const float &GetBeta() const { return beta; }
 	//const std::string &GetGamma() const { return gamma; }
 	const luxrays::Vector &GetGamma() const { return gamma; }
+	float GetRInner() const { return rInner; }
+	float GetROuter() const { return rOuter; }
 	float GetStepSize() const { return stepSize; }
 	u_int GetNumSteps() const { return numSteps; }
 

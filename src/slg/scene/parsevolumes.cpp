@@ -91,18 +91,18 @@ void Scene::ParseVolumes(const Properties &props) {
 					worldGrinInfo.enabled = true;
 					SDL_LOG("World/Scene GRIN Volume Enabled.");
 					worldGrinInfo.volume = gv;
-					worldGrinInfo.iorMin = gv->GetIORMin();
-					SDL_LOG("worldGrinInfo.iorMin = " << worldGrinInfo.iorMin);
-					worldGrinInfo.iorMax = gv->GetIORMax();
-					SDL_LOG("worldGrinInfo.iorMax = " << worldGrinInfo.iorMax);
-					worldGrinInfo.stretch = gv->GetStretch();
-					SDL_LOG("worldGrinInfo.stretch = " << worldGrinInfo.stretch);
+					worldGrinInfo.iorInner = gv->GetIORInner();
+					SDL_LOG("worldGrinInfo.iorInner = " << worldGrinInfo.iorInner);
+					worldGrinInfo.iorOuter = gv->GetIOROuter();
+					SDL_LOG("worldGrinInfo.iorOuter = " << worldGrinInfo.iorOuter);
 					worldGrinInfo.profile = gv->GetProfile();
 					SDL_LOG("worldGrinInfo.profile = " << worldGrinInfo.profile);
 					worldGrinInfo.beta = gv->GetBeta();
 					SDL_LOG("worldGrinInfo.beta = " << worldGrinInfo.beta);
 					worldGrinInfo.gamma = gv->GetGamma();
 					SDL_LOG("worldGrinInfo.gamma = " << worldGrinInfo.gamma);
+					worldGrinInfo.rInner = gv->GetRInner();
+					worldGrinInfo.rOuter = gv->GetROuter();
 					worldGrinInfo.stepSize = gv->GetStepSize();
 					SDL_LOG("worldGrinInfo.stepSize = " << worldGrinInfo.stepSize);
 					worldGrinInfo.numSteps = gv->GetNumSteps();
@@ -134,18 +134,18 @@ void Scene::ParseVolumes(const Properties &props) {
 				worldGrinInfo.enabled = true;
 				SDL_LOG("World/Scene GRIN Volume Enabled.");
 				worldGrinInfo.volume = gv;
-				worldGrinInfo.iorMin = gv->GetIORMin();
-				SDL_LOG("worldGrinInfo.iorMin = " << worldGrinInfo.iorMin);
-				worldGrinInfo.iorMax = gv->GetIORMax();
-				SDL_LOG("worldGrinInfo.iorMax = " << worldGrinInfo.iorMax);
-				worldGrinInfo.stretch = gv->GetStretch();
-				SDL_LOG("worldGrinInfo.stretch = " << worldGrinInfo.stretch);
+				worldGrinInfo.iorInner = gv->GetIORInner();
+				SDL_LOG("worldGrinInfo.iorInner = " << worldGrinInfo.iorInner);
+				worldGrinInfo.iorOuter = gv->GetIOROuter();
+				SDL_LOG("worldGrinInfo.iorOuter = " << worldGrinInfo.iorOuter);
 				worldGrinInfo.profile = gv->GetProfile();
 				SDL_LOG("worldGrinInfo.profile = " << worldGrinInfo.profile);
 				worldGrinInfo.beta = gv->GetBeta();
 				SDL_LOG("worldGrinInfo.beta = " << worldGrinInfo.beta);
 				worldGrinInfo.gamma = gv->GetGamma();
 				SDL_LOG("worldGrinInfo.gamma = " << worldGrinInfo.gamma);
+				worldGrinInfo.rInner = gv->GetRInner();
+				worldGrinInfo.rOuter = gv->GetROuter();
 				worldGrinInfo.stepSize = gv->GetStepSize();
 				SDL_LOG("worldGrinInfo.stepSize = " << worldGrinInfo.stepSize);
 				worldGrinInfo.numSteps = gv->GetNumSteps();
@@ -202,24 +202,28 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 
 		const Spectrum iorMin = props.Get(Property(propName + ".grin.iormin")(1.0f)).Get<Spectrum>();
 		const Spectrum iorMax = props.Get(Property(propName + ".grin.iormax")(1.5f)).Get<Spectrum>();
-		const Vector stretch = props.Get(Property(propName + ".grin.stretch")(1.f, 1.f, 1.f)).Get<Vector>();
-		const string profile = props.Get(Property(propName + ".grin.profile")("radial")).Get<string>();
-		const float beta = props.Get(Property(propName + ".grin.beta")(1.0f)).Get<float>();
+		const float rMin = props.Get(Property(propName + ".grin.rmin")(0.0001f)).Get<float>();
+		const float rMax = props.Get(Property(propName + ".grin.rmax")(1.f)).Get<float>();
 		const Vector gamma = props.Get(Property(propName + ".grin.gamma")(1.f, 1.f, 1.f)).Get<Vector>();
+		const float beta = props.Get(Property(propName + ".grin.beta")(1.0f)).Get<float>();
+		const string profile = props.Get(Property(propName + ".grin.profile")("power")).Get<string>();
 		const float stepSize = props.Get(Property(propName + ".grin.stepsize")(0.01f)).Get<float>();
 		const u_int numSteps = props.Get(Property(propName + ".grin.numsteps")(64u)).Get<u_int>();
 
 		SLG_LOG("🔥 [parsevolumes] Created GRIN volume: " << volName);
 		SLG_LOG("🔥 [parsevolumes] GRIN IOR Range: " << iorMin.c[0] << " - " << iorMax.c[0]);
-		SLG_LOG("🔥 [parsevolumes] GRIN Stretch: (" << stretch.x << ", " << stretch.y << ", " << stretch.z << ")");
+		SLG_LOG("🔥 [parsevolumes] GRIN IOR Range: " << rMin << " - " << rMax);
 		SLG_LOG("🔥 [parsevolumes] GRIN Profile: " << profile);
 		SLG_LOG("🔥 [parsevolumes] GRIN Beta: " << beta);
 		SLG_LOG("🔥 [parsevolumes] GRIN Gamma: (" << gamma.x << ", " << gamma.y << ", " << gamma.z << ")");
 		SLG_LOG("🔥 [parsevolumes] GRIN stepSize: (" << stepSize);
 		SLG_LOG("🔥 [parsevolumes] GRIN numSteps: (" << numSteps);
 
-		// TODO add GRINVolume additional properties for beta gamma
-		vol = new GRINVolume(iorTex, emissionTex, absorption, iorMin, iorMax, stretch, profile, beta, gamma, stepSize, numSteps);
+		vol = new GRINVolume(iorTex, emissionTex, absorption,
+								iorMin.c[0], iorMax.c[0],
+								rMin, rMax,
+								profile, beta, gamma,
+								stepSize, numSteps);
 	} else
 		throw runtime_error("Unknown volume type: " + volType);
 

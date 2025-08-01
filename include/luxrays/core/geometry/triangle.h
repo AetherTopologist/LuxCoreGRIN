@@ -103,18 +103,29 @@ public:
 		const Point &pos,
 		const float beta,
 		const Vector &gamma,
-		const Point &GRINCenter) {
+		const Point &GRINCenter,
+		const float rInner,
+		const float rOuter) {
 
 		const Vector offset = pos - GRINCenter;
-		const float rMin = 1e-4f;
 		const float r = offset.Length();
-		const float rClamped = std::max(r, rMin);
+
+		// Straight-line region inside rInner
+		if (r < rInner)
+			return Vector(0.f, 0.f, 0.f);
+
+		// Normalize r into t ∈ [0, 1]
+		const float t = std::clamp((r - rInner) / (rOuter - rInner), 0.f, 1.f);
+		const float t_x = std::pow(t, gamma.x);
+		const float t_y = std::pow(t, gamma.y);
+		const float t_z = std::pow(t, gamma.z);
 
 		return Vector(
-			beta * std::pow(rClamped, gamma.x) * offset.x / rClamped,
-			beta * std::pow(rClamped, gamma.y) * offset.y / rClamped,
-			beta * std::pow(rClamped, gamma.z) * offset.z / rClamped);
+			beta * t_x * offset.x / r,
+			beta * t_y * offset.y / r,
+			beta * t_z * offset.z / r);
 	}
+
 
 	static bool IntersectINSIGHT(
 		const xPRIMEray &ray,
@@ -160,20 +171,29 @@ public:
 	}
 
 	static bool RK4_GRINIntersect(
-			const xPRIMEray &ray,
-			const Point &p0,
-			const Point &p1,
-			const Point &p2,
-			const Point &grinCenter,
-			float *tHit,
-			Point *rk4Hit,
-			float *b1,
-			float *b2) {
+				const xPRIMEray &ray,
+				const Point &p0,
+				const Point &p1,
+				const Point &p2,
+				const Point &grinCenter,
+				const float rInner,
+				const float rOuter,
+				float *tHit,
+				Point *rk4Hit,
+				float *b1,
+				float *b2) {
 
 		// Triangle plane setup
 		const Vector edge1 = p1 - p0;
 		const Vector edge2 = p2 - p0;
 		const Vector N = Normalize(Cross(edge1, edge2));
+
+		// Optional INSIGHT straight-line shortcut
+		const float r0 = (ray.origin - grinCenter).Length();
+		if (r0 < rInner) {
+			Ray linearRay(ray.origin, ray.direction, ray.mint, ray.maxt);
+			return Intersect(linearRay, p0, p1, p2, tHit, b1, b2);
+		}
 
 		// RK4 setup
 		const float stepSize = ray.stepSize;
@@ -189,11 +209,10 @@ public:
 
 		for (int i = 0; i < maxSteps; ++i) {
 			// Compute GRIN curvature at current position
-			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter);
-			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma, grinCenter);
-			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma, grinCenter);
-			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, grinCenter);
-
+			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter, rInner, rOuter);
+			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma, grinCenter, rInner, rOuter);
+			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma, grinCenter, rInner, rOuter);
+			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, grinCenter, rInner, rOuter);
 			// RK4 update
 			dir += (stepSize / 6.f) * (k1 + 2.f * k2 + 2.f * k3 + k4);
 			pos += stepSize * dir;
@@ -220,14 +239,16 @@ public:
 
 	// 🔥GRIN Curved Path Additions 
 	static bool xPRIMEIntersect(
-		const xPRIMEray &ray,
-		const Point &p0,
-		const Point &p1,
-		const Point &p2,
-		const Point &grinCenter,
-		float *tHit,
-		float *b1,
-		float *b2) {
+			const xPRIMEray &ray,
+			const Point &p0,
+			const Point &p1,
+			const Point &p2,
+			const Point &grinCenter,
+			const float rInner,
+			const float rOuter,
+			float *tHit,
+			float *b1,
+			float *b2) {
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;
@@ -250,8 +271,8 @@ public:
 		Point rk4Hit;
 		float tRK4;
 
-		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, &tRK4, &rk4Hit, b1, b2))
-						return false;
+		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter, &tRK4, &rk4Hit, b1, b2))
+			return false;
 
 		*tHit = tRK4;
 		return true;

@@ -103,14 +103,16 @@ struct GRINRayContext {
 struct WorldGRINInfo {
        bool enabled = false;
        const GRINVolume *volume = nullptr;
-       luxrays::Spectrum iorMin;
-       luxrays::Spectrum iorMax;
-       luxrays::Vector stretch;
+       float iorInner;
+       float iorOuter;
+	   luxrays::Vector stretch;
        luxrays::Point center;
 	   std::string profile;
        float beta = 0.f;
        luxrays::Vector gamma;
-       float stepSize = 0.01f;
+       float rInner = 1e-4f;
+       float rOuter = 1.f;
+	   float stepSize = 0.01f;
        int numSteps = 64;
 };
 

@@ -29,13 +29,15 @@ using namespace slg;
 // GRINVolume
 //------------------------------------------------------------------------------
 GRINVolume::GRINVolume(const Texture *iorTex, const Texture *emiTex, const Texture *a,
-                       const luxrays::Spectrum &minIor, const luxrays::Spectrum &maxIor,
-                       const luxrays::Vector &stretchVec, const std::string &profileType,
+                       const float iorInnerVal, const float iorOuterVal,
+                       const float rInnerVal, const float rOuterVal,
+                       const std::string &profileType,
                        const float beta, const Vector &gamma,
                        const float ss, const u_int ns)
 
-    : Volume(iorTex, emiTex), iorMin(minIor), iorMax(maxIor),
-      stretch(stretchVec), profile(profileType), beta(beta), gamma(gamma),
+    : Volume(iorTex, emiTex), iorInner(iorInnerVal), iorOuter(iorOuterVal),
+      profile(profileType), beta(beta), gamma(gamma),
+      rInner(rInnerVal), rOuter(rOuterVal),
       stepSize(ss), numSteps(ns) {
     sigmaA = a;
 }
@@ -133,10 +135,15 @@ Properties GRINVolume::ToProperties() const {
 	props.Set(Property("scene.volumes." + name + ".type")("grin"));
 	props.Set(Property("scene.volumes." + name + ".absorption")(sigmaA->GetSDLValue()));
 	props.Set(Volume::ToProperties());
+	props.Set(Property("scene.volumes." + name + ".grin.iormin")(iorInner));
+	props.Set(Property("scene.volumes." + name + ".grin.iormax")(iorOuter));
+	props.Set(Property("scene.volumes." + name + ".grin.rmin")(rInner));
+	props.Set(Property("scene.volumes." + name + ".grin.rmax")(rOuter));
 	props.Set(Property("scene.volumes." + name + ".grin.beta")(beta));
 	props.Set(Property("scene.volumes." + name + ".grin.gamma")(gamma));
 	props.Set(Property("scene.volumes." + name + ".grin.stepsize")(stepSize));
 	props.Set(Property("scene.volumes." + name + ".grin.numsteps")(numSteps));
-
+	props.Set(Property("scene.volumes." + name + ".grin.profile")(profile));
+	
 	return props;
 }
