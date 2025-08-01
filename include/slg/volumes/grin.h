@@ -77,9 +77,7 @@ public:
 	float GetIORInner() const { return iorInner; }
 	float GetIOROuter() const { return iorOuter; }
 	const std::string &GetProfile() const { return profile; }
-	//const std::string &GetBeta() const { return ; }
 	const float &GetBeta() const { return beta; }
-	//const std::string &GetGamma() const { return gamma; }
 	const luxrays::Vector &GetGamma() const { return gamma; }
 	float GetRInner() const { return rInner; }
 	float GetROuter() const { return rOuter; }

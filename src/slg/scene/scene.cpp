@@ -591,10 +591,6 @@ bool Scene::Intersect(IntersectionDevice *device,
 	//SLG_LOG("🔥 [Scene::Intersect] Entry");
 
 	for (;;) {
-		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_EMBREE)->Intersect(ray, rayHit);
-		//bool hit = device ? device->TraceRay(ray, rayHit) : dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-		//bool hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-		//bool hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit, worldGrinInfo.beta, worldGrinInfo.gamma);
 		bool hit;
 		if ((worldVolumeType == GRIN_VOL) && worldGrinInfo.enabled)
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
@@ -604,6 +600,7 @@ bool Scene::Intersect(IntersectionDevice *device,
 											worldGrinInfo.stepSize, worldGrinInfo.numSteps);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+		
 
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();

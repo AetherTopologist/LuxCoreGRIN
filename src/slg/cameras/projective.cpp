@@ -210,10 +210,12 @@ void ProjectiveCamera::GenerateRay(const float  time,
 	// Apply GRIN-based warping after transforming to world space
 	if (scene && scene->worldGrinInfo.enabled && (scene->worldVolumeType == GRIN_VOL)) {
 			const Vector field = Triangle::ComputeGRINField(
-					ray->o,
-					scene->worldGrinInfo.beta,
-					scene->worldGrinInfo.gamma,
-					scene->worldGrinInfo.center);
+						ray->o,
+						scene->worldGrinInfo.beta,
+						scene->worldGrinInfo.gamma,
+						scene->worldGrinInfo.center,
+						scene->worldGrinInfo.rInner,
+						scene->worldGrinInfo.rOuter);
 
 			ray->d = Normalize(ray->d + field);
 	}

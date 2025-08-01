@@ -62,7 +62,7 @@ SET(LUXCORE_VERSION "${_DEFAULT_LUXCORE_VERSION}" CACHE STRING "LuxCore version"
 # Dependencies check
 STRING(JSON REQUIRED_LUXCOREDEPS_VERSION GET "${settings_json}" Dependencies release)
 MESSAGE(STATUS "LuxCore Dependencies - Required version: ${REQUIRED_LUXCOREDEPS_VERSION}")
-IF(NOT ${REQUIRED_LUXCOREDEPS_VERSION} VERSION_EQUAL ${LUXCOREDEPS_VERSION})
+IF(NOT "${REQUIRED_LUXCOREDEPS_VERSION}" VERSION_EQUAL "${LUXCOREDEPS_VERSION}")
   MESSAGE(WARNING "LuxCore Dependencies - Provided version: ${LUXCOREDEPS_VERSION}")
   MESSAGE(WARNING "\
 LuxCore Dependencies - Provided version does not match required version!\n\

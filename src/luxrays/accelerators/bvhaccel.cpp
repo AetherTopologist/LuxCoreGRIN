@@ -362,8 +362,6 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
 			// 🔥GRIN Straight-Line Hit Operation
-			//if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-			//if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, &t, &b1, &b2)) {
 			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;

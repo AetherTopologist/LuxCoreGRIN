@@ -49,9 +49,6 @@ public:
 		const u_longlong totalTriangleCount);
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const;
-	//virtual bool Intersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const;
-	//virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const;
-	//virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,const float beta, const luxrays::Vector &gamma,const luxrays::Point &grinCenter,const float stepSize, const int numSteps) const;
 
 	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,
 									const float beta, const luxrays::Vector &gamma,

@@ -53,11 +53,7 @@ public:
 	virtual void Update() { throw new std::runtime_error("Internal error in Accelerator::Update()"); }
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const = 0;
-    //virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const = 0;
-	// Default implementation routes to straight line intersection so
-	// accelerators that don't override this method still compile.
-	//virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit, const float beta, const luxrays::Vector &gamma) const {return Intersect(ray, hit); }
-	//virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,const float beta, const luxrays::Vector &gamma,const luxrays::Point &grinCenter,const float stepSize, const int numSteps) const {return Intersect(ray, hit);}
+
 	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,
 									const float beta, const luxrays::Vector &gamma,
 									const luxrays::Point &grinCenter,
