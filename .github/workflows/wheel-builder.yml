@@ -291,8 +291,7 @@ jobs:
             M4
           CIBW_BEFORE_ALL_LINUX: |
             # Install toolchain and required Perl modules
-            sudo apt-get update
-            sudo apt-get install -y ccache perl libdigest-sha-perl libipc-cmd-perl wget
+            yum install -y ccache wget bash perl-IPC-Cmd perl-Digest-SHA
             
             # Install gh (via conda)
             mkdir -p miniconda3
@@ -306,7 +305,7 @@ jobs:
 
             # Manylinux_2_34 compatibility (for future use)
             if [ "$GLIBC_VERSION" != "2_28" ]; then
-              sudo apt-get install -y libfindbin-libs-perl
+              yum install -y libfindbin-libs-perl
             fi
 
             # Install dependencies

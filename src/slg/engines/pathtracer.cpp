@@ -415,32 +415,6 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		sampleResult.firstPathVertex = (pathInfo.depth.depth == 0);
 		const u_int sampleOffset = eyeSampleBootSize + pathInfo.depth.depth * eyeSampleStepSize;
 
-		// 🔥GRIN Inject GRIN context setup
-		//GRINRayContext grinCtx;
-		//grinCtx.enabled = false;
-		//const Volume *vol = pathInfo.volume.GetCurrentVolume();
-		//if (vol) {
-			//SLG_LOG("🔥 [Debug] Volume class name: " << typeid(*vol).name());
-		//} else{
-			//SLG_LOG("🔥 [Debug] Volume is nullptr");
-		//}
-
-		//const GRINVolume *grinVol = dynamic_cast<const GRINVolume *>(vol);
-		//if (grinVol) {
-			//SLG_LOG("🔥 [PathTracer] GRIN Volume found with IOR range: " << grinCtx.iorMin << " - " << grinCtx.iorMax);
-			//grinCtx.enabled = true;
-			//grinCtx.volume = grinVol;
-			//grinCtx.rayOrigin = eyeRay.o;
-			//grinCtx.rayDir = eyeRay.d;
-			//grinCtx.rayMinT = eyeRay.mint;
-			//grinCtx.rayMaxT = eyeRay.maxt;
-			//grinCtx.iorMin = grinVol->GetIORMin().Filter();  // optional: use .Average() if preferred
-			//grinCtx.iorMax = grinVol->GetIORMax().Filter();
-			//grinCtx.stretchAxis = grinVol->GetStretch();
-			//grinCtx.profile = grinVol->GetProfile();
-			// grinCtx.center and grinCtx.radius could be passed during volume parsing if needed
-		//}
-
 		RayHit eyeRayHit;
 		Spectrum connectionThroughput;
 		const float passThrough = sampler->GetSample(sampleOffset);

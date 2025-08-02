@@ -240,17 +240,6 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 		return false;
 
 	Ray ray(*initialRay);
-	// -- Convert Ray to xPRIMEray --
-	xPRIMEray xPRIMEray(
-			initialRay->o,                 // origin
-			initialRay->d,                 // direction
-			luxrays::Point(0.f, 0.f, 0.f), // center of curvature (can customize)
-			1.0f,                          // beta (GRIN intensity scalar)
-			luxrays::Vector(1.f,1.f,1.f),  // gamma (exponents per axis)
-			xPRIMErayType::POWER,          // curvature model
-			initialRay->mint,
-			initialRay->maxt
-	);
 	
 	// 🔥GRIN
 	//std::cout <<  "🔥[GRIN] Ray origin: " << ray.o << ", dir: " << ray.d << ", maxt: " << ray.maxt << std::endl;
@@ -274,10 +263,7 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[1]);
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
-
 			// 🔥GRIN Straight-Line Hit Operation
-			//if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
-			//if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, &t, &b1, &b2)) {
 			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;

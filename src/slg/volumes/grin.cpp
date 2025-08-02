@@ -15,6 +15,30 @@
  * See the License for the specific language governing permissions and     *
  * limitations under the License.                                          *
  ***************************************************************************/
+/*
+===============================
+GRINVolume – Gradient Refractive Index
+===============================
+
+This volume model introduces a radially-varying IOR field:
+
+  IOR(r) = ior_inner + (ior_outer - ior_inner) * ((r - r_inner)/(r_outer - r_inner))^gamma
+
+- Rays are straight for r < r_inner
+- Curvature is applied from r_inner to r_outer using a power-law profile
+- `beta` scales the strength of curvature
+- `gamma` is applied per-axis (x, y, z)
+- `invert` flips field direction (beta → -beta)
+
+Field vector used in RK4 integration:
+
+  F(r) = beta * t^gamma * normalize(pos - center)
+
+Integration:
+  Uses RK4 stepping (stepSize, stepLimit) to evolve ray path in curved GRIN field.
+
+Supported profile types: POWER (default)
+*/
 
 #include <cstddef>
 

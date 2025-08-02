@@ -745,12 +745,16 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 	//SLG_LOG("🔥 [Scene::Intersect] Entry");
 
 	for (;;) {
-		bool hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-																		worldGrinInfo.beta, worldGrinInfo.gamma,
-																		worldGrinInfo.center,
-																		worldGrinInfo.rInner, worldGrinInfo.rOuter,
-																		worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-																		worldGrinInfo.invert);
+		bool hit;
+		if ((worldVolumeType == GRIN_VOL) && worldGrinInfo.enabled)
+			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
+																	worldGrinInfo.beta, worldGrinInfo.gamma,
+																	worldGrinInfo.center,
+																	worldGrinInfo.rInner, worldGrinInfo.rOuter,
+																	worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+																	worldGrinInfo.invert);
+		else
+			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();

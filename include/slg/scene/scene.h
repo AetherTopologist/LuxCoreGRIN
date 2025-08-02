@@ -136,7 +136,6 @@ public:
 		luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
 		SampleResult *sampleResult = nullptr, const bool backTracing = false, const GRINRayContext *grinCtx= nullptr) const;
 
-
 	void PreprocessCamera(const u_int filmWidth, const u_int filmHeight, const u_int *filmSubRegion);
 	void Preprocess(luxrays::Context *ctx,
 		const u_int filmWidth, const u_int filmHeight, const u_int *filmSubRegion,
