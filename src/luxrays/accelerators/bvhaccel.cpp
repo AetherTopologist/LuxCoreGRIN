@@ -308,10 +308,11 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 }
 
 bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
-				const float beta, const luxrays::Vector &gamma,
-				const luxrays::Point &grinCenter,
-				const float rInner, const float rOuter,
-				const float stepSize, const int numSteps) const {
+                                const float beta, const luxrays::Vector &gamma,
+                                const luxrays::Point &grinCenter,
+                                const float rInner, const float rOuter,
+                                const float stepSize, const int numSteps,
+                                const bool invert) const {
 	assert (initialized);
 
 	rayHit->t = initialRay->maxt;
@@ -362,7 +363,7 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
 			// 🔥GRIN Straight-Line Hit Operation
-			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter, &t, &b1, &b2)) {
+			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter, &t, &b1, &b2, invert)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;

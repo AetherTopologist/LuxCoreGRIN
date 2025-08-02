@@ -34,7 +34,8 @@ public:
 					const float rInner, const float rOuter,
 					const std::string &profileType,
 					const float beta, const Vector &gamma,
-					const float stepSize, const u_int numSteps);
+					const float stepSize, const u_int numSteps,
+					const bool invert = false);
 
 	virtual float Scatter(const luxrays::Ray &ray, const float u, const bool scatteredStart,
 		luxrays::Spectrum *connectionThroughput, luxrays::Spectrum *connectionEmission) const;
@@ -73,6 +74,7 @@ public:
 	float rOuter;
 	float stepSize;
 	u_int numSteps;
+	bool invert;
 
 	float GetIORInner() const { return iorInner; }
 	float GetIOROuter() const { return iorOuter; }
@@ -83,6 +85,7 @@ public:
 	float GetROuter() const { return rOuter; }
 	float GetStepSize() const { return stepSize; }
 	u_int GetNumSteps() const { return numSteps; }
+	bool GetInvert() const { return invert; }
 
 
 protected:

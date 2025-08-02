@@ -33,12 +33,13 @@ GRINVolume::GRINVolume(const Texture *iorTex, const Texture *emiTex, const Textu
                        const float rInnerVal, const float rOuterVal,
                        const std::string &profileType,
                        const float beta, const Vector &gamma,
-                       const float ss, const u_int ns)
+                       const float ss, const u_int ns,
+                       const bool inv)
 
     : Volume(iorTex, emiTex), iorInner(iorInnerVal), iorOuter(iorOuterVal),
       profile(profileType), beta(beta), gamma(gamma),
       rInner(rInnerVal), rOuter(rOuterVal),
-      stepSize(ss), numSteps(ns) {
+      stepSize(ss), numSteps(ns), invert(inv) {
     sigmaA = a;
 }
 
@@ -144,6 +145,7 @@ Properties GRINVolume::ToProperties() const {
 	props.Set(Property("scene.volumes." + name + ".grin.stepsize")(stepSize));
 	props.Set(Property("scene.volumes." + name + ".grin.numsteps")(numSteps));
 	props.Set(Property("scene.volumes." + name + ".grin.profile")(profile));
-	
+	props.Set(Property("scene.volumes." + name + ".grin.invert")(invert));
+
 	return props;
 }

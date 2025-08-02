@@ -101,19 +101,20 @@ struct GRINRayContext {
 // Parsed World GRIN information
 //------------------------------------------------------------------------------
 struct WorldGRINInfo {
-       bool enabled = false;
-       const GRINVolume *volume = nullptr;
-       float iorInner;
-       float iorOuter;
-	   luxrays::Vector stretch;
-       luxrays::Point center;
-	   std::string profile;
-       float beta = 0.f;
-       luxrays::Vector gamma;
-       float rInner = 1e-4f;
-       float rOuter = 1.f;
-	   float stepSize = 0.01f;
-       int numSteps = 64;
+		bool enabled = false;
+		const GRINVolume *volume = nullptr;
+		float iorInner;
+		float iorOuter;
+		luxrays::Vector stretch;
+		luxrays::Point center;
+		std::string profile;
+		float beta = 0.f;
+		luxrays::Vector gamma;
+		float rInner = 1e-4f;
+		float rOuter = 1.f;
+		float stepSize = 0.01f;
+		int numSteps = 64;
+		bool invert = false;
 };
 
 class Scene {

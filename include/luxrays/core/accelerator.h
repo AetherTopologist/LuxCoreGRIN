@@ -58,7 +58,8 @@ public:
 									const float beta, const luxrays::Vector &gamma,
 									const luxrays::Point &grinCenter,
 									const float rInner, const float rOuter,
-									const float stepSize, const int numSteps) const {
+									const float stepSize, const int numSteps,
+									const bool invert = false) const {
 									return Intersect(ray, hit); // <== fallback behavior
 	}
 

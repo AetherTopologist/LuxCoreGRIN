@@ -107,6 +107,10 @@ void Scene::ParseVolumes(const Properties &props) {
 					SDL_LOG("worldGrinInfo.stepSize = " << worldGrinInfo.stepSize);
 					worldGrinInfo.numSteps = gv->GetNumSteps();
 					SDL_LOG("worldGrinInfo.numSteps = " << worldGrinInfo.numSteps);
+					worldGrinInfo.invert = gv->GetInvert();
+					SDL_LOG("worldGrinInfo.invert = " << worldGrinInfo.invert);
+					worldGrinInfo.invert = gv->GetInvert();
+					SDL_LOG("worldGrinInfo.invert = " << worldGrinInfo.invert);
 				} else {
 					worldGrinInfo.enabled = false;
 					SDL_LOG("World/Scene GRIN Volume Disabled.");
@@ -209,6 +213,7 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		const string profile = props.Get(Property(propName + ".grin.profile")("power")).Get<string>();
 		const float stepSize = props.Get(Property(propName + ".grin.stepsize")(0.01f)).Get<float>();
 		const u_int numSteps = props.Get(Property(propName + ".grin.numsteps")(64u)).Get<u_int>();
+		const bool invert = props.Get(Property(propName + ".grin.invert")(false)).Get<bool>();
 
 		SLG_LOG("🔥 [parsevolumes] Created GRIN volume: " << volName);
 		SLG_LOG("🔥 [parsevolumes] GRIN IOR Range: " << iorMin.c[0] << " - " << iorMax.c[0]);
@@ -218,12 +223,14 @@ Volume *Scene::CreateVolume(const u_int defaultVolID, const string &volName, con
 		SLG_LOG("🔥 [parsevolumes] GRIN Gamma: (" << gamma.x << ", " << gamma.y << ", " << gamma.z << ")");
 		SLG_LOG("🔥 [parsevolumes] GRIN stepSize: (" << stepSize);
 		SLG_LOG("🔥 [parsevolumes] GRIN numSteps: (" << numSteps);
+		SLG_LOG("🔥 [parsevolumes] GRIN invert: " << invert);
 
 		vol = new GRINVolume(iorTex, emissionTex, absorption,
-								iorMin.c[0], iorMax.c[0],
-								rMin, rMax,
-								profile, beta, gamma,
-								stepSize, numSteps);
+														iorMin.c[0], iorMax.c[0],
+														rMin, rMax,
+														profile, beta, gamma,
+														stepSize, numSteps,
+														invert);
 	} else
 		throw runtime_error("Unknown volume type: " + volType);
 

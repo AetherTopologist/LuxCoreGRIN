@@ -77,8 +77,12 @@ public:
 			return false;
 
 		const float tBase = -A / denom;
-		if (tBase <= 0.f)
-			return false;
+		if (tBase <= 0.f) {
+			if (ray.beta < 0.f && B < 0.f) {
+				// Allow negative beta with ray pointing toward the plane
+			} else
+				return false;
+		}
 
 		// Use axis of maximum curvature to determine t exponent
 		const float gammaMax = std::max(ray.gamma.x, std::max(ray.gamma.y, ray.gamma.z));
@@ -100,12 +104,13 @@ public:
 	}
 
 	static Vector ComputeGRINField(
-		const Point &pos,
-		const float beta,
-		const Vector &gamma,
-		const Point &GRINCenter,
-		const float rInner,
-		const float rOuter) {
+			const Point &pos,
+			const float beta,
+			const Vector &gamma,
+			const Point &GRINCenter,
+			const float rInner,
+			const float rOuter,
+			const bool invert = false) {
 
 		const Vector offset = pos - GRINCenter;
 		const float r = offset.Length();
@@ -120,12 +125,13 @@ public:
 		const float t_y = std::pow(t, gamma.y);
 		const float t_z = std::pow(t, gamma.z);
 
-		return Vector(
-			beta * t_x * offset.x / r,
-			beta * t_y * offset.y / r,
-			beta * t_z * offset.z / r);
-	}
+		const float effectiveBeta = invert ? -beta : beta;
 
+		return Vector(
+				effectiveBeta * t_x * offset.x / r,
+				effectiveBeta * t_y * offset.y / r,
+				effectiveBeta * t_z * offset.z / r);
+	}
 
 	static bool IntersectINSIGHT(
 		const xPRIMEray &ray,
@@ -148,8 +154,12 @@ public:
 			return false;
 
 		const float tBase = -A / denom;
-		if (tBase <= 0.f)
-			return false;
+		if (tBase <= 0.f) {
+			if (ray.beta < 0.f && B < 0.f) {
+				// Allow negative beta with ray pointing toward the plane
+			} else
+				return false;
+		}
 
 		// Use strongest curvature axis for exponent
 		const float gammaMax = std::max(ray.gamma.x, std::max(ray.gamma.y, ray.gamma.z));
@@ -181,8 +191,9 @@ public:
 				float *tHit,
 				Point *rk4Hit,
 				float *b1,
-				float *b2) {
-
+				float *b2,
+				const bool invert = false) {
+		
 		// Triangle plane setup
 		const Vector edge1 = p1 - p0;
 		const Vector edge2 = p2 - p0;
@@ -209,10 +220,10 @@ public:
 
 		for (int i = 0; i < maxSteps; ++i) {
 			// Compute GRIN curvature at current position
-			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter, rInner, rOuter);
-			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma, grinCenter, rInner, rOuter);
-			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma, grinCenter, rInner, rOuter);
-			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, grinCenter, rInner, rOuter);
+			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
 
 			// RK4 update
 			dir += (stepSize / 6.f) * (k1 + 2.f * k2 + 2.f * k3 + k4);
@@ -249,7 +260,8 @@ public:
 			const float rOuter,
 			float *tHit,
 			float *b1,
-			float *b2) {
+			float *b2,
+			const bool invert = false) {
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;
@@ -272,8 +284,8 @@ public:
 		Point rk4Hit;
 		float tRK4;
 
-		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter, &tRK4, &rk4Hit, b1, b2))
-			return false;
+		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter, &tRK4, &rk4Hit, b1, b2, invert))
+				return false;
 
 		*tHit = tRK4;
 		return true;
