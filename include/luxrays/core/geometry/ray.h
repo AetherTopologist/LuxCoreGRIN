@@ -23,14 +23,10 @@
 #include "luxrays/core/geometry/vector.h"
 #include "luxrays/core/geometry/point.h"
 
+#include <limits>
 #include <boost/math/special_functions/sign.hpp>
 
 namespace luxrays {
-
-// OpenCL data types
-namespace ocl {
-#include "luxrays/core/geometry/ray_types.cl"
-}
 
 //------------------------------------------------------------------------------
 // Ray type flags used to route straight vs. curved ray processing
@@ -39,6 +35,15 @@ enum RayType {
     RAYTYPE_DEFAULT,
     RAYTYPE_CURVED
 };
+
+// OpenCL data types
+namespace ocl {
+#include "luxrays/core/geometry/ray_types.cl"
+}
+
+// Avoid macro redefinitions from the OpenCL header
+#undef RAYTYPE_DEFAULT
+#undef RAYTYPE_CURVED
 
 class  Ray {
 public:
@@ -95,7 +100,7 @@ public:
 
 	unsigned int flags;
 	RayType rayType;
-	float pad; // Add padding to avoid size discrepancies between OpenCL and C++
+	float pad[2]; // Padding to match OpenCL struct size
 
 	// 🔥GRIN TEST
 	//bool isCurved = false;

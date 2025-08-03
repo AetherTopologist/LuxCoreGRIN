@@ -31,7 +31,7 @@ typedef struct {
 
 	unsigned int flags;
 	unsigned int rayType;
-	float pad; // Add padding to avoid size discrepancies between OpenCL and C++
+	float pad[2];
 } Ray;
 
 typedef struct {
