@@ -32,25 +32,35 @@ namespace ocl {
 #include "luxrays/core/geometry/ray_types.cl"
 }
 
+//------------------------------------------------------------------------------
+// Ray type flags used to route straight vs. curved ray processing
+//------------------------------------------------------------------------------
+enum RayType {
+    RAYTYPE_DEFAULT,
+    RAYTYPE_CURVED
+};
+
 class  Ray {
 public:
 	// Ray Public Methods
-	Ray() : maxt(std::numeric_limits<float>::infinity()), time(0.f), flags(RAY_FLAGS_NONE) {
+	Ray() : maxt(std::numeric_limits<float>::infinity()), time(0.f),
+			flags(RAY_FLAGS_NONE), rayType(RAYTYPE_DEFAULT) {
 		mint = MachineEpsilon::E(1.f);
 	}
 
 	Ray(const Point &origin, const Vector &direction) : o(origin),
-		d(direction), maxt(std::numeric_limits<float>::infinity()),
-		time(0.f), flags(RAY_FLAGS_NONE) {
+			d(direction), maxt(std::numeric_limits<float>::infinity()),
+			time(0.f), flags(RAY_FLAGS_NONE), rayType(RAYTYPE_DEFAULT) {
 		mint = MachineEpsilon::E(origin);
 	}
 
 	// This constructor have to be used with care because it is up to the caller to
 	// correctly use MachineEpsilon.
 	Ray(const Point &origin, const Vector &direction,
-		const float start, const float end = std::numeric_limits<float>::infinity(),
-		const float t = 0.f)
-		: o(origin), d(direction), mint(start), maxt(end), time(t), flags(RAY_FLAGS_NONE) { }
+                const float start, const float end = std::numeric_limits<float>::infinity(),
+                const float t = 0.f)
+                : o(origin), d(direction), mint(start), maxt(end), time(t),
+                flags(RAY_FLAGS_NONE), rayType(RAYTYPE_DEFAULT) { }
 
 	Point operator()(float t) const { return o + d * t; }
 	void GetDirectionSigns(int signs[3]) const {
@@ -84,7 +94,8 @@ public:
 	float time;
 
 	unsigned int flags;
-	float pad[2]; // Add padding to avoid size discrepancies between OpenCL and C++
+	RayType rayType;
+	float pad; // Add padding to avoid size discrepancies between OpenCL and C++
 
 	// 🔥GRIN TEST
 	//bool isCurved = false;

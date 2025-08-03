@@ -23,7 +23,6 @@
 #include "slg/film/film.h"
 #include "slg/core/sdl.h"
 #include "slg/scene/scene.h"
-#include "luxrays/core/geometry/triangle.h"
 
 using namespace std;
 using namespace luxrays;
@@ -164,28 +163,29 @@ void ProjectiveCamera::ApplyArbitraryClippingPlane(Ray *ray) const {
 	}
 }
 
-void ProjectiveCamera::GenerateRay(const float  time,
-		const float filmX, const float filmY,
-		Ray *ray, PathVolumeInfo *volInfo,
-		const float u0, const float u1) const {
+//------------------------------------------------------------------------------
+// Generate a camera ray. Rays are transformed to world space once and tagged
+// with a RayType so downstream intersection code can decide between straight
+// and curved GRIN processing.
+//------------------------------------------------------------------------------
+void ProjectiveCamera::GenerateRay(const float time,
+                const float filmX, const float filmY,
+                Ray *ray, PathVolumeInfo *volInfo,
+                const float u0, const float u1) const {
 	InitRay(ray, filmX, filmY);
 	volInfo->AddVolume(volume);
 
-	//SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay]");
-
-	// Modify ray for depth of field
+	// Depth of field
 	if ((lensRadius > 0.f) && (focalDistance > 0.f)) {
-		// Sample point on lens
 		Point lensPoint;
 		LocalSampleLens(time, u0, u1, &lensPoint);
 
-		// Compute point on plane of focus
 		const float dist = focalDistance - clipHither;
 		float ft = dist;
 		if (type != ORTHOGRAPHIC)
-			ft /= ray->d.z;
-		Point Pfocus = (*ray)(ft);
-		// Update ray for effect of lens
+				ft /= ray->d.z;
+		const Point Pfocus = (*ray)(ft);
+
 		const float k = dist / focalDistance;
 		ray->o.x += lensPoint.x * k;
 		ray->o.y += lensPoint.y * k;
@@ -199,44 +199,20 @@ void ProjectiveCamera::GenerateRay(const float  time,
 		ray->maxt /= ray->d.z;
 	ray->time = time;
 
-	if (motionSystem) {
-			*ray = motionSystem->Sample(ray->time) * (camTrans.cameraToWorld * (*ray));
-			// I need to normalize the direction vector again because the motion
-			// system could include some kind of scale
-			ray->d = Normalize(ray->d);
-	} else
-			*ray = camTrans.cameraToWorld * (*ray);
-
-	// Apply GRIN-based warping after transforming to world space
-	if (scene && scene->worldGrinInfo.enabled && (scene->worldVolumeType == GRIN_VOL)) {
-		const Vector field = Triangle::ComputeGRINField(
-								ray->o,
-								scene->worldGrinInfo.beta,
-								scene->worldGrinInfo.gamma,
-								scene->worldGrinInfo.center,
-								scene->worldGrinInfo.rInner,
-								scene->worldGrinInfo.rOuter,
-								scene->worldGrinInfo.invert);
-
-		ray->d = Normalize(ray->d + field);
-	}
-
-	if (motionSystem) {
+	// Transform to world space once
+	if (motionSystem)
 		*ray = motionSystem->Sample(ray->time) * (camTrans.cameraToWorld * (*ray));
-		// I need to normalize the direction vector again because the motion
-		// system could include some kind of scale
-		ray->d = Normalize(ray->d);
-	} else
+	else
 		*ray = camTrans.cameraToWorld * (*ray);
+	ray->d = Normalize(ray->d);
+
+	// Tag the ray for curved GRIN handling if required
+	if (scene && scene->worldGrinInfo.enabled && (scene->worldVolumeType == GRIN_VOL))
+		ray->rayType = RAYTYPE_CURVED;
+	else
+		ray->rayType = RAYTYPE_DEFAULT;
 
 	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay] filmX: " << filmX << ", filmY: " << filmY << ", time: " << time);
-
-	// 🔥GRIN Visual debug warp: sinusoidal bend in direction
-	// 🔥[GRIN] corruption
-	//ray->d.x += 0.05f * sin(ray->o.y * 10.0f);
-	//ray->d.y += 0.05f * cos(ray->o.x * 10.0f);
-	//ray->d = Normalize(ray->d);
-	// 🔥[GRIN] corruption
 
 	// World arbitrary clipping plane support
 	if (enableClippingPlane)

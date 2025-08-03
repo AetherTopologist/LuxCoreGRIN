@@ -593,7 +593,7 @@ bool Scene::Intersect(IntersectionDevice *device,
 
 	for (;;) {
 		bool hit;
-		if ((worldVolumeType == GRIN_VOL) && worldGrinInfo.enabled)
+		if (ray->rayType == RAYTYPE_CURVED)
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
 																	worldGrinInfo.beta, worldGrinInfo.gamma,
 																	worldGrinInfo.center,
@@ -602,7 +602,6 @@ bool Scene::Intersect(IntersectionDevice *device,
 																	worldGrinInfo.invert);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-		
 
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();
@@ -746,13 +745,13 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 
 	for (;;) {
 		bool hit;
-		if ((worldVolumeType == GRIN_VOL) && worldGrinInfo.enabled)
+		if (ray->rayType == RAYTYPE_CURVED)
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-																	worldGrinInfo.beta, worldGrinInfo.gamma,
-																	worldGrinInfo.center,
-																	worldGrinInfo.rInner, worldGrinInfo.rOuter,
-																	worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-																	worldGrinInfo.invert);
+																		worldGrinInfo.beta, worldGrinInfo.gamma,
+																		worldGrinInfo.center,
+																		worldGrinInfo.rInner, worldGrinInfo.rOuter,
+																		worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+																		worldGrinInfo.invert);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 

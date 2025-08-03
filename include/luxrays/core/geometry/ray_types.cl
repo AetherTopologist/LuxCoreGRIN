@@ -21,13 +21,17 @@
 #define RAY_FLAGS_NONE   0x00000000
 #define RAY_FLAGS_MASKED 0x00000001
 
+#define RAYTYPE_DEFAULT 0u
+#define RAYTYPE_CURVED  1u
+
 typedef struct {
 	Point o;
 	Vector d;
 	float mint, maxt, time;
 
 	unsigned int flags;
-	float pad[2]; // Add padding to avoid size discrepancies between OpenCL and C++
+	unsigned int rayType;
+	float pad; // Add padding to avoid size discrepancies between OpenCL and C++
 } Ray;
 
 typedef struct {
