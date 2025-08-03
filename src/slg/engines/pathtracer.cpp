@@ -418,10 +418,9 @@ void PathTracer::RenderEyePath(IntersectionDevice *device,
 		RayHit eyeRayHit;
 		Spectrum connectionThroughput;
 		const float passThrough = sampler->GetSample(sampleOffset);
-		// 💥 Pass GRIN context to Intersect
+
 		bool hit;
 		// 🔥GRIN
-		//hit = scene->xPRIMEIntersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult, &grinCtx);
 		hit = scene->Intersect(device, EYE_RAY | (sampleResult.firstPathVertex ? CAMERA_RAY : INDIRECT_RAY), &pathInfo.volume, passThrough, &eyeRay, &eyeRayHit, &bsdf, &connectionThroughput, &pathThroughput, &sampleResult);
 
 		pathThroughput *= connectionThroughput;
@@ -695,23 +694,6 @@ void PathTracer::RenderEyeSample(IntersectionDevice *device,
 	Ray eyeRay;
 	GenerateEyeRay(scene->camera, film, eyeRay, pathInfo.volume, sampler, sampleResults[0]);
 	
-	// 🔥 GRIN Corruption Test #3: Warp Ray Origin
-	//eyeRay.o.x += 0.1f * sinf(eyeRay.o.y * 15.0f);
-	//eyeRay.o.y += 0.1f * cosf(eyeRay.o.x * 5.0f);
-	// 🔥 GRIN Corruption Test #3: Warp Ray Origin
-
-	//SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()]");	
-
-	// BB GRIN
-	// === FILE: pathtracer.cpp ===
-	// 📍 Function: PathTracer::RenderEyePath(...)
-	// Just after: GenerateEyeRay(...)
-	// Inject this to enable curved rays from the camera:
-	//eyeRay.isCurved = true;
-	//eyeRay.curveAxis = luxrays::Vector(0.0f, 0.0f, 1.0f); // Curve about Z axis
-	//eyeRay.curveStrength = 0.00001f; // Tunable
-	// BB GRIN END
-
 	//SLG_LOG("🔥GRIN [PathTracer::RenderEyeSample()] Exiting");
 
 	RenderEyePath(device, scene, sampler, pathInfo, eyeRay, Spectrum(1.f), sampleResults);

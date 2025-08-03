@@ -102,11 +102,6 @@ public:
 	RayType rayType;
 	float pad[2]; // Padding to match OpenCL struct size
 
-	// 🔥GRIN TEST
-	//bool isCurved = false;
-	//luxrays::Vector curveAxis = luxrays::Vector(0.0f, 0.0f, 1.0f);
-	//float curveStrength = 0.0f;
-	// 🔥GRIN END
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Ray &r) {

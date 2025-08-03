@@ -593,13 +593,13 @@ bool Scene::Intersect(IntersectionDevice *device,
 
 	for (;;) {
 		bool hit;
-		if (ray->rayType == RAYTYPE_CURVED)
+		if ((ray->rayType == RAYTYPE_CURVED) && worldGrinInfo.enabled && (worldVolumeType == GRIN_VOL))
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-																	worldGrinInfo.beta, worldGrinInfo.gamma,
-																	worldGrinInfo.center,
-																	worldGrinInfo.rInner, worldGrinInfo.rOuter,
-																	worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-																	worldGrinInfo.invert);
+							worldGrinInfo.beta, worldGrinInfo.gamma,
+							worldGrinInfo.center,
+							worldGrinInfo.rInner, worldGrinInfo.rOuter,
+							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+							worldGrinInfo.invert);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 

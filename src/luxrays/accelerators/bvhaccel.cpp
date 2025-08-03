@@ -230,7 +230,6 @@ void BVHAccel::Init(const deque<const Mesh *> &ms, const u_longlong totVert,
 
 
 // 🔥GRIN Straight-Line Ray Decisions
-//bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit, const float beta, const luxrays::Vector &gamma) const {
 bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	assert (initialized);
 
