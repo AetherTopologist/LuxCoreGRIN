@@ -593,13 +593,26 @@ bool Scene::Intersect(IntersectionDevice *device,
 
 	for (;;) {
 		bool hit;
-		if ((ray->rayType == RAYTYPE_CURVED) && worldGrinInfo.enabled && (worldVolumeType == GRIN_VOL))
+		// ------------------------------------------------------------
+		// Path Logic Branch: Curved vs. Straight Ray Behavior
+		//
+		// If ray.rayType == RAYTYPE_CURVED:
+		//     - Apply RK4 or symbolic curved ray stepping
+		//     - Interpolate hitpoint via barycentric mesh vertices
+		//     - Compute GRIN field distortion, non-linear IOR paths
+		//
+		// Else (RAYTYPE_DEFAULT):
+		//     - Standard linear ray marching and hit resolution
+		//     - Use ray(rayHit.t) for hitpoint position
+		//     - Mesh UVs, normals, and shading all follow original logic
+		// ------------------------------------------------------------
+		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-							worldGrinInfo.beta, worldGrinInfo.gamma,
-							worldGrinInfo.center,
-							worldGrinInfo.rInner, worldGrinInfo.rOuter,
-							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-							worldGrinInfo.invert);
+									worldGrinInfo.beta, worldGrinInfo.gamma,
+									worldGrinInfo.center,
+									worldGrinInfo.rInner, worldGrinInfo.rOuter,
+									worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+									worldGrinInfo.invert);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
@@ -615,7 +628,7 @@ bool Scene::Intersect(IntersectionDevice *device,
 				float t;
 				Point p;
 				Normal n;
-				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n, *this)) {
+				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n)) {
 					rayHit->t = t;
 
 					// Update the BSDF with the new intersection point and normal
@@ -745,16 +758,29 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 
 	for (;;) {
 		bool hit;
-		if (ray->rayType == RAYTYPE_CURVED)
+		// ------------------------------------------------------------
+		// Path Logic Branch: Curved vs. Straight Ray Behavior
+		//
+		// If ray.rayType == RAYTYPE_CURVED:
+		//     - Apply RK4 or symbolic curved ray stepping
+		//     - Interpolate hitpoint via barycentric mesh vertices
+		//     - Compute GRIN field distortion, non-linear IOR paths
+		//
+		// Else (RAYTYPE_DEFAULT):
+		//     - Standard linear ray marching and hit resolution
+		//     - Use ray(rayHit.t) for hitpoint position
+		//     - Mesh UVs, normals, and shading all follow original logic
+		// ------------------------------------------------------------
+		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-																		worldGrinInfo.beta, worldGrinInfo.gamma,
-																		worldGrinInfo.center,
-																		worldGrinInfo.rInner, worldGrinInfo.rOuter,
-																		worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-																		worldGrinInfo.invert);
+										worldGrinInfo.beta, worldGrinInfo.gamma,
+										worldGrinInfo.center,
+										worldGrinInfo.rInner, worldGrinInfo.rOuter,
+										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+										worldGrinInfo.invert);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-
+		
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();
 		if (hit) {		
@@ -767,7 +793,7 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 				float t;
 				Point p;
 				Normal n;
-				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n, *this)) {
+				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n)) {
 					rayHit->t = t;
 
 					// Update the BSDF with the new intersection point and normal

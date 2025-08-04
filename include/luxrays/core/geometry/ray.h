@@ -92,6 +92,10 @@ public:
 		time = t;
 	}
 
+	bool IsCurved() const {
+		return rayType == RAYTYPE_CURVED;
+	}
+
 	// Ray Public Data
 	Point o;
 	Vector d;

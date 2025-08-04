@@ -39,7 +39,20 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	mesh->GetLocal2World(ray.time, hitPoint.localToWorld);
 
 	Point hp;
-	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
+	// ------------------------------------------------------------
+	// Path Logic Branch: Curved vs. Straight Ray Behavior
+	//
+	// If ray.rayType == RAYTYPE_CURVED:
+	//     - Apply RK4 or symbolic curved ray stepping
+	//     - Interpolate hitpoint via barycentric mesh vertices
+	//     - Compute GRIN field distortion, non-linear IOR paths
+	//
+	// Else (RAYTYPE_DEFAULT):
+	//     - Standard linear ray marching and hit resolution
+	//     - Use ray(rayHit.t) for hitpoint position
+	//     - Mesh UVs, normals, and shading all follow original logic
+	// ------------------------------------------------------------
+	if (ray.IsCurved()) {
 		const Triangle *tris = mesh->GetTriangles();
 		const Point *verts = mesh->GetVertices();
 		const Triangle &tri = tris[rayHit.triangleIndex];
@@ -57,17 +70,29 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 
 	//hitPoint.Init(fixedFromLight, throughShadowTransparency, scene, rayHit.meshIndex, rayHit.triangleIndex, ray(rayHit.t), -ray.d, rayHit.b1, rayHit.b2, passThroughEvent);
 	
-	// Apply GRIN-based UV distortion if enabled
-	if ((ray.rayType == RAYTYPE_CURVED) && scene.worldGrinInfo.enabled &&
-					(scene.worldVolumeType == GRIN_VOL)) {
+        // Apply GRIN-based UV distortion if enabled
+        // ------------------------------------------------------------
+        // Path Logic Branch: Curved vs. Straight Ray Behavior
+        //
+        // If ray.rayType == RAYTYPE_CURVED:
+        //     - Apply RK4 or symbolic curved ray stepping
+        //     - Interpolate hitpoint via barycentric mesh vertices
+        //     - Compute GRIN field distortion, non-linear IOR paths
+        //
+        // Else (RAYTYPE_DEFAULT):
+        //     - Standard linear ray marching and hit resolution
+        //     - Use ray(rayHit.t) for hitpoint position
+        //     - Mesh UVs, normals, and shading all follow original logic
+        // ------------------------------------------------------------
+        if (ray.IsCurved()) {
 		const Vector field = Triangle::ComputeGRINField(
-												hp,
-												scene.worldGrinInfo.beta,
-												scene.worldGrinInfo.gamma,
-												scene.worldGrinInfo.center,
-												scene.worldGrinInfo.rInner,
-												scene.worldGrinInfo.rOuter,
-												scene.worldGrinInfo.invert);
+								hp,
+								scene.worldGrinInfo.beta,
+								scene.worldGrinInfo.gamma,
+								scene.worldGrinInfo.center,
+								scene.worldGrinInfo.rInner,
+								scene.worldGrinInfo.rOuter,
+								scene.worldGrinInfo.invert);
 
 		// Project the distortion to be tangent to the surface
 		const Vector tangent = field - Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
@@ -125,7 +150,7 @@ void BSDF::Init(const Scene &scene,
 				surfacePointBary1, surfacePointBary2, passThroughEvent);
 
 	// Apply GRIN-based UV distortion if enabled
-	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
+	if (scene.worldGrinInfo.enabled) {
 		const Vector field = Triangle::ComputeGRINField(
 									surfacePoint,
 									scene.worldGrinInfo.beta,

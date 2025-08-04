@@ -207,10 +207,8 @@ void ProjectiveCamera::GenerateRay(const float time,
 	ray->d = Normalize(ray->d);
 
 	// Tag the ray for curved GRIN handling if required
-	if (scene && scene->worldGrinInfo.enabled && (scene->worldVolumeType == GRIN_VOL))
-		ray->rayType = RAYTYPE_CURVED;
-	else
-		ray->rayType = RAYTYPE_DEFAULT;
+	ray->rayType = (scene && scene->worldGrinInfo.enabled && (scene->worldVolumeType == GRIN_VOL)) ?
+		RAYTYPE_CURVED : RAYTYPE_DEFAULT;
 
 	SLG_LOG("🔥GRIN [ProjectiveCamera::GenerateRay] filmX: " << filmX << ", filmY: " << filmY << ", time: " << time);
 
