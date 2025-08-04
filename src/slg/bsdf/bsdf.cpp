@@ -39,8 +39,7 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	mesh->GetLocal2World(ray.time, hitPoint.localToWorld);
 
 	Point hp;
-	if ((ray.rayType == RAYTYPE_CURVED) && scene.worldGrinInfo.enabled &&
-					(scene.worldVolumeType == GRIN_VOL)) {
+	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
 		const Triangle *tris = mesh->GetTriangles();
 		const Point *verts = mesh->GetVertices();
 		const Triangle &tri = tris[rayHit.triangleIndex];

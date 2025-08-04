@@ -615,7 +615,7 @@ bool Scene::Intersect(IntersectionDevice *device,
 				float t;
 				Point p;
 				Normal n;
-				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n)) {
+				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n, *this)) {
 					rayHit->t = t;
 
 					// Update the BSDF with the new intersection point and normal
@@ -767,7 +767,7 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 				float t;
 				Point p;
 				Normal n;
-				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n)) {
+				if (mesh->IntersectBevel(*ray, *rayHit, bevelContinueToTrace, t, p, n, *this)) {
 					rayHit->t = t;
 
 					// Update the BSDF with the new intersection point and normal

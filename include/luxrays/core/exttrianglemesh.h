@@ -47,6 +47,7 @@ namespace ocl {
 
 class Ray;
 class RayHit;
+namespace slg { class Scene; }
 
 /*
  * The inheritance scheme used here:
@@ -71,8 +72,9 @@ public:
 
 	virtual float GetBevelRadius() const { return bevelRadius; }
 	virtual bool IntersectBevel(const luxrays::Ray &ray, const luxrays::RayHit &rayHit,
-			bool &continueToTrace, float &rayHitT,
-			luxrays::Point &p, luxrays::Normal &n) const {
+					bool &continueToTrace, float &rayHitT,
+					luxrays::Point &p, luxrays::Normal &n,
+					const slg::Scene &scene) const {
 		continueToTrace = false;
 		return false;
 	}
@@ -314,8 +316,9 @@ public:
 	}
 
 	virtual bool IntersectBevel(const luxrays::Ray &ray, const luxrays::RayHit &rayHit,
-			bool &continueToTrace, float &rayHitT,
-			luxrays::Point &p, luxrays::Normal &n) const;
+					bool &continueToTrace, float &rayHitT,
+					luxrays::Point &p, luxrays::Normal &n,
+					const slg::Scene &scene) const;
 	
 	static ExtTriangleMesh *Load(const std::string &fileName);
 	static ExtTriangleMesh *Merge(const std::vector<const ExtTriangleMesh *> &meshes,
@@ -583,8 +586,9 @@ public:
 	}
 
 	virtual bool IntersectBevel(const luxrays::Ray &ray, const luxrays::RayHit &rayHit,
-			bool &continueToTrace, float &rayHitT,
-			luxrays::Point &p, luxrays::Normal &n) const;
+				bool &continueToTrace, float &rayHitT,
+				luxrays::Point &p, luxrays::Normal &n,
+				const slg::Scene &scene) const;
 
 	virtual void Save(const std::string &fileName) const { static_cast<ExtTriangleMesh *>(mesh)->Save(fileName); }
 

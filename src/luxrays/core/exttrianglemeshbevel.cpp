@@ -18,9 +18,11 @@
 
 #include "luxrays/core/exttrianglemesh.h"
 #include "boost/unordered/unordered_set.hpp"
+#include "slg/scene/scene.h"
 
 using namespace std;
 using namespace luxrays;
+using namespace slg;
 
 //------------------------------------------------------------------------------
 // Based on: "Efficient Rendering of Rounded Corners and Edges for Convex Objects"
@@ -489,7 +491,8 @@ void ExtTriangleMesh::PreprocessBevel() {
 //------------------------------------------------------------------------------
 
 bool ExtTriangleMesh::IntersectBevel(const Ray &ray, const RayHit &rayHit,
-		bool &continueToTrace, float &rayHitT, Point &newP, Normal &n) const {
+			bool &continueToTrace, float &rayHitT, Point &newP, Normal &n,
+			const Scene &scene) const {
 	u_int bevelCylinderIndex = NULL_INDEX;
 	float minT = numeric_limits<float>::infinity();
 	continueToTrace = false;
@@ -508,10 +511,14 @@ bool ExtTriangleMesh::IntersectBevel(const Ray &ray, const RayHit &rayHit,
 	//	}
 	//--------------------------------------------------------------------------
 
-	const Triangle &tri = tris[rayHit.triangleIndex];
-	const float b0 = 1.f - rayHit.b1 - rayHit.b2;
-	const Point p = b0 * vertices[tri.v[0]] + rayHit.b1 * vertices[tri.v[1]] + rayHit.b2 * vertices[tri.v[2]];
-	//const Point p = ray(rayHit.t);
+	//const Point p = ray(rayHit.t); // (Straight line path logic required line ported into else statement below)
+	Point p;
+	if ((scene.worldVolumeType == GRIN_VOL) && scene.worldGrinInfo.enabled) {
+			const Triangle &tri = tris[rayHit.triangleIndex];
+			const float b0 = 1.f - rayHit.b1 - rayHit.b2;
+			p = b0 * vertices[tri.v[0]] + rayHit.b1 * vertices[tri.v[1]] + rayHit.b2 * vertices[tri.v[2]];
+	} else
+			p = ray(rayHit.t);
 
 	u_int currentNode = 0; // Root Node
 	const u_int stopNode = IndexBVHNodeData_GetSkipIndex(bevelBVHArrayNodes[0].nodeData); // Non-existent
@@ -568,13 +575,14 @@ bool ExtTriangleMesh::IntersectBevel(const Ray &ray, const RayHit &rayHit,
 //------------------------------------------------------------------------------
 
 bool ExtInstanceTriangleMesh::IntersectBevel(const Ray &ray, const RayHit &rayHit,
-		bool &continueToTrace, float &rayHitT, Point &newP, Normal &n) const {
+               bool &continueToTrace, float &rayHitT, Point &newP, Normal &n,
+               const Scene &scene) const {
 	// Transform the ray in local space	
 	Ray localRay = Inverse(trans) * ray;
 	
 	Point localNewP;
 	Normal localN;
-	const bool result = static_cast<ExtTriangleMesh *>(mesh)->IntersectBevel(localRay, rayHit, continueToTrace, rayHitT, localNewP, localN);
+	const bool result = static_cast<ExtTriangleMesh *>(mesh)->IntersectBevel(localRay, rayHit, continueToTrace, rayHitT, localNewP, localN, scene);
 	if( result) {
 		// Transform newP and N in global space
 		newP = trans * localNewP;
