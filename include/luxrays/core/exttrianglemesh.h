@@ -47,7 +47,6 @@ namespace ocl {
 
 class Ray;
 class RayHit;
-namespace slg { class Scene; }
 
 /*
  * The inheritance scheme used here:
