@@ -61,8 +61,8 @@ public:
 
 	// Analytic intersection of POWER curved rays with a triangle's plane using symbolic per-axis gamma
 	static bool IntersectPlaneSymbolic(const xPRIMEray &ray, const Point &p0, const Vector &normal,
-		float *tHit, Point *hitPoint) {
-
+		float *tHit, Point *hitPoint, const float insightCurvatureThreshold = 1e-6f) {
+		
 		if (ray.type != xPRIMErayType::POWER)
 			return false;
 
@@ -73,9 +73,9 @@ public:
 
 		// Early out: Avoid division by zero or negligible curvature
 		const float denom = beta * B;
-		if (std::fabs(denom) < 1e-6f)
+		if (std::fabs(denom) < insightCurvatureThreshold)
 			return false;
-
+		
 		const float tBase = -A / denom;
 		if (tBase <= 0.f) {
 			if (ray.beta < 0.f && B < 0.f) {
@@ -134,11 +134,12 @@ public:
 	}
 
 	static bool IntersectINSIGHT(
-		const xPRIMEray &ray,
-		const Point &p0,
-		const Vector &normal,
-		float *tINSIGHT,
-		Point *approxHit) {
+			const xPRIMEray &ray,
+			const Point &p0,
+			const Vector &normal,
+			float *tINSIGHT,
+			Point *approxHit,
+			const float insightCurvatureThreshold = 1e-6f) {
 		
 		if (ray.type != xPRIMErayType::POWER)
 			return false;
@@ -150,9 +151,9 @@ public:
 
 		// Early out for negligible curvature
 		const float denom = beta * B;
-		if (std::fabs(denom) < 1e-6f)
+		if (std::fabs(denom) < insightCurvatureThreshold)
 			return false;
-
+		
 		const float tBase = -A / denom;
 		if (tBase <= 0.f) {
 			if (ray.beta < 0.f && B < 0.f) {
@@ -192,7 +193,9 @@ public:
 				Point *rk4Hit,
 				float *b1,
 				float *b2,
-				const bool invert = false) {
+				const bool invert = false,
+				const float barycentricEpsilon = 0.03f,
+				const float rk4PlaneThreshold = 1e-4f) {		
 		
 		// Triangle plane setup
 		const Vector edge1 = p1 - p0;
@@ -234,9 +237,8 @@ public:
 			float currDist = Dot(pos - p0, N);
 
 			// 🔥 Two tests: crossing the plane OR direct near-plane hit
-			if ((prevDist * currDist < 0.f) || (std::fabs(currDist) < 1e-4f)) {
-				//if (GetBaryCoords(p0, p1, p2, pos, b1, b2)) {
-				if (GetBaryCoordsSoft(p0, p1, p2, pos, b1, b2, 0.03f)) {
+			if ((prevDist * currDist < 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
+				if (GetBaryCoordsSoft(p0, p1, p2, pos, b1, b2, barycentricEpsilon)) {
 					*tHit = tAccum;
 					*rk4Hit = pos;
 					return true;
@@ -251,17 +253,20 @@ public:
 
 	// 🔥GRIN Curved Path Additions 
 	static bool xPRIMEIntersect(
-			const xPRIMEray &ray,
-			const Point &p0,
-			const Point &p1,
-			const Point &p2,
-			const Point &grinCenter,
-			const float rInner,
-			const float rOuter,
-			float *tHit,
-			float *b1,
-			float *b2,
-			const bool invert = false) {
+					const xPRIMEray &ray,
+					const Point &p0,
+					const Point &p1,
+					const Point &p2,
+					const Point &grinCenter,
+					const float rInner,
+					const float rOuter,
+					float *tHit,
+					float *b1,
+					float *b2,
+					const bool invert = false,
+					const float insightCurvatureThreshold = 1e-6f,
+					const float barycentricEpsilon = 0.03f,
+					const float rk4PlaneThreshold = 1e-4f) {
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;
@@ -272,20 +277,21 @@ public:
 		float tINSIGHT;
 
 		// STEP 1: Do INSIGHT symbolic intersection with the triangle's plane
-		if (!IntersectINSIGHT(ray, p0, N, &tINSIGHT, &approxHit))
+		if (!IntersectINSIGHT(ray, p0, N, &tINSIGHT, &approxHit, insightCurvatureThreshold))
 			return false;
 
 		// STEP 2: Quick barycentric test
-		//if (!GetBaryCoords(p0, p1, p2, approxHit, b1, b2))
-		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, 0.03f))
+		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, barycentricEpsilon))
 			return false;
 
 		// STEP 3: RK4 refinement through GRIN field (like your Blender)
 		Point rk4Hit;
 		float tRK4;
 
-		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter, &tRK4, &rk4Hit, b1, b2, invert))
-				return false;
+		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter,
+								&tRK4, &rk4Hit, b1, b2, invert,
+								barycentricEpsilon, rk4PlaneThreshold))
+			return false;
 
 		*tHit = tRK4;
 		return true;

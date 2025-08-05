@@ -127,13 +127,13 @@ void Scene::ParseVolumes(const Properties &props) {
 	
 	if (props.IsDefined("scene.world.volume.default")) {
 		const string volName = props.Get("scene.world.volume.default").Get<string>();
-			const Material *m = matDefs.GetMaterial(volName);
-			const Volume *v = dynamic_cast<const Volume *>(m);
-			if (!v)
-					throw runtime_error(volName + " is not a volume and can not be used for default world volume");
-			defaultWorldVolume = v;
-			worldVolumeType = defaultWorldVolume->GetType();
-			const GRINVolume *gv = dynamic_cast<const GRINVolume *>(v);
+		const Material *m = matDefs.GetMaterial(volName);
+		const Volume *v = dynamic_cast<const Volume *>(m);
+		if (!v)
+			throw runtime_error(volName + " is not a volume and can not be used for default world volume");
+		defaultWorldVolume = v;
+		worldVolumeType = defaultWorldVolume->GetType();
+		const GRINVolume *gv = dynamic_cast<const GRINVolume *>(v);
 			if (gv) {
 				worldGrinInfo.enabled = true;
 				SDL_LOG("World/Scene GRIN Volume Enabled.");
@@ -159,8 +159,16 @@ void Scene::ParseVolumes(const Properties &props) {
 					SDL_LOG("World/Scene GRIN Volume Disabled.");
 			}
 
-			editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);
+		editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);
 	}
+
+	// Optional GRIN filtering thresholds
+	if (props.IsDefined("grin.insight_curvature_threshold"))
+		worldGrinInfo.insightCurvatureThreshold = props.Get("grin.insight_curvature_threshold").Get<float>();
+	if (props.IsDefined("grin.barycentric_epsilon"))
+		worldGrinInfo.barycentricEpsilon = props.Get("grin.barycentric_epsilon").Get<float>();
+	if (props.IsDefined("grin.rk4_plane_threshold"))
+		worldGrinInfo.rk4PlaneThreshold = props.Get("grin.rk4_plane_threshold").Get<float>();
 
 	if (matKeys.size() > 0)
 		editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);

@@ -94,6 +94,11 @@ struct GRINRayContext {
 	luxrays::Point rayOrigin;
 	luxrays::Vector rayDir;
 	float rayMinT, rayMaxT;
+
+	// Per-ray thresholds for GRIN filtering
+	float insightCurvatureThreshold = 1e-6f;
+	float barycentricEpsilon = 0.03f;
+	float rk4PlaneThreshold = 1e-4f;
 };
 
 // 🔥GRIN WORLD TEST
@@ -101,20 +106,25 @@ struct GRINRayContext {
 // Parsed World GRIN information
 //------------------------------------------------------------------------------
 struct WorldGRINInfo {
-		bool enabled = false;
-		const GRINVolume *volume = nullptr;
-		float iorInner;
-		float iorOuter;
-		luxrays::Vector stretch;
-		luxrays::Point center;
-		std::string profile;
-		float beta = 0.f;
-		luxrays::Vector gamma;
-		float rInner = 1e-4f;
-		float rOuter = 1.f;
-		float stepSize = 0.01f;
-		int numSteps = 64;
-		bool invert = false;
+			bool enabled = false;
+			const GRINVolume *volume = nullptr;
+			float iorInner;
+			float iorOuter;
+			luxrays::Vector stretch;
+			luxrays::Point center;
+			std::string profile;
+			float beta = 0.f;
+			luxrays::Vector gamma;
+			float rInner = 1e-4f;
+			float rOuter = 1.f;
+			float stepSize = 0.01f;
+			int numSteps = 64;
+			bool invert = false;
+
+			// Scene-level GRIN filtering thresholds
+			float insightCurvatureThreshold = 1e-6f;
+			float barycentricEpsilon = 0.03f;
+			float rk4PlaneThreshold = 1e-4f;
 };
 
 class Scene {

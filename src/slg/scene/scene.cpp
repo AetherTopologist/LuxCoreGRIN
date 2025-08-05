@@ -71,6 +71,9 @@ void Scene::Init(const luxrays::Properties *resizePolicyProps) {
 	worldGrinInfo.stepSize = 0.01f;
 	worldGrinInfo.numSteps = 64;
 	worldGrinInfo.invert = false;
+	worldGrinInfo.insightCurvatureThreshold = 1e-6f;
+	worldGrinInfo.barycentricEpsilon = 0.03f;
+	worldGrinInfo.rk4PlaneThreshold = 1e-4f;
 	worldVolumeType = CLEAR_VOL;
 	grinUVDistortionStrength = 0.05f;
 
@@ -608,14 +611,17 @@ bool Scene::Intersect(IntersectionDevice *device,
 		// ------------------------------------------------------------
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-									worldGrinInfo.beta, worldGrinInfo.gamma,
-									worldGrinInfo.center,
-									worldGrinInfo.rInner, worldGrinInfo.rOuter,
-									worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-									worldGrinInfo.invert);
+							worldGrinInfo.beta, worldGrinInfo.gamma,
+							worldGrinInfo.center,
+							worldGrinInfo.rInner, worldGrinInfo.rOuter,
+							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+							worldGrinInfo.invert,
+							worldGrinInfo.insightCurvatureThreshold,
+							worldGrinInfo.barycentricEpsilon,
+							worldGrinInfo.rk4PlaneThreshold);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-
+		
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();
 		if (hit) {		
@@ -773,11 +779,14 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 		// ------------------------------------------------------------
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-										worldGrinInfo.beta, worldGrinInfo.gamma,
-										worldGrinInfo.center,
-										worldGrinInfo.rInner, worldGrinInfo.rOuter,
-										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-										worldGrinInfo.invert);
+							worldGrinInfo.beta, worldGrinInfo.gamma,
+							worldGrinInfo.center,
+							worldGrinInfo.rInner, worldGrinInfo.rOuter,
+							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+							worldGrinInfo.invert,
+							worldGrinInfo.insightCurvatureThreshold,
+							worldGrinInfo.barycentricEpsilon,
+							worldGrinInfo.rk4PlaneThreshold);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 		
