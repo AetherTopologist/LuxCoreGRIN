@@ -22,6 +22,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <array>
+#include <vector>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
@@ -133,6 +134,11 @@ private:
 
 class ExtTriangleMesh : public TriangleMesh, public ExtMesh {
 public:
+	struct TriangleAdjacency {
+		std::vector<u_int> edgeNeighbors;   // Triangles sharing an edge
+		std::vector<u_int> vertexNeighbors; // Triangles sharing at least one vertex
+	};
+
 	ExtTriangleMesh(const u_int meshVertCount, const u_int meshTriCount,
 			Point *meshVertices, Triangle *meshTris, Normal *meshNormals = nullptr,
 			UV *meshUVs = nullptr, Spectrum *meshCols = nullptr, float *meshAlphas = nullptr,
@@ -145,6 +151,10 @@ public:
 			const float bRadius = 0.f);
 	~ExtTriangleMesh() { };
 	virtual void Delete();
+
+	const TriangleAdjacency &GetAdjacency(const u_int triIndex) const {
+		return triangleAdjacents[triIndex];
+	}
 
 	void SetVertexAOV(const u_int dataIndex, float *values) {
 		vertAOV[dataIndex] = values;
@@ -481,6 +491,8 @@ public:
 	}
 	BOOST_SERIALIZATION_SPLIT_MEMBER()
 
+	void BuildTriangleAdjacency();
+
 	Normal *normals; // Vertices normals
 	Normal *triNormals; // Triangle normals
 
@@ -490,6 +502,8 @@ public:
 
 	std::array<float *, EXTMESH_MAX_DATA_COUNT> vertAOV; // Vertex AOV
 	std::array<float *, EXTMESH_MAX_DATA_COUNT> triAOV; // Triangle AOV
+
+	std::vector<TriangleAdjacency> triangleAdjacents; // Per-triangle adjacency information
 
 	BevelCylinder *bevelCylinders;
 	BevelBoundingCylinder *bevelBoundingCylinders;

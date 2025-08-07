@@ -19,6 +19,11 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <cstdint>
+#include <unordered_map>
+#include <unordered_set>
+#include <algorithm>
+#include <utility>
 
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
@@ -207,9 +212,100 @@ void ExtTriangleMesh::Init(Normal *meshNormals,
 void ExtTriangleMesh::Preprocess() {
 	// Compute all triangle normals
 	for (u_int i = 0; i < triCount; ++i)
-		triNormals[i] = tris[i].GetGeometryNormal(vertices);
+	triNormals[i] = tris[i].GetGeometryNormal(vertices);
 	
+	BuildTriangleAdjacency();
+
 	PreprocessBevel();
+}
+
+void ExtTriangleMesh::BuildTriangleAdjacency() {
+	triangleAdjacents.clear();
+	triangleAdjacents.resize(triCount);
+
+	//------------------------------------------------------------------------------
+	// Build maps from edges and vertices to triangles
+	//------------------------------------------------------------------------------
+
+	struct EdgeHash {
+		size_t operator()(const std::pair<u_int, u_int> &p) const {
+			return (static_cast<size_t>(p.first) << 32) ^ p.second;
+		}
+	};
+
+	std::unordered_map<std::pair<u_int, u_int>, std::vector<u_int>, EdgeHash> edgeMap;
+	edgeMap.reserve(triCount * 3);
+
+	std::unordered_map<u_int, std::vector<u_int>> vertexMap;
+	vertexMap.reserve(vertCount);
+
+	for (u_int triIndex = 0; triIndex < triCount; ++triIndex) {
+		const Triangle &tri = tris[triIndex];
+
+		// Store vertices
+		vertexMap[tri.v[0]].push_back(triIndex);
+		vertexMap[tri.v[1]].push_back(triIndex);
+		vertexMap[tri.v[2]].push_back(triIndex);
+
+		// Store edges
+		auto addEdge = [&](u_int a, u_int b) {
+			if (a > b)
+				std::swap(a, b);
+			edgeMap[std::make_pair(a, b)].push_back(triIndex);
+		};
+		addEdge(tri.v[0], tri.v[1]);
+		addEdge(tri.v[1], tri.v[2]);
+		addEdge(tri.v[2], tri.v[0]);
+	}
+
+	//------------------------------------------------------------------------------
+	// Build adjacency lists
+	//------------------------------------------------------------------------------
+	for (u_int triIndex = 0; triIndex < triCount; ++triIndex) {
+		TriangleAdjacency adj;
+		const Triangle &tri = tris[triIndex];
+
+		// Edge neighbors
+		auto gatherEdge = [&](u_int a, u_int b) {
+			if (a > b)
+				std::swap(a, b);
+			const auto it = edgeMap.find(std::make_pair(a, b));
+			if (it == edgeMap.end())
+				return;
+			for (const u_int other : it->second) {
+				if (other != triIndex)
+					adj.edgeNeighbors.push_back(other);
+			}
+		};
+		gatherEdge(tri.v[0], tri.v[1]);
+		gatherEdge(tri.v[1], tri.v[2]);
+		gatherEdge(tri.v[2], tri.v[0]);
+
+		// Vertex neighbors
+		auto gatherVertex = [&](u_int v) {
+			const auto it = vertexMap.find(v);
+			if (it == vertexMap.end())
+				return;
+			for (const u_int other : it->second) {
+				if (other != triIndex)
+					adj.vertexNeighbors.push_back(other);
+			}
+		};
+		gatherVertex(tri.v[0]);
+		gatherVertex(tri.v[1]);
+		gatherVertex(tri.v[2]);
+
+		// Remove duplicates
+		auto &edgeVec = adj.edgeNeighbors;
+		std::sort(edgeVec.begin(), edgeVec.end());
+		edgeVec.erase(std::unique(edgeVec.begin(), edgeVec.end()), edgeVec.end());
+
+		auto &vertVec = adj.vertexNeighbors;
+		std::sort(vertVec.begin(), vertVec.end());
+		vertVec.erase(std::unique(vertVec.begin(), vertVec.end()), vertVec.end());
+
+		triangleAdjacents[triIndex] = std::move(adj);
+	}
 }
 
 void ExtTriangleMesh::Delete() {
