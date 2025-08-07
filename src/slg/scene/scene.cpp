@@ -35,6 +35,8 @@
 
 #include "luxrays/core/randomgen.h"
 #include "luxrays/utils/properties.h"
+#include "luxrays/core/exttrianglemesh.h"
+#include "luxrays/core/geometry/xprimeray.h"
 #include "slg/core/sphericalfunction/sphericalfunction.h"
 #include "slg/editaction.h"
 #include "slg/samplers/sampler.h"
@@ -48,6 +50,12 @@
 using namespace std;
 using namespace luxrays;
 using namespace slg;
+
+// Detect if a curved ray came very close to the triangle plane without
+// producing a valid hit. A margin of twice the RK4 plane threshold is used.
+static bool NearMissRK4(const float planeDist, const float rk4PlaneThreshold) {
+        return fabs(planeDist) <= 2.f * rk4PlaneThreshold;
+}
 
 //------------------------------------------------------------------------------
 // Scene
@@ -611,16 +619,27 @@ bool Scene::Intersect(IntersectionDevice *device,
 		// ------------------------------------------------------------
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-							worldGrinInfo.beta, worldGrinInfo.gamma,
-							worldGrinInfo.center,
-							worldGrinInfo.rInner, worldGrinInfo.rOuter,
-							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-							worldGrinInfo.invert,
-							worldGrinInfo.insightCurvatureThreshold,
-							worldGrinInfo.barycentricEpsilon,
-							worldGrinInfo.rk4PlaneThreshold);
+											worldGrinInfo.beta, worldGrinInfo.gamma,
+											worldGrinInfo.center,
+											worldGrinInfo.rInner, worldGrinInfo.rOuter,
+											worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+											worldGrinInfo.invert,
+											worldGrinInfo.insightCurvatureThreshold,
+											worldGrinInfo.barycentricEpsilon,
+											worldGrinInfo.rk4PlaneThreshold);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+
+		// Attempt to recover a miss by probing neighboring triangles
+		// using the precomputed adjacency data.
+		if (!hit && ray->IsCurved() && grinCtx && grinCtx->enabled) {
+			RayHit stitchHit;
+			if (EmitStitchRays(rayHit->meshIndex, rayHit->triangleIndex,
+							*ray, *grinCtx, &stitchHit)) {
+					*rayHit = stitchHit;
+					hit = true;
+			}
+		}
 		
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();
@@ -723,13 +742,62 @@ bool Scene::Intersect(IntersectionDevice *device,
 					return false;
 			} else
 				return true;
-		} else {
-			// Nothing was hit
-			return false;
-		}
+        } else {
+                // Nothing was hit
+                return false;
+        }
 
-		passThrough = rng.floatValue();
+        passThrough = rng.floatValue();
 	}
+}
+
+bool Scene::EmitStitchRays(const u_int meshIndex, const u_int triIndex,
+	const Ray &originalRay, const GRINRayContext &grinCtx, RayHit *hit) const {
+	// Fetch mesh and adjacency information
+	const SceneObject *obj = objDefs.GetSceneObject(meshIndex);
+	if (!obj)
+		return false;
+	const ExtTriangleMesh *mesh = dynamic_cast<const ExtTriangleMesh *>(obj->GetExtMesh());
+	if (!mesh)
+		return false;
+
+	const ExtTriangleMesh::TriangleAdjacency &adj = mesh->GetAdjacency(triIndex);
+
+	// Convert the original ray to an xPRIMEray using world GRIN parameters
+	xPRIMEray xray(
+			originalRay.o,
+			originalRay.d,
+			worldGrinInfo.center,
+			worldGrinInfo.beta,
+			worldGrinInfo.gamma,
+			xPRIMErayType::POWER,
+			originalRay.mint, originalRay.maxt,
+			worldGrinInfo.stepSize, worldGrinInfo.numSteps);
+
+	// Test all edge neighbors for an intersection
+	float t, b1, b2;
+	for (const u_int nTriIdx : adj.edgeNeighbors) {
+		const Triangle &nTri = mesh->GetTriangles()[nTriIdx];
+		const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, nTri.v[0]);
+		const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, nTri.v[1]);
+		const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, nTri.v[2]);
+
+		if (Triangle::xPRIMEIntersect(xray, p0, p1, p2,
+						worldGrinInfo.center, worldGrinInfo.rInner, worldGrinInfo.rOuter,
+						&t, &b1, &b2, worldGrinInfo.invert,
+						worldGrinInfo.insightCurvatureThreshold,
+						worldGrinInfo.barycentricEpsilon,
+						worldGrinInfo.rk4PlaneThreshold)) {
+				hit->t = t;
+				hit->b1 = b1;
+				hit->b2 = b2;
+				hit->meshIndex = meshIndex;
+				hit->triangleIndex = nTriIdx;
+				return true;
+		}
+	}
+
+	return false;
 }
 
 
@@ -778,18 +846,29 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 		//     - Mesh UVs, normals, and shading all follow original logic
 		// ------------------------------------------------------------
 		if (ray->IsCurved())
-			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-							worldGrinInfo.beta, worldGrinInfo.gamma,
-							worldGrinInfo.center,
-							worldGrinInfo.rInner, worldGrinInfo.rOuter,
-							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-							worldGrinInfo.invert,
-							worldGrinInfo.insightCurvatureThreshold,
-							worldGrinInfo.barycentricEpsilon,
-							worldGrinInfo.rk4PlaneThreshold);
+				hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
+												worldGrinInfo.beta, worldGrinInfo.gamma,
+												worldGrinInfo.center,
+												worldGrinInfo.rInner, worldGrinInfo.rOuter,
+												worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+												worldGrinInfo.invert,
+												worldGrinInfo.insightCurvatureThreshold,
+												worldGrinInfo.barycentricEpsilon,
+												worldGrinInfo.rk4PlaneThreshold);
 		else
-			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-		
+				hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+
+		// Stitch rays: retry with neighboring triangles if the first
+		// intersection test failed for a curved ray.
+		if (!hit && ray->IsCurved() && grinCtx && grinCtx->enabled) {
+				RayHit stitchHit;
+				if (EmitStitchRays(rayHit->meshIndex, rayHit->triangleIndex,
+								*ray, *grinCtx, &stitchHit)) {
+						*rayHit = stitchHit;
+						hit = true;
+				}
+		}
+
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();
 		if (hit) {		
