@@ -169,6 +169,8 @@ void Scene::ParseVolumes(const Properties &props) {
 		worldGrinInfo.barycentricEpsilon = props.Get("grin.barycentric_epsilon").Get<float>();
 	if (props.IsDefined("grin.rk4_plane_threshold"))
 		worldGrinInfo.rk4PlaneThreshold = props.Get("grin.rk4_plane_threshold").Get<float>();
+	if (props.IsDefined("grin.stitch_debug"))
+		worldGrinInfo.stitchDebug = props.Get("grin.stitch_debug").Get<bool>();
 
 	if (matKeys.size() > 0)
 		editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);

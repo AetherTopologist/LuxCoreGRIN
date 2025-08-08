@@ -247,6 +247,7 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 	u_int currentNode = 0; // Root Node
 	const u_int stopNode = BVHNodeData_GetSkipIndex(bvhTree[0].nodeData); // Non-existent
 
+	bool hit = false;
 	float t, b1, b2;
 	while (currentNode < stopNode) {
 		const luxrays::ocl::BVHArrayNode &node = bvhTree[currentNode];
@@ -351,11 +352,14 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, node.triangleLeaf.v[2]);
 
 			// 🔥GRIN Straight-Line Hit Operation
+			float planeDist = std::numeric_limits<float>::infinity();
+			bool nearBary = false;
 			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter,
-								&t, &b1, &b2, invert,
-								insightCurvatureThreshold,
-								barycentricEpsilon,
-								rk4PlaneThreshold)) {
+											&t, &b1, &b2, invert,
+											insightCurvatureThreshold,
+											barycentricEpsilon,
+											rk4PlaneThreshold,
+											&planeDist, &nearBary)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
@@ -363,8 +367,13 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 					rayHit->b2 = b2;
 					rayHit->meshIndex = node.triangleLeaf.meshIndex;
 					rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
+					hit = true;
 					// Continue testing for closer intersections
 				}
+			} else if (!hit && (std::fabs(planeDist) <= 2.f * rk4PlaneThreshold || nearBary)) {
+				// Record potential near-miss triangle
+				rayHit->meshIndex = node.triangleLeaf.meshIndex;
+				rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
 			}
 			++currentNode;
 		} else {
@@ -382,7 +391,7 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 		}
 	}
 
-	return !rayHit->Miss();
+	return hit;
 }
 
 }

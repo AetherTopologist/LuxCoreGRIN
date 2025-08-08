@@ -22,6 +22,7 @@
 #include <sstream>
 #include <set>
 #include <vector>
+#include <algorithm>
 #include <memory>
 #include <fstream>  // Needed for std::ofstream
 
@@ -82,6 +83,7 @@ void Scene::Init(const luxrays::Properties *resizePolicyProps) {
 	worldGrinInfo.insightCurvatureThreshold = 1e-6f;
 	worldGrinInfo.barycentricEpsilon = 0.03f;
 	worldGrinInfo.rk4PlaneThreshold = 1e-4f;
+	worldGrinInfo.stitchDebug = false;
 	worldVolumeType = CLEAR_VOL;
 	grinUVDistortionStrength = 0.05f;
 
@@ -632,12 +634,18 @@ bool Scene::Intersect(IntersectionDevice *device,
 
 		// Attempt to recover a miss by probing neighboring triangles
 		// using the precomputed adjacency data.
-		if (!hit && ray->IsCurved() && worldGrinInfo.enabled) {
-			RayHit stitchHit;
-			if (EmitStitchRays(rayHit->meshIndex, rayHit->triangleIndex,
-						*ray, &stitchHit)) {
-				*rayHit = stitchHit;
-				hit = true;
+		if (!hit && ray->IsCurved() && worldGrinInfo.enabled &&
+					(rayHit->meshIndex != 0xffffffffu)) {
+			const SceneObject *obj = objDefs.GetSceneObject(rayHit->meshIndex);
+			ExtTriangleMesh *mesh = obj ?
+						dynamic_cast<ExtTriangleMesh *>(const_cast<ExtMesh *>(obj->GetExtMesh())) : nullptr;
+			if (mesh) {
+				RayHit stitchHit;
+				if (EmitStitchRays(mesh, rayHit->triangleIndex, *ray, &stitchHit)) {
+					stitchHit.meshIndex = rayHit->meshIndex;
+					*rayHit = stitchHit;
+					hit = true;
+				}
 			}
 		}
 		
@@ -752,51 +760,49 @@ bool Scene::Intersect(IntersectionDevice *device,
 	}
 }
 
-bool Scene::EmitStitchRays(const u_int meshIndex, const u_int triIndex,
+// Helper to test a single triangle with the curved-ray intersection routine
+static bool GRINIntersectSingleTriangle(const ExtTriangleMesh *mesh, const u_int triIndex,
+                const Ray &ray, const Scene::WorldGRINInfo &info, RayHit *hit) {
+	const Triangle &tri = mesh->GetTriangles()[triIndex];
+	const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, tri.v[0]);
+	const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, tri.v[1]);
+	const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, tri.v[2]);
+
+	xPRIMEray xray(ray.o, ray.d, info.center, info.beta, info.gamma,
+					xPRIMErayType::POWER, ray.mint, ray.maxt,
+					info.stepSize, info.numSteps);
+
+	if (Triangle::xPRIMEIntersect(xray, p0, p1, p2, info.center, info.rInner, info.rOuter,
+							&hit->t, &hit->b1, &hit->b2, info.invert,
+							info.insightCurvatureThreshold, info.barycentricEpsilon,
+							info.rk4PlaneThreshold, nullptr, nullptr)) {
+		hit->triangleIndex = triIndex;
+		return true;
+	}
+
+        return false;
+}
+
+bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 	const Ray &originalRay, RayHit *hit) const {
-	// Fetch mesh and adjacency information
-	const SceneObject *obj = objDefs.GetSceneObject(meshIndex);
-	if (!obj)
-			return false;
-	const ExtTriangleMesh *mesh = dynamic_cast<const ExtTriangleMesh *>(obj->GetExtMesh());
 	if (!mesh)
-			return false;
+		return false;
 
 	const ExtTriangleMesh::TriangleAdjacency &adj = mesh->GetAdjacency(triIndex);
+	const size_t maxProbes = std::min<size_t>(adj.edgeNeighbors.size(), 3);
 
-	// Convert the original ray to an xPRIMEray using world GRIN parameters
-	xPRIMEray xray(
-			originalRay.o,
-			originalRay.d,
-			worldGrinInfo.center,
-			worldGrinInfo.beta,
-			worldGrinInfo.gamma,
-			xPRIMErayType::POWER,
-			originalRay.mint, originalRay.maxt,
-			worldGrinInfo.stepSize, worldGrinInfo.numSteps);
-
-	// Test all edge neighbors for an intersection
-	float t, b1, b2;
-	for (const u_int nTriIdx : adj.edgeNeighbors) {
-			const Triangle &nTri = mesh->GetTriangles()[nTriIdx];
-			const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, nTri.v[0]);
-			const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, nTri.v[1]);
-			const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, nTri.v[2]);
-
-			if (Triangle::xPRIMEIntersect(xray, p0, p1, p2,
-							worldGrinInfo.center, worldGrinInfo.rInner, worldGrinInfo.rOuter,
-							&t, &b1, &b2, worldGrinInfo.invert,
-							worldGrinInfo.insightCurvatureThreshold,
-							worldGrinInfo.barycentricEpsilon,
-							worldGrinInfo.rk4PlaneThreshold)) {
-					hit->t = t;
-					hit->b1 = b1;
-					hit->b2 = b2;
-					hit->meshIndex = meshIndex;
-					hit->triangleIndex = nTriIdx;
-					return true;
-			}
+	for (size_t i = 0; i < maxProbes; ++i) {
+		const u_int nTriIdx = adj.edgeNeighbors[i];
+		RayHit localHit;
+		if (GRINIntersectSingleTriangle(mesh, nTriIdx, originalRay, worldGrinInfo, &localHit)) {
+			if (worldGrinInfo.stitchDebug)
+				std::cout << "[GRIN] Stitch recovered via neighbor tri "
+								<< nTriIdx << " from base tri " << triIndex << std::endl;
+			*hit = localHit;
+			return true;
+		}
 	}
+
 	return false;
 }
 
@@ -854,19 +860,24 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 												worldGrinInfo.barycentricEpsilon,
 												worldGrinInfo.rk4PlaneThreshold);
 		else
-				hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-
-		// Stitch rays: retry with neighboring triangles if the first
-		// intersection test failed for a curved ray.
-		if (!hit && ray->IsCurved() && worldGrinInfo.enabled) {
-				RayHit stitchHit;
-				if (EmitStitchRays(rayHit->meshIndex, rayHit->triangleIndex,
-								*ray, &stitchHit)) {
+			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
+			// Stitch rays: retry with neighboring triangles if the first
+			// intersection test failed for a curved ray.
+			if (!hit && ray->IsCurved() && worldGrinInfo.enabled &&
+							(rayHit->meshIndex != 0xffffffffu)) {
+				const SceneObject *obj = objDefs.GetSceneObject(rayHit->meshIndex);
+				ExtTriangleMesh *mesh = obj ?
+								dynamic_cast<ExtTriangleMesh *>(const_cast<ExtMesh *>(obj->GetExtMesh())) : nullptr;
+				if (mesh) {
+					RayHit stitchHit;
+					if (EmitStitchRays(mesh, rayHit->triangleIndex, *ray, &stitchHit)) {
+						stitchHit.meshIndex = rayHit->meshIndex;
 						*rayHit = stitchHit;
 						hit = true;
+					}
 				}
-		}
-
+			}
+		
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();
 		if (hit) {		

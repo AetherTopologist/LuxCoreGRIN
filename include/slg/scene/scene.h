@@ -49,6 +49,8 @@
 #include "slg/scene/extmeshcache.h"
 #include "slg/scene/colorspaceconverters.h"
 
+namespace luxrays { class ExtTriangleMesh; class Ray; class RayHit; }
+
 namespace slg {
 
 	// OpenCL data types
@@ -125,6 +127,7 @@ struct WorldGRINInfo {
 			float insightCurvatureThreshold = 1e-6f;
 			float barycentricEpsilon = 0.03f;
 			float rk4PlaneThreshold = 1e-4f;
+			bool stitchDebug = false;
 };
 
 class Scene {
@@ -145,11 +148,12 @@ public:
 			luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
 			SampleResult *sampleResult = nullptr, const bool backTracing = false) const;
 
-	// Try to recover a miss by probing neighbor triangles using precomputed
-	// adjacency information. It returns true if a neighboring triangle is
-	// hit by the original ray.
-	bool EmitStitchRays(const u_int meshIndex, const u_int triIndex,
-			const luxrays::Ray &originalRay, luxrays::RayHit *hit) const;
+	// Try to recover a near-miss by probing edge neighbors of triIndex in 'mesh'.
+	// Returns true and writes to *hit on success.
+	bool EmitStitchRays(luxrays::ExtTriangleMesh *mesh,
+					const u_int triIndex,
+					const luxrays::Ray &ray,
+					luxrays::RayHit *hit) const;
 
 	void PreprocessCamera(const u_int filmWidth, const u_int filmHeight, const u_int *filmSubRegion);
 	void Preprocess(luxrays::Context *ctx,

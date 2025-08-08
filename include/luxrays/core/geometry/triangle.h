@@ -85,7 +85,8 @@ public:
 		}
 
 		// Use axis of maximum curvature to determine t exponent
-		const float gammaMax = std::max(ray.gamma.x, std::max(ray.gamma.y, ray.gamma.z));
+		const float gammaMax = std::max(1e-6f,
+			std::max(ray.gamma.x, std::max(ray.gamma.y, ray.gamma.z)));
 		const float t = std::pow(tBase, 1.f / gammaMax);
 
 		if (!std::isfinite(t) || t < ray.mint || t > ray.maxt)
@@ -163,7 +164,8 @@ public:
 		}
 
 		// Use strongest curvature axis for exponent
-		const float gammaMax = std::max(ray.gamma.x, std::max(ray.gamma.y, ray.gamma.z));
+		const float gammaMax = std::max(1e-6f,
+				std::max(ray.gamma.x, std::max(ray.gamma.y, ray.gamma.z)));
 		const float t = std::pow(tBase, 1.f / gammaMax);
 
 		if (!std::isfinite(t) || t < ray.mint || t > ray.maxt)
@@ -182,20 +184,21 @@ public:
 	}
 
 	static bool RK4_GRINIntersect(
-				const xPRIMEray &ray,
-				const Point &p0,
-				const Point &p1,
-				const Point &p2,
-				const Point &grinCenter,
-				const float rInner,
-				const float rOuter,
-				float *tHit,
-				Point *rk4Hit,
-				float *b1,
-				float *b2,
-				const bool invert = false,
-				const float barycentricEpsilon = 0.03f,
-				const float rk4PlaneThreshold = 1e-4f) {		
+						const xPRIMEray &ray,
+						const Point &p0,
+						const Point &p1,
+						const Point &p2,
+						const Point &grinCenter,
+						const float rInner,
+						const float rOuter,
+						float *tHit,
+						Point *rk4Hit,
+						float *b1,
+						float *b2,
+						const bool invert = false,
+						const float barycentricEpsilon = 0.03f,
+						const float rk4PlaneThreshold = 1e-4f,
+						float *finalPlaneDist = nullptr) {
 		
 		// Triangle plane setup
 		const Vector edge1 = p1 - p0;
@@ -220,6 +223,7 @@ public:
 
 		// For sign-change detection
 		float prevDist = Dot(pos - p0, N);
+		float currDist = prevDist;
 
 		for (int i = 0; i < maxSteps; ++i) {
 			// Compute GRIN curvature at current position
@@ -234,7 +238,7 @@ public:
 			tAccum += stepSize;
 
 			// Current signed distance to plane
-			float currDist = Dot(pos - p0, N);
+			currDist = Dot(pos - p0, N);
 
 			// 🔥 Two tests: crossing the plane OR direct near-plane hit
 			if ((prevDist * currDist < 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
@@ -245,8 +249,11 @@ public:
 				}
 			}
 
-			prevDist = currDist;
+				prevDist = currDist;
 		}
+
+		if (finalPlaneDist)
+			*finalPlaneDist = std::fabs(currDist);
 
 		return false; // No intersection found
 	}
@@ -266,7 +273,9 @@ public:
 					const bool invert = false,
 					const float insightCurvatureThreshold = 1e-6f,
 					const float barycentricEpsilon = 0.03f,
-					const float rk4PlaneThreshold = 1e-4f) {
+					const float rk4PlaneThreshold = 1e-4f,
+					float *finalPlaneDist = nullptr,
+					bool *nearBary = nullptr) {
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;
@@ -281,16 +290,28 @@ public:
 			return false;
 
 		// STEP 2: Quick barycentric test
-		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, barycentricEpsilon))
+		const float stitchBaryMargin = 0.02f;
+		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, barycentricEpsilon)) {
+			if (nearBary) {
+				float tb1, tb2;
+				if (GetBaryCoordsSoft(p0, p1, p2, approxHit, &tb1, &tb2,
+							barycentricEpsilon + stitchBaryMargin))
+					*nearBary = true;
+				else
+					*nearBary = false;
+			}
 			return false;
+		} else if (nearBary)
+			*nearBary = false;
 
 		// STEP 3: RK4 refinement through GRIN field (like your Blender)
 		Point rk4Hit;
 		float tRK4;
 
 		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter,
-								&tRK4, &rk4Hit, b1, b2, invert,
-								barycentricEpsilon, rk4PlaneThreshold))
+									&tRK4, &rk4Hit, b1, b2, invert,
+									barycentricEpsilon, rk4PlaneThreshold,
+									finalPlaneDist))
 			return false;
 
 		*tHit = tRK4;
