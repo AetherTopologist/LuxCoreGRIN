@@ -140,19 +140,16 @@ public:
 		luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
 		SampleResult *sampleResult = nullptr, const bool backTracing = false) const;
 
-	// 🔥GRIN - Added input GRINRayContext can remove for now..
 	bool xPRIMEIntersect(luxrays::IntersectionDevice *device, const SceneRayType rayType, PathVolumeInfo *volInfo,
-		const float passThrough, luxrays::Ray *ray, luxrays::RayHit *rayHit, BSDF *bsdf,
-		luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
-		SampleResult *sampleResult = nullptr, const bool backTracing = false, const GRINRayContext *grinCtx= nullptr) const;
+			const float passThrough, luxrays::Ray *ray, luxrays::RayHit *rayHit, BSDF *bsdf,
+			luxrays::Spectrum *connectionThroughput, const luxrays::Spectrum *pathThroughput = nullptr,
+			SampleResult *sampleResult = nullptr, const bool backTracing = false) const;
 
 	// Try to recover a miss by probing neighbor triangles using precomputed
 	// adjacency information. It returns true if a neighboring triangle is
 	// hit by the original ray.
 	bool EmitStitchRays(const u_int meshIndex, const u_int triIndex,
-		const luxrays::Ray &originalRay, const GRINRayContext &grinCtx,
-		luxrays::RayHit *hit) const;
-
+			const luxrays::Ray &originalRay, luxrays::RayHit *hit) const;
 
 	void PreprocessCamera(const u_int filmWidth, const u_int filmHeight, const u_int *filmSubRegion);
 	void Preprocess(luxrays::Context *ctx,

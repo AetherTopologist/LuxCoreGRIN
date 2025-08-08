@@ -262,49 +262,49 @@ void ExtTriangleMesh::BuildTriangleAdjacency() {
 	// Build adjacency lists
 	//------------------------------------------------------------------------------
 	for (u_int triIndex = 0; triIndex < triCount; ++triIndex) {
-			TriangleAdjacency adj;
-			const Triangle &tri = tris[triIndex];
+		TriangleAdjacency adj;
+		const Triangle &tri = tris[triIndex];
 
-			// Edge neighbors
-			auto gatherEdge = [&](u_int a, u_int b) {
-					if (a > b)
-							std::swap(a, b);
-					const auto it = edgeMap.find(std::make_pair(a, b));
-					if (it == edgeMap.end())
-							return;
-					for (const u_int other : it->second) {
-							if (other != triIndex)
-									adj.edgeNeighbors.push_back(other);
-					}
-			};
-			gatherEdge(tri.v[0], tri.v[1]);
-			gatherEdge(tri.v[1], tri.v[2]);
-			gatherEdge(tri.v[2], tri.v[0]);
+		// Edge neighbors
+		auto gatherEdge = [&](u_int a, u_int b) {
+			if (a > b)
+				std::swap(a, b);
+			const auto it = edgeMap.find(std::make_pair(a, b));
+			if (it == edgeMap.end())
+				return;
+			for (const u_int other : it->second) {
+				if (other != triIndex)
+					adj.edgeNeighbors.push_back(other);
+			}
+		};
+		gatherEdge(tri.v[0], tri.v[1]);
+		gatherEdge(tri.v[1], tri.v[2]);
+		gatherEdge(tri.v[2], tri.v[0]);
 
-			// Vertex neighbors
-			auto gatherVertex = [&](u_int v) {
-					const auto it = vertexMap.find(v);
-					if (it == vertexMap.end())
-							return;
-					for (const u_int other : it->second) {
-							if (other != triIndex)
-									adj.vertexNeighbors.push_back(other);
-					}
-			};
-			gatherVertex(tri.v[0]);
-			gatherVertex(tri.v[1]);
-			gatherVertex(tri.v[2]);
+		// Vertex neighbors
+		auto gatherVertex = [&](u_int v) {
+			const auto it = vertexMap.find(v);
+			if (it == vertexMap.end())
+				return;
+			for (const u_int other : it->second) {
+				if (other != triIndex)
+					adj.vertexNeighbors.push_back(other);
+			}
+		};
+		gatherVertex(tri.v[0]);
+		gatherVertex(tri.v[1]);
+		gatherVertex(tri.v[2]);
 
-			// Remove duplicates
-			auto &edgeVec = adj.edgeNeighbors;
-			std::sort(edgeVec.begin(), edgeVec.end());
-			edgeVec.erase(std::unique(edgeVec.begin(), edgeVec.end()), edgeVec.end());
+		// Remove duplicates
+		auto &edgeVec = adj.edgeNeighbors;
+		std::sort(edgeVec.begin(), edgeVec.end());
+		edgeVec.erase(std::unique(edgeVec.begin(), edgeVec.end()), edgeVec.end());
 
-			auto &vertVec = adj.vertexNeighbors;
-			std::sort(vertVec.begin(), vertVec.end());
-			vertVec.erase(std::unique(vertVec.begin(), vertVec.end()), vertVec.end());
+		auto &vertVec = adj.vertexNeighbors;
+		std::sort(vertVec.begin(), vertVec.end());
+		vertVec.erase(std::unique(vertVec.begin(), vertVec.end()), vertVec.end());
 
-			triangleAdjacents[triIndex] = std::move(adj);
+		triangleAdjacents[triIndex] = std::move(adj);
 	}
 }
 

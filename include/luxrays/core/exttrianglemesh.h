@@ -138,7 +138,6 @@ public:
 		std::vector<u_int> edgeNeighbors;   // Triangles sharing an edge
 		std::vector<u_int> vertexNeighbors; // Triangles sharing at least one vertex
 	};
-
 	ExtTriangleMesh(const u_int meshVertCount, const u_int meshTriCount,
 			Point *meshVertices, Triangle *meshTris, Normal *meshNormals = nullptr,
 			UV *meshUVs = nullptr, Spectrum *meshCols = nullptr, float *meshAlphas = nullptr,
