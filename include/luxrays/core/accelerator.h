@@ -25,6 +25,7 @@
 #include "luxrays/luxrays.h"
 #include "luxrays/core/geometry/ray.h"
 #include "luxrays/core/trianglemesh.h"
+#include "slg/scene/stitchhint.h"
 
 namespace luxrays {
 
@@ -55,14 +56,15 @@ public:
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const = 0;
 
 	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,
-								const float beta, const luxrays::Vector &gamma,
-								const luxrays::Point &grinCenter,
-								const float rInner, const float rOuter,
-								const float stepSize, const int numSteps,
-								const bool invert = false,
-								const float insightCurvatureThreshold = 1e-6f,
-								const float barycentricEpsilon = 0.03f,
-								const float rk4PlaneThreshold = 1e-4f) const {
+					const float beta, const luxrays::Vector &gamma,
+					const luxrays::Point &grinCenter,
+					const float rInner, const float rOuter,
+					const float stepSize, const int numSteps,
+					const bool invert = false,
+					const float insightCurvatureThreshold = 1e-6f,
+					const float barycentricEpsilon = 0.03f,
+					const float rk4PlaneThreshold = 1e-4f,
+					slg::StitchHint *stitchHint = nullptr) const {
 		return Intersect(ray, hit); // <== fallback behavior
 	}
 	

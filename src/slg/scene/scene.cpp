@@ -619,30 +619,30 @@ bool Scene::Intersect(IntersectionDevice *device,
 		//     - Use ray(rayHit.t) for hitpoint position
 		//     - Mesh UVs, normals, and shading all follow original logic
 		// ------------------------------------------------------------
+		Scene::StitchHint stitchHint;
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-									worldGrinInfo.beta, worldGrinInfo.gamma,
-									worldGrinInfo.center,
-									worldGrinInfo.rInner, worldGrinInfo.rOuter,
-									worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-									worldGrinInfo.invert,
-									worldGrinInfo.insightCurvatureThreshold,
-									worldGrinInfo.barycentricEpsilon,
-									worldGrinInfo.rk4PlaneThreshold);
+											worldGrinInfo.beta, worldGrinInfo.gamma,
+											worldGrinInfo.center,
+											worldGrinInfo.rInner, worldGrinInfo.rOuter,
+											worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+											worldGrinInfo.invert,
+											worldGrinInfo.insightCurvatureThreshold,
+											worldGrinInfo.barycentricEpsilon,
+											worldGrinInfo.rk4PlaneThreshold,
+											&stitchHint);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
 		// Attempt to recover a miss by probing neighboring triangles
-		// using the precomputed adjacency data.
-		if (!hit && ray->IsCurved() && worldGrinInfo.enabled &&
-					(rayHit->meshIndex != 0xffffffffu)) {
-			const SceneObject *obj = objDefs.GetSceneObject(rayHit->meshIndex);
+		if (!hit && ray->IsCurved() && worldGrinInfo.enabled && stitchHint.valid()) {
+			const SceneObject *obj = objDefs.GetSceneObject(stitchHint.meshIndex);
 			ExtTriangleMesh *mesh = obj ?
-						dynamic_cast<ExtTriangleMesh *>(const_cast<ExtMesh *>(obj->GetExtMesh())) : nullptr;
-			if (mesh) {
+							dynamic_cast<ExtTriangleMesh *>(const_cast<ExtMesh *>(obj->GetExtMesh())) : nullptr;
+			if (mesh && stitchHint.triIndex < mesh->GetTotalTriangleCount()) {
 				RayHit stitchHit;
-				if (EmitStitchRays(mesh, rayHit->triangleIndex, *ray, &stitchHit)) {
-					stitchHit.meshIndex = rayHit->meshIndex;
+				if (EmitStitchRays(mesh, stitchHint.triIndex, *ray, &stitchHit)) {
+					stitchHit.meshIndex = stitchHint.meshIndex;
 					*rayHit = stitchHit;
 					hit = true;
 				}
@@ -780,11 +780,11 @@ static bool GRINIntersectSingleTriangle(const ExtTriangleMesh *mesh, const u_int
 		return true;
 	}
 
-        return false;
+	return false;
 }
 
 bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
-	const Ray &originalRay, RayHit *hit) const {
+					const Ray &originalRay, RayHit *hit) const {
 	if (!mesh)
 		return false;
 
@@ -796,7 +796,7 @@ bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 		RayHit localHit;
 		if (GRINIntersectSingleTriangle(mesh, nTriIdx, originalRay, worldGrinInfo, &localHit)) {
 			if (worldGrinInfo.stitchDebug)
-				std::cout << "[GRIN] Stitch recovered via neighbor tri "
+					std::cout << "[GRIN] Stitch recovered via neighbor tri "
 								<< nTriIdx << " from base tri " << triIndex << std::endl;
 			*hit = localHit;
 			return true;
@@ -849,34 +849,36 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 		//     - Use ray(rayHit.t) for hitpoint position
 		//     - Mesh UVs, normals, and shading all follow original logic
 		// ------------------------------------------------------------
+		Scene::StitchHint stitchHint;
 		if (ray->IsCurved())
-				hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-												worldGrinInfo.beta, worldGrinInfo.gamma,
-												worldGrinInfo.center,
-												worldGrinInfo.rInner, worldGrinInfo.rOuter,
-												worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-												worldGrinInfo.invert,
-												worldGrinInfo.insightCurvatureThreshold,
-												worldGrinInfo.barycentricEpsilon,
-												worldGrinInfo.rk4PlaneThreshold);
+			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
+										worldGrinInfo.beta, worldGrinInfo.gamma,
+										worldGrinInfo.center,
+										worldGrinInfo.rInner, worldGrinInfo.rOuter,
+										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+										worldGrinInfo.invert,
+										worldGrinInfo.insightCurvatureThreshold,
+										worldGrinInfo.barycentricEpsilon,
+										worldGrinInfo.rk4PlaneThreshold,
+										&stitchHint);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
-			// Stitch rays: retry with neighboring triangles if the first
-			// intersection test failed for a curved ray.
-			if (!hit && ray->IsCurved() && worldGrinInfo.enabled &&
-							(rayHit->meshIndex != 0xffffffffu)) {
-				const SceneObject *obj = objDefs.GetSceneObject(rayHit->meshIndex);
-				ExtTriangleMesh *mesh = obj ?
-								dynamic_cast<ExtTriangleMesh *>(const_cast<ExtMesh *>(obj->GetExtMesh())) : nullptr;
-				if (mesh) {
-					RayHit stitchHit;
-					if (EmitStitchRays(mesh, rayHit->triangleIndex, *ray, &stitchHit)) {
-						stitchHit.meshIndex = rayHit->meshIndex;
-						*rayHit = stitchHit;
-						hit = true;
-					}
+
+		// Stitch rays: retry with neighboring triangles if the first
+		// intersection test failed for a curved ray.
+		if (!hit && ray->IsCurved() && worldGrinInfo.enabled && stitchHint.valid()) {
+			const SceneObject *obj = objDefs.GetSceneObject(stitchHint.meshIndex);
+			ExtTriangleMesh *mesh = obj ?
+							dynamic_cast<ExtTriangleMesh *>(const_cast<ExtMesh *>(obj->GetExtMesh())) : nullptr;
+			if (mesh && stitchHint.triIndex < mesh->GetTotalTriangleCount()) {
+				RayHit stitchHit;
+				if (EmitStitchRays(mesh, stitchHint.triIndex, *ray, &stitchHit)) {
+					stitchHit.meshIndex = stitchHint.meshIndex;
+					*rayHit = stitchHit;
+					hit = true;
 				}
 			}
+		}
 		
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();

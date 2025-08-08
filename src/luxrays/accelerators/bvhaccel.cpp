@@ -301,7 +301,8 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
                                 const bool invert,
                                 const float insightCurvatureThreshold,
                                 const float barycentricEpsilon,
-                                const float rk4PlaneThreshold) const {
+                                const float rk4PlaneThreshold,
+                                slg::StitchHint *stitchHint) const {
 	assert (initialized);
 
 	rayHit->t = initialRay->maxt;
@@ -337,6 +338,7 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 	const u_int stopNode = BVHNodeData_GetSkipIndex(bvhTree[0].nodeData); // Non-existent
 
 	float t, b1, b2;
+	bool hit = false;
 	while (currentNode < stopNode) {
 		const luxrays::ocl::BVHArrayNode &node = bvhTree[currentNode];
 
@@ -354,26 +356,29 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			// 🔥GRIN Straight-Line Hit Operation
 			float planeDist = std::numeric_limits<float>::infinity();
 			bool nearBary = false;
+			const u_int meshIdx = node.triangleLeaf.meshIndex;
+			const u_int triIdx = node.triangleLeaf.triangleIndex;
 			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter,
-											&t, &b1, &b2, invert,
-											insightCurvatureThreshold,
-											barycentricEpsilon,
-											rk4PlaneThreshold,
-											&planeDist, &nearBary)) {
+												&t, &b1, &b2, invert,
+												insightCurvatureThreshold,
+												barycentricEpsilon,
+												rk4PlaneThreshold,
+												&planeDist, &nearBary)) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
 					rayHit->b1 = b1;
 					rayHit->b2 = b2;
-					rayHit->meshIndex = node.triangleLeaf.meshIndex;
-					rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
+					rayHit->meshIndex = meshIdx;
+					rayHit->triangleIndex = triIdx;
 					hit = true;
 					// Continue testing for closer intersections
 				}
-			} else if (!hit && (std::fabs(planeDist) <= 2.f * rk4PlaneThreshold || nearBary)) {
-				// Record potential near-miss triangle
-				rayHit->meshIndex = node.triangleLeaf.meshIndex;
-				rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
+			} else if (stitchHint) {
+				const bool nearPlane = std::isfinite(planeDist) &&
+					(fabs(planeDist) < (2.f * rk4PlaneThreshold));
+				if (nearPlane || nearBary)
+					stitchHint->consider(meshIdx, triIdx, planeDist, nearBary);
 			}
 			++currentNode;
 		} else {

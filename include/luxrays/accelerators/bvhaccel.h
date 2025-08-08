@@ -24,6 +24,7 @@
 
 #include "luxrays/luxrays.h"
 #include "luxrays/core/accelerator.h"
+#include "slg/scene/stitchhint.h"
 #include "luxrays/core/bvh/bvhbuild.h"
 
 namespace luxrays {
@@ -58,7 +59,8 @@ public:
 					const bool invert = false,
 					const float insightCurvatureThreshold = 1e-6f,
 					const float barycentricEpsilon = 0.03f,
-					const float rk4PlaneThreshold = 1e-4f) const;
+					const float rk4PlaneThreshold = 1e-4f,
+					slg::StitchHint *stitchHint = nullptr) const;
 
 	static BVHParams ToBVHParams(const Properties &props);
 
