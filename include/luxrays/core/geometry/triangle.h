@@ -275,7 +275,8 @@ public:
 					const float barycentricEpsilon = 0.03f,
 					const float rk4PlaneThreshold = 1e-4f,
 					float *finalPlaneDist = nullptr,
-					bool *nearBary = nullptr) {
+					bool *nearBary = nullptr,
+					const float stitchBaryMargin = 0.02f) {
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;
@@ -290,7 +291,6 @@ public:
 			return false;
 
 		// STEP 2: Quick barycentric test
-		const float stitchBaryMargin = 0.02f;
 		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, barycentricEpsilon)) {
 			if (nearBary) {
 				float tb1, tb2;

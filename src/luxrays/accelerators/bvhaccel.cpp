@@ -294,15 +294,17 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 }
 
 bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
-                                const float beta, const luxrays::Vector &gamma,
-                                const luxrays::Point &grinCenter,
-                                const float rInner, const float rOuter,
-                                const float stepSize, const int numSteps,
-                                const bool invert,
-                                const float insightCurvatureThreshold,
-                                const float barycentricEpsilon,
-                                const float rk4PlaneThreshold,
-                                slg::StitchHint *stitchHint) const {
+                               const float beta, const luxrays::Vector &gamma,
+                               const luxrays::Point &grinCenter,
+                               const float rInner, const float rOuter,
+                               const float stepSize, const int numSteps,
+                               const bool invert,
+                               const float insightCurvatureThreshold,
+                               const float barycentricEpsilon,
+                               const float rk4PlaneThreshold,
+                               slg::StitchHint *stitchHint,
+                               float stitchPlaneFactor,
+                               float stitchBaryMargin) const {
 	assert (initialized);
 
 	rayHit->t = initialRay->maxt;
@@ -358,12 +360,14 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			bool nearBary = false;
 			const u_int meshIdx = node.triangleLeaf.meshIndex;
 			const u_int triIdx = node.triangleLeaf.triangleIndex;
-			if (Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter,
-												&t, &b1, &b2, invert,
-												insightCurvatureThreshold,
-												barycentricEpsilon,
-												rk4PlaneThreshold,
-												&planeDist, &nearBary)) {
+			const bool ok = Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter,
+														&t, &b1, &b2, invert,
+														insightCurvatureThreshold,
+														barycentricEpsilon,
+														rk4PlaneThreshold,
+														&planeDist, &nearBary,
+														stitchBaryMargin);
+			if (ok) {
 				if (t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
@@ -376,7 +380,7 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 				}
 			} else if (stitchHint) {
 				const bool nearPlane = std::isfinite(planeDist) &&
-					(fabs(planeDist) < (2.f * rk4PlaneThreshold));
+					(fabs(planeDist) < (stitchPlaneFactor * rk4PlaneThreshold));
 				if (nearPlane || nearBary)
 					stitchHint->consider(meshIdx, triIdx, planeDist, nearBary);
 			}

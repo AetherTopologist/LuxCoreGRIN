@@ -622,15 +622,17 @@ bool Scene::Intersect(IntersectionDevice *device,
 		Scene::StitchHint stitchHint;
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-											worldGrinInfo.beta, worldGrinInfo.gamma,
-											worldGrinInfo.center,
-											worldGrinInfo.rInner, worldGrinInfo.rOuter,
-											worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-											worldGrinInfo.invert,
-											worldGrinInfo.insightCurvatureThreshold,
-											worldGrinInfo.barycentricEpsilon,
-											worldGrinInfo.rk4PlaneThreshold,
-											&stitchHint);
+										worldGrinInfo.beta, worldGrinInfo.gamma,
+										worldGrinInfo.center,
+										worldGrinInfo.rInner, worldGrinInfo.rOuter,
+										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+										worldGrinInfo.invert,
+										worldGrinInfo.insightCurvatureThreshold,
+										worldGrinInfo.barycentricEpsilon,
+										worldGrinInfo.rk4PlaneThreshold,
+										&stitchHint,
+										worldGrinInfo.stitchPlaneFactor,
+										worldGrinInfo.stitchBaryMargin);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
@@ -773,9 +775,10 @@ static bool GRINIntersectSingleTriangle(const ExtTriangleMesh *mesh, const u_int
 					info.stepSize, info.numSteps);
 
 	if (Triangle::xPRIMEIntersect(xray, p0, p1, p2, info.center, info.rInner, info.rOuter,
-							&hit->t, &hit->b1, &hit->b2, info.invert,
-							info.insightCurvatureThreshold, info.barycentricEpsilon,
-							info.rk4PlaneThreshold, nullptr, nullptr)) {
+								&hit->t, &hit->b1, &hit->b2, info.invert,
+								info.insightCurvatureThreshold, info.barycentricEpsilon,
+								info.rk4PlaneThreshold, nullptr, nullptr,
+								info.stitchBaryMargin)) {
 		hit->triangleIndex = triIndex;
 		return true;
 	}
@@ -784,22 +787,85 @@ static bool GRINIntersectSingleTriangle(const ExtTriangleMesh *mesh, const u_int
 }
 
 bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
-					const Ray &originalRay, RayHit *hit) const {
+						const Ray &originalRay, RayHit *hit) const {
 	if (!mesh)
 		return false;
 
+	const Triangle &baseTri = mesh->GetTriangles()[triIndex];
+	const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, baseTri.v[0]);
+	const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, baseTri.v[1]);
+	const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, baseTri.v[2]);
+	const Normal Nb = Normal(Normalize(Cross(p1 - p0, p2 - p0)));
+
 	const ExtTriangleMesh::TriangleAdjacency &adj = mesh->GetAdjacency(triIndex);
-	const size_t maxProbes = std::min<size_t>(adj.edgeNeighbors.size(), 3);
+	const size_t maxProbes = std::min<size_t>(adj.edgeNeighbors.size(), worldGrinInfo.stitchMaxProbes);
 
 	for (size_t i = 0; i < maxProbes; ++i) {
 		const u_int nTriIdx = adj.edgeNeighbors[i];
-		RayHit localHit;
-		if (GRINIntersectSingleTriangle(mesh, nTriIdx, originalRay, worldGrinInfo, &localHit)) {
+		const Triangle &nTri = mesh->GetTriangles()[nTriIdx];
+
+		// Find shared edge
+		std::vector<u_int> shared;
+		for (u_int a : baseTri.v)
+			for (u_int b : nTri.v)
+				if (a == b)
+					shared.push_back(a);
+
+		const int jitterAttempts = 1 + worldGrinInfo.stitchEdgeJitterCount;
+		const Point vA = (shared.size() >= 1) ? mesh->GetVertex(Transform::TRANS_IDENTITY, shared[0]) : Point();
+		const Point vB = (shared.size() >= 2) ? mesh->GetVertex(Transform::TRANS_IDENTITY, shared[1]) : Point();
+		const Vector edge = Normalize(vB - vA);
+		const float edgeLen = (shared.size() >= 2) ? (vB - vA).Length() : 0.f;
+		Vector nudgeDir = Cross(edge, Nb);
+		if (nudgeDir.LengthSquared() < 1e-9f)
+			nudgeDir = Nb;
+		else
+			nudgeDir = Normalize(nudgeDir);
+		const Point mid = (shared.size() >= 2) ? ((vA + vB) * 0.5f) : p0;
+		const Vector bias = Normalize(mid - originalRay.o);
+
+		for (int attempt = 0; attempt < jitterAttempts; ++attempt) {
+			Ray probeRay = originalRay;
+			if ((attempt > 0) && (edgeLen > 0.f)) {
+				const float sign = (attempt % 2) ? 1.f : -1.f;
+				const float offset = sign * (worldGrinInfo.stitchEdgeJitterScale * edgeLen);
+				probeRay.o = originalRay.o + nudgeDir * offset;
+				probeRay.d = Normalize(originalRay.d + (1e-3f * bias));
+			}
+
 			if (worldGrinInfo.stitchDebug)
+				std::cout << "[GRIN] Stitch probe nTri=" << nTriIdx
+							<< " try=" << attempt
+							<< " jitter=" << (attempt > 0) << std::endl;
+
+			RayHit localHit;
+			if (GRINIntersectSingleTriangle(mesh, nTriIdx, probeRay, worldGrinInfo, &localHit)) {
+				if (worldGrinInfo.stitchDebug)
 					std::cout << "[GRIN] Stitch recovered via neighbor tri "
 								<< nTriIdx << " from base tri " << triIndex << std::endl;
-			*hit = localHit;
-			return true;
+				*hit = localHit;
+				return true;
+			}
+		}
+	}
+
+	if (worldGrinInfo.stitchUseVertexNeighbors) {
+		const size_t vMax = std::min<size_t>(adj.vertexNeighbors.size(), worldGrinInfo.stitchMaxProbes);
+		for (size_t i = 0; i < vMax; ++i) {
+			const u_int nTriIdx = adj.vertexNeighbors[i];
+
+			if (worldGrinInfo.stitchDebug)
+				std::cout << "[GRIN] Stitch probe nTri=" << nTriIdx
+							<< " try=0 jitter=0" << std::endl;
+
+			RayHit localHit;
+			if (GRINIntersectSingleTriangle(mesh, nTriIdx, originalRay, worldGrinInfo, &localHit)) {
+				if (worldGrinInfo.stitchDebug)
+					std::cout << "[GRIN] Stitch recovered via neighbor tri "
+								<< nTriIdx << " from base tri " << triIndex << std::endl;
+				*hit = localHit;
+				return true;
+			}
 		}
 	}
 
@@ -860,7 +926,9 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 										worldGrinInfo.insightCurvatureThreshold,
 										worldGrinInfo.barycentricEpsilon,
 										worldGrinInfo.rk4PlaneThreshold,
-										&stitchHint);
+										&stitchHint,
+										worldGrinInfo.stitchPlaneFactor,
+										worldGrinInfo.stitchBaryMargin);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 

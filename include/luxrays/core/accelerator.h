@@ -64,7 +64,9 @@ public:
 					const float insightCurvatureThreshold = 1e-6f,
 					const float barycentricEpsilon = 0.03f,
 					const float rk4PlaneThreshold = 1e-4f,
-					slg::StitchHint *stitchHint = nullptr) const {
+					slg::StitchHint *stitchHint = nullptr,
+					float stitchPlaneFactor = 2.f,
+					float stitchBaryMargin = 0.02f) const {
 		return Intersect(ray, hit); // <== fallback behavior
 	}
 	

@@ -129,7 +129,15 @@ struct WorldGRINInfo {
 				float insightCurvatureThreshold = 1e-6f;
 				float barycentricEpsilon = 0.03f;
 				float rk4PlaneThreshold = 1e-4f;
-				bool stitchDebug = false;
+
+				// Stitch tunables
+				float stitchPlaneFactor = 2.0f;     // multiplier for near-plane test
+				float stitchBaryMargin  = 0.02f;    // extra margin on bary test
+				int   stitchMaxProbes   = 3;        // neighbors to try
+				int   stitchEdgeJitterCount = 2;    // extra nudged rays per neighbor
+				float stitchEdgeJitterScale = 1e-4f;// origin offset scale relative to edge length
+				bool  stitchUseVertexNeighbors = false;
+				bool  stitchDebug = false;
 };
 
 class Scene {

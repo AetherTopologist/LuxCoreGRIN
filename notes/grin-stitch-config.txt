@@ -1,0 +1,7 @@
+grin.stitch_debug = 1
+grin.stitch_plane_factor = 3.0
+grin.stitch_bary_margin = 0.04
+grin.stitch_max_probes = 4
+grin.stitch_edge_jitter_count = 3
+grin.stitch_edge_jitter_scale = 2e-4
+grin.stitch_use_vertex_neighbors = 0
