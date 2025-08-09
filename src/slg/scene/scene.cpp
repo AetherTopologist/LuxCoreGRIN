@@ -60,6 +60,26 @@ static bool NearMissRK4(const float planeDist, const float rk4PlaneThreshold) {
 	return fabs(planeDist) <= 2.f * rk4PlaneThreshold;
 }
 
+static inline void ClampBaryForPolicy(const ExtTriangleMesh *mesh, const u_int triIdx,
+			const Point &hitP, float tol, int uvPolicy, float *b1, float *b2) {
+	const Triangle &tri = mesh->GetTriangles()[triIdx];
+	const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, tri.v[0]);
+	const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, tri.v[1]);
+	const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, tri.v[2]);
+
+	const float u = 1.f - *b1 - *b2;
+	const bool outside = (u < -tol) || (*b1 < -tol) || (*b2 < -tol);
+	if (!outside) return;
+
+	if (uvPolicy == WorldGRINInfo::UV_REJECT) {
+		// Mark impossible by pushing far outside; caller will ignore
+		*b1 = *b2 = 10.f;
+		return;
+	} else { // UV_EDGE_PROJECT
+		Triangle::ClosestPointBarycentric(hitP, p0, p1, p2, b1, b2);
+	}
+}
+
 //------------------------------------------------------------------------------
 // Scene
 //------------------------------------------------------------------------------
@@ -799,8 +819,7 @@ bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 	const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, baseTri.v[2]);
 
 	// Vector normal for math + Normal for orientation
-	const Vector NbV = Normalize(Cross(p1 - p0, p2 - p0));
-	const Normal Nb = Normal(NbV);
+	const Normal Nb = Normal(Normalize(Cross(p1 - p0, p2 - p0)));
 
 	const ExtTriangleMesh::TriangleAdjacency &adj = mesh->GetAdjacency(triIndex);
 	const size_t maxProbes = std::min<size_t>(adj.edgeNeighbors.size(), worldGrinInfo.stitchMaxProbes);
@@ -825,9 +844,9 @@ bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 		const Vector edgeV = (edgeLen > 0.f) ? (edgeDir / edgeLen) : Vector(0.f, 0.f, 0.f);
 
 		// Use Vector normal for Cross()
-		Vector nudgeDir = Cross(edgeV, NbV);
+		Vector nudgeDir = Cross(edgeV, Vector(Nb));
 		if (nudgeDir.LengthSquared() < 1e-9f)
-			nudgeDir = NbV;
+			nudgeDir = Vector(Nb);
 		else
 			nudgeDir = Normalize(nudgeDir);
 
@@ -854,11 +873,29 @@ bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 
 			RayHit localHit;
 			if (GRINIntersectSingleTriangle(mesh, nTriIdx, probeRay, worldGrinInfo, &localHit)) {
-				if (worldGrinInfo.stitchDebug)
-					std::cout << "[GRIN] Stitch recovered via neighbor tri "
-								<< nTriIdx << " from base tri " << triIndex << std::endl;
-				*hit = localHit;
-				return true;
+					if (worldGrinInfo.stitchDebug)
+							std::cout << "[GRIN] Stitch recovered via neighbor tri "
+													<< nTriIdx << " from base tri " << triIndex << std::endl;
+					// seam policy: clamp or reject if the rk4 point slipped just outside
+					const Triangle &nt = mesh->GetTriangles()[nTriIdx];
+					const Point np0 = mesh->GetVertex(Transform::TRANS_IDENTITY, nt.v[0]);
+					const Point np1 = mesh->GetVertex(Transform::TRANS_IDENTITY, nt.v[1]);
+					const Point np2 = mesh->GetVertex(Transform::TRANS_IDENTITY, nt.v[2]);
+
+					// Rebuild the hit position from current bary (closest point if needed)
+					Point guessP = np0 + (np1 - np0) * localHit.b1 + (np2 - np0) * localHit.b2;
+					ClampBaryForPolicy(mesh, nTriIdx, guessP,
+							worldGrinInfo.uvSeamTolerance,
+							worldGrinInfo.uvCrossIslandPolicy,
+							&localHit.b1, &localHit.b2);
+
+					// If policy rejected, skip this neighbor
+					const float uu = 1.f - localHit.b1 - localHit.b2;
+					if (localHit.b1 > 5.f || localHit.b2 > 5.f || uu < -0.5f)
+							continue;
+
+					*hit = localHit;
+					return true;
 			}
 		}
 	}
@@ -870,13 +907,28 @@ bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 
 			if (worldGrinInfo.stitchDebug)
 				std::cout << "[GRIN] Stitch probe nTri=" << nTriIdx
-							<< " try=0 jitter=0" << std::endl;
+						<< " try=0 jitter=0" << std::endl;
 
 			RayHit localHit;
 			if (GRINIntersectSingleTriangle(mesh, nTriIdx, originalRay, worldGrinInfo, &localHit)) {
 				if (worldGrinInfo.stitchDebug)
-						std::cout << "[GRIN] Stitch recovered via neighbor tri "
-									<< nTriIdx << " from base tri " << triIndex << std::endl;
+					std::cout << "[GRIN] Stitch recovered via neighbor tri "
+											<< nTriIdx << " from base tri " << triIndex << std::endl;
+				const Triangle &nt = mesh->GetTriangles()[nTriIdx];
+				const Point np0 = mesh->GetVertex(Transform::TRANS_IDENTITY, nt.v[0]);
+				const Point np1 = mesh->GetVertex(Transform::TRANS_IDENTITY, nt.v[1]);
+				const Point np2 = mesh->GetVertex(Transform::TRANS_IDENTITY, nt.v[2]);
+
+				Point guessP = np0 + (np1 - np0) * localHit.b1 + (np2 - np0) * localHit.b2;
+				ClampBaryForPolicy(mesh, nTriIdx, guessP,
+						worldGrinInfo.uvSeamTolerance,
+						worldGrinInfo.uvCrossIslandPolicy,
+						&localHit.b1, &localHit.b2);
+
+				const float uu = 1.f - localHit.b1 - localHit.b2;
+				if (localHit.b1 > 5.f || localHit.b2 > 5.f || uu < -0.5f)
+					continue;
+
 				*hit = localHit;
 				return true;
 			}

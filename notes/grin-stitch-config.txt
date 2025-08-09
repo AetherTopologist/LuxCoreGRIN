@@ -5,3 +5,6 @@ grin.stitch_max_probes = 4
 grin.stitch_edge_jitter_count = 3
 grin.stitch_edge_jitter_scale = 2e-4
 grin.stitch_use_vertex_neighbors = 0
+
+grin.uv_seam_tolerance = 1e-4
+grin.uv_cross_island_policy = edge_project

@@ -358,6 +358,7 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			// 🔥GRIN Straight-Line Hit Operation
 			float planeDist = std::numeric_limits<float>::infinity();
 			bool nearBary = false;
+			Point rk4Hit;
 			const u_int meshIdx = node.triangleLeaf.meshIndex;
 			const u_int triIdx = node.triangleLeaf.triangleIndex;
 			const bool ok = Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter,
@@ -366,23 +367,25 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 														barycentricEpsilon,
 														rk4PlaneThreshold,
 														&planeDist, &nearBary,
-														stitchBaryMargin);
-			if (ok) {
-				if (t < rayHit->t) {
-					ray.maxt = t;
-					rayHit->t = t;
-					rayHit->b1 = b1;
-					rayHit->b2 = b2;
-					rayHit->meshIndex = meshIdx;
-					rayHit->triangleIndex = triIdx;
-					hit = true;
-					// Continue testing for closer intersections
-				}
-			} else if (stitchHint) {
+														stitchBaryMargin,
+														&rk4Hit);
+			if (ok && t < rayHit->t) {
+				// Replace t with projection length to rk4Hit so downstream 'ray(rayHit.t)' is close
+				const Vector v = rk4Hit - initialRay->o;
+				const float tProj = Dot(v, Normalize(initialRay->d));
+				ray.maxt = tProj;
+				rayHit->t = tProj;
+				rayHit->b1 = b1;
+				rayHit->b2 = b2;
+				rayHit->meshIndex = meshIdx;
+				rayHit->triangleIndex = triIdx;
+				hit = true;
+				// Continue testing for closer intersections
+			} else if (!ok && stitchHint) {
 				const bool nearPlane = std::isfinite(planeDist) &&
-					(fabs(planeDist) < (stitchPlaneFactor * rk4PlaneThreshold));
+						(fabs(planeDist) < (stitchPlaneFactor * rk4PlaneThreshold));
 				if (nearPlane || nearBary)
-					stitchHint->consider(meshIdx, triIdx, planeDist, nearBary);
+						stitchHint->consider(meshIdx, triIdx, planeDist, nearBary);
 			}
 			++currentNode;
 		} else {

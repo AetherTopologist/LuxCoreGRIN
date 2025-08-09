@@ -183,6 +183,89 @@ public:
 		return true;
 	}
 
+	// Project point P to the closest point on triangle (p0,p1,p2). Returns clamped barycentrics.
+	static inline void ClosestPointBarycentric(const Point &p,
+					const Point &p0, const Point &p1, const Point &p2,
+					float *b1, float *b2) {
+		// Ericson-style closest-point on triangle
+		const Vector v0 = p1 - p0;
+		const Vector v1 = p2 - p0;
+		const Vector v2 = p - p0;
+
+		const float d00 = Dot(v0, v0);
+		const float d01 = Dot(v0, v1);
+		const float d11 = Dot(v1, v1);
+		const float d20 = Dot(v2, v0);
+		const float d21 = Dot(v2, v1);
+		const float denom = d00 * d11 - d01 * d01;
+
+		float v = (d11 * d20 - d01 * d21) / denom;
+		float w = (d00 * d21 - d01 * d20) / denom;
+		float u = 1.f - v - w;
+
+		// If inside, done
+		if (u >= 0.f && v >= 0.f && w >= 0.f) {
+			*b1 = v; *b2 = w;
+			return;
+		}
+
+		// Otherwise clamp to edges
+		auto clamp01 = [](float x) { return (x < 0.f) ? 0.f : (x > 1.f ? 1.f : x); };
+
+		// Edge p0-p1
+		{
+			const Vector e = v0;
+			float t = clamp01(Dot(v2, e) / Dot(e, e));
+			Point q = p0 + t * e;
+			Vector rq = p - q;
+			float d = Dot(rq, rq);
+			// store best in locals
+		}
+
+		// We’ll do simple bary clamp: move to nearest of 3 edges by analytic projection
+		// Edge p0-p1
+		{
+			const Vector e = v0;
+			float t = clamp01(Dot(v2, e) / Dot(e, e));
+			float vv = t, ww = 0.f;
+			float uu = 1.f - vv - ww;
+			if (uu >= 0.f && vv >= 0.f && ww >= 0.f) { *b1 = vv; *b2 = ww; return; }
+		}
+		// Edge p0-p2
+		{
+			const Vector e = v1;
+			float t = clamp01(Dot(v2, e) / Dot(e, e));
+			float vv = 0.f, ww = t;
+			float uu = 1.f - vv - ww;
+			if (uu >= 0.f && vv >= 0.f && ww >= 0.f) { *b1 = vv; *b2 = ww; return; }
+		}
+		// Edge p1-p2
+		{
+			const Vector e = v1 - v0;
+			const Vector w2 = p - p1;
+			float t = clamp01(Dot(w2, e) / Dot(e, e));
+			// On edge p1->p2, bary: u=0, v=1-t, w=t
+			float vv = 1.f - t, ww = t;
+			if (vv >= 0.f && ww >= 0.f) { *b1 = vv; *b2 = ww; return; }
+		}
+
+		// Fallback clamp to [0,1] and renormalize
+		*b1 = clamp01(v);
+		*b2 = clamp01(w);
+		float u2 = 1.f - *b1 - *b2;
+		if (u2 < 0.f) { // push back into simplex
+			if (*b1 > *b2) *b1 = clamp01(1.f - *b2); else *b2 = clamp01(1.f - *b1);
+		}
+	}
+
+	static inline void ClampBarycentricSoft(const Point &p,
+					const Point &p0, const Point &p1, const Point &p2,
+					float tol, float *b1, float *b2) {
+		const float u = 1.f - *b1 - *b2;
+		if (u >= -tol && *b1 >= -tol && *b2 >= -tol)
+			ClosestPointBarycentric(p, p0, p1, p2, b1, b2);
+	}
+
 	static bool RK4_GRINIntersect(
 					const xPRIMEray &ray,
 					const Point &p0,
@@ -276,7 +359,8 @@ public:
 					const float rk4PlaneThreshold = 1e-4f,
 					float *finalPlaneDist = nullptr,
 					bool *nearBary = nullptr,
-					const float stitchBaryMargin = 0.02f) {
+					const float stitchBaryMargin = 0.02f,
+					Point *outHitPos = nullptr) {
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;
@@ -314,7 +398,15 @@ public:
 								finalPlaneDist))
 			return false;
 
+		// Clamp barycentrics softly to the triangle interior before returning
+		ClampBarycentricSoft(rk4Hit, p0, p1, p2, /*tol=*/0.f, b1, b2);
+		if (outHitPos)
+			*outHitPos = rk4Hit;
+
 		*tHit = tRK4;
+
+		// Final guard: tiny numerical excursions can still happen → clamp softly
+		ClampBarycentricSoft(rk4Hit, p0, p1, p2, 1e-6f, b1, b2);
 		return true;
 	}
 

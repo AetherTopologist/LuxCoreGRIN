@@ -138,6 +138,11 @@ struct WorldGRINInfo {
 				float stitchEdgeJitterScale = 1e-4f;// origin offset scale relative to edge length
 				bool  stitchUseVertexNeighbors = false;
 				bool  stitchDebug = false;
+
+				// UV seam handling
+				float uvSeamTolerance = 1e-4f;   // how far outside a tri we still accept (in barycentric units)
+				enum UVCrossIslandPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
+				int   uvCrossIslandPolicy = UV_REJECT; // default: reject neighbor if bary hits outside
 };
 
 class Scene {
