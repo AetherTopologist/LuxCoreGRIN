@@ -168,21 +168,21 @@ void Scene::ParseVolumes(const Properties &props) {
 	if (props.IsDefined("grin.barycentric_epsilon"))
 		worldGrinInfo.barycentricEpsilon = props.Get("grin.barycentric_epsilon").Get<float>();
 	if (props.IsDefined("grin.rk4_plane_threshold"))
-		worldGrinInfo.rk4PlaneThreshold = props.Get("grin.rk4_plane_threshold").Get<float>();
+			worldGrinInfo.rk4PlaneThreshold = props.Get("grin.rk4_plane_threshold").Get<float>();
 	if (props.IsDefined("grin.stitch_plane_factor"))
-		worldGrinInfo.stitchPlaneFactor = props.Get("grin.stitch_plane_factor").Get<float>();
+			worldGrinInfo.stitchPlaneFactor = props.Get("grin.stitch_plane_factor").Get<float>();
 	if (props.IsDefined("grin.stitch_bary_margin"))
-		worldGrinInfo.stitchBaryMargin = props.Get("grin.stitch_bary_margin").Get<float>();
+			worldGrinInfo.stitchBaryMargin = props.Get("grin.stitch_bary_margin").Get<float>();
 	if (props.IsDefined("grin.stitch_max_probes"))
-		worldGrinInfo.stitchMaxProbes = props.Get("grin.stitch_max_probes").Get<int>();
+			worldGrinInfo.stitchMaxProbes = props.Get("grin.stitch_max_probes").Get<int>();
 	if (props.IsDefined("grin.stitch_edge_jitter_count"))
-		worldGrinInfo.stitchEdgeJitterCount = props.Get("grin.stitch_edge_jitter_count").Get<int>();
+			worldGrinInfo.stitchEdgeJitterCount = props.Get("grin.stitch_edge_jitter_count").Get<int>();
 	if (props.IsDefined("grin.stitch_edge_jitter_scale"))
-		worldGrinInfo.stitchEdgeJitterScale = props.Get("grin.stitch_edge_jitter_scale").Get<float>();
+			worldGrinInfo.stitchEdgeJitterScale = props.Get("grin.stitch_edge_jitter_scale").Get<float>();
 	if (props.IsDefined("grin.stitch_use_vertex_neighbors"))
-		worldGrinInfo.stitchUseVertexNeighbors = props.Get("grin.stitch_use_vertex_neighbors").Get<bool>();
+			worldGrinInfo.stitchUseVertexNeighbors = props.Get("grin.stitch_use_vertex_neighbors").Get<bool>();
 	if (props.IsDefined("grin.stitch_debug"))
-		worldGrinInfo.stitchDebug = props.Get("grin.stitch_debug").Get<bool>();
+			worldGrinInfo.stitchDebug = props.Get("grin.stitch_debug").Get<bool>();
 
 	if (matKeys.size() > 0)
 		editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);

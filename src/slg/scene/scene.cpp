@@ -25,6 +25,8 @@
 #include <algorithm>
 #include <memory>
 #include <fstream>  // Needed for std::ofstream
+#include <limits>
+#include <cmath>
 
 #include <boost/detail/container_fwd.hpp>
 #include <boost/lexical_cast.hpp>
@@ -775,10 +777,10 @@ static bool GRINIntersectSingleTriangle(const ExtTriangleMesh *mesh, const u_int
 					info.stepSize, info.numSteps);
 
 	if (Triangle::xPRIMEIntersect(xray, p0, p1, p2, info.center, info.rInner, info.rOuter,
-								&hit->t, &hit->b1, &hit->b2, info.invert,
-								info.insightCurvatureThreshold, info.barycentricEpsilon,
-								info.rk4PlaneThreshold, nullptr, nullptr,
-								info.stitchBaryMargin)) {
+									&hit->t, &hit->b1, &hit->b2, info.invert,
+									info.insightCurvatureThreshold, info.barycentricEpsilon,
+									info.rk4PlaneThreshold, nullptr, nullptr,
+									info.stitchBaryMargin)) {
 		hit->triangleIndex = triIndex;
 		return true;
 	}
@@ -787,7 +789,7 @@ static bool GRINIntersectSingleTriangle(const ExtTriangleMesh *mesh, const u_int
 }
 
 bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
-						const Ray &originalRay, RayHit *hit) const {
+							const Ray &originalRay, RayHit *hit) const {
 	if (!mesh)
 		return false;
 
@@ -795,7 +797,10 @@ bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 	const Point p0 = mesh->GetVertex(Transform::TRANS_IDENTITY, baseTri.v[0]);
 	const Point p1 = mesh->GetVertex(Transform::TRANS_IDENTITY, baseTri.v[1]);
 	const Point p2 = mesh->GetVertex(Transform::TRANS_IDENTITY, baseTri.v[2]);
-	const Normal Nb = Normal(Normalize(Cross(p1 - p0, p2 - p0)));
+
+	// Vector normal for math + Normal for orientation
+	const Vector NbV = Normalize(Cross(p1 - p0, p2 - p0));
+	const Normal Nb = Normal(NbV);
 
 	const ExtTriangleMesh::TriangleAdjacency &adj = mesh->GetAdjacency(triIndex);
 	const size_t maxProbes = std::min<size_t>(adj.edgeNeighbors.size(), worldGrinInfo.stitchMaxProbes);
@@ -814,15 +819,24 @@ bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 		const int jitterAttempts = 1 + worldGrinInfo.stitchEdgeJitterCount;
 		const Point vA = (shared.size() >= 1) ? mesh->GetVertex(Transform::TRANS_IDENTITY, shared[0]) : Point();
 		const Point vB = (shared.size() >= 2) ? mesh->GetVertex(Transform::TRANS_IDENTITY, shared[1]) : Point();
-		const Vector edge = Normalize(vB - vA);
-		const float edgeLen = (shared.size() >= 2) ? (vB - vA).Length() : 0.f;
-		Vector nudgeDir = Cross(edge, Nb);
+
+		const Vector edgeDir = vB - vA;
+		const float edgeLen = (shared.size() >= 2) ? edgeDir.Length() : 0.f;
+		const Vector edgeV = (edgeLen > 0.f) ? (edgeDir / edgeLen) : Vector(0.f, 0.f, 0.f);
+
+		// Use Vector normal for Cross()
+		Vector nudgeDir = Cross(edgeV, NbV);
 		if (nudgeDir.LengthSquared() < 1e-9f)
-			nudgeDir = Nb;
+			nudgeDir = NbV;
 		else
 			nudgeDir = Normalize(nudgeDir);
+
 		const Point mid = (shared.size() >= 2) ? ((vA + vB) * 0.5f) : p0;
-		const Vector bias = Normalize(mid - originalRay.o);
+		Vector bias = (mid - originalRay.o);
+		if (bias.LengthSquared() > 1e-12f)
+			bias = Normalize(bias);
+		else
+			bias = Vector(0.f, 0.f, 0.f);
 
 		for (int attempt = 0; attempt < jitterAttempts; ++attempt) {
 			Ray probeRay = originalRay;
@@ -861,8 +875,8 @@ bool Scene::EmitStitchRays(ExtTriangleMesh *mesh, const u_int triIndex,
 			RayHit localHit;
 			if (GRINIntersectSingleTriangle(mesh, nTriIdx, originalRay, worldGrinInfo, &localHit)) {
 				if (worldGrinInfo.stitchDebug)
-					std::cout << "[GRIN] Stitch recovered via neighbor tri "
-								<< nTriIdx << " from base tri " << triIndex << std::endl;
+						std::cout << "[GRIN] Stitch recovered via neighbor tri "
+									<< nTriIdx << " from base tri " << triIndex << std::endl;
 				*hit = localHit;
 				return true;
 			}
