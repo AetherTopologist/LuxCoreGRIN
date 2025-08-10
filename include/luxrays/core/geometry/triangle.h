@@ -37,6 +37,138 @@
 
 namespace luxrays {
 
+// UV seam handling policy
+enum UVCrossPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
+
+struct BaryResult {
+    bool inside;          // strictly inside triangle (with epsilon)
+    bool nearEdge;        // within tolerance of any edge
+    float b1, b2;         // barycentrics (b0 = 1 - b1 - b2)
+    u_int edgeId;         // 0:(p0,p1) 1:(p1,p2) 2:(p2,p0), or 3 if none
+};
+
+// Project a 3D point (curved hit) to triangle plane and compute robust barycentrics.
+// Uses an orthonormal basis, returns nearEdge if within edgeTol of an edge.
+static inline BaryResult ProjectToTriangleBary(
+    const Point &p0, const Point &p1, const Point &p2,
+    const Point &hit, const float insideTol, const float edgeTol) {
+    BaryResult br;
+    br.inside = false;
+    br.nearEdge = false;
+    br.b1 = br.b2 = 0.f;
+    br.edgeId = 3;
+
+    // Build orthonormal basis on the triangle plane
+    const Vector e1 = p1 - p0;
+    const Vector e2 = p2 - p0;
+    const Vector Nraw = Cross(e1, e2);
+    const float nlen2 = Nraw.LengthSquared();
+    if (nlen2 < 1e-20f)
+        return br; // Degenerate triangle, leave br.inside=false
+    const Vector N = Normalize(Nraw);
+    const Vector u = Normalize(e1);
+    const Vector v = Normalize(Cross(N, u));
+
+    // Project hit to plane
+    const Vector hpv = hit - p0;
+    const float dist = Dot(hpv, N);
+    const Point hp = hit - dist * N;
+
+    // 2D coordinates in basis
+    const double x1 = Dot(e1, u);
+    const double y1 = Dot(e1, v);
+    const double x2 = Dot(e2, u);
+    const double y2 = Dot(e2, v);
+    const double xh = Dot(hp - p0, u);
+    const double yh = Dot(hp - p0, v);
+
+    const double denom = x1 * y2 - x2 * y1;
+    if (denom != 0.0) {
+        const double b1d = (xh * y2 - x2 * yh) / denom;
+        const double b2d = (x1 * yh - xh * y1) / denom;
+        br.b1 = static_cast<float>(b1d);
+        br.b2 = static_cast<float>(b2d);
+        const double b0d = 1.0 - b1d - b2d;
+
+        // inside check with tolerance
+        if (b1d >= -insideTol && b2d >= -insideTol && b0d >= -insideTol &&
+            b1d <= 1.0 + insideTol && b2d <= 1.0 + insideTol && b0d <= 1.0 + insideTol)
+            br.inside = true;
+    }
+
+    // Edge distance check for seam handling
+    const Point pts[3] = { p0, p1, p2 };
+    for (u_int i = 0; i < 3; ++i) {
+        const Point &a = pts[i];
+        const Point &b = pts[(i + 1) % 3];
+        const Vector ab = b - a;
+        const double abLen2 = ab.LengthSquared();
+        if (abLen2 == 0.0)
+            continue;
+        double t = Dot(hp - a, ab) / abLen2;
+        t = std::clamp(t, 0.0, 1.0);
+        const Point proj = a + ab * t;
+        const double d = Distance(hp, proj);
+        if (d <= edgeTol) {
+            br.nearEdge = true;
+            br.edgeId = i;
+            break;
+        }
+    }
+
+    return br;
+}
+
+// If near an edge, project 'hit' onto closest edge segment in-plane,
+// recompute barycentrics restricted to that edge (one coord = 0).
+static inline bool EdgeProjectBary(
+    const Point &p0, const Point &p1, const Point &p2,
+    const Point &hit, u_int edgeId, float *b1, float *b2) {
+    // Compute plane normal and project hit onto the plane
+    const Vector e10 = p1 - p0;
+    const Vector e20 = p2 - p0;
+    const Vector Nraw = Cross(e10, e20);
+    const float nlen2 = Nraw.LengthSquared();
+    if (nlen2 < 1e-20f)
+        return false;
+    const Vector N = Normalize(Nraw);
+    const Point hp = hit - Dot(hit - p0, N) * N;
+
+    const Point *a = nullptr;
+    const Point *b = nullptr;
+    switch (edgeId) {
+        case 0: a = &p0; b = &p1; break;
+        case 1: a = &p1; b = &p2; break;
+        case 2: a = &p2; b = &p0; break;
+        default: return false;
+    }
+
+    const Vector ab = *b - *a;
+    const double abLen2 = ab.LengthSquared();
+    if (abLen2 == 0.0)
+        return false;
+    double t = Dot(hp - *a, ab) / abLen2;
+    t = std::clamp(t, 0.0, 1.0);
+    const double wA = 1.0 - t;
+    const double wB = t;
+
+    switch (edgeId) {
+        case 0: // p0-p1
+            *b1 = static_cast<float>(wB);
+            *b2 = 0.f;
+            break;
+        case 1: // p1-p2
+            *b1 = static_cast<float>(wA);
+            *b2 = static_cast<float>(wB);
+            break;
+        case 2: // p2-p0
+            *b1 = 0.f;
+            *b2 = static_cast<float>(wA);
+            break;
+    }
+    return true;
+}
+
 // OpenCL data types
 namespace ocl {
 #include "luxrays/core/geometry/triangle_types.cl"
@@ -267,21 +399,24 @@ public:
 	}
 
 	static bool RK4_GRINIntersect(
-					const xPRIMEray &ray,
-					const Point &p0,
-					const Point &p1,
-					const Point &p2,
-					const Point &grinCenter,
-					const float rInner,
-					const float rOuter,
-					float *tHit,
-					Point *rk4Hit,
-					float *b1,
-					float *b2,
-					const bool invert = false,
-					const float barycentricEpsilon = 0.03f,
-					const float rk4PlaneThreshold = 1e-4f,
-					float *finalPlaneDist = nullptr) {
+						const xPRIMEray &ray,
+						const Point &p0,
+						const Point &p1,
+						const Point &p2,
+						const Point &grinCenter,
+						const float rInner,
+						const float rOuter,
+						float *tHit,
+						Point *rk4Hit,
+						float *b1,
+						float *b2,
+						const bool invert = false,
+						const float barycentricEpsilon = 0.03f,
+						const float rk4PlaneThreshold = 1e-4f,
+						float *finalPlaneDist = nullptr,
+						bool *nearBary = nullptr,
+						const float uvSeamTolerance = 1e-6f,
+						const UVCrossPolicy uvPolicy = UV_REJECT) {
 		
 		// Triangle plane setup
 		const Vector edge1 = p1 - p0;
@@ -308,6 +443,8 @@ public:
 		float prevDist = Dot(pos - p0, N);
 		float currDist = prevDist;
 
+		bool nearEdge = false;
+
 		for (int i = 0; i < maxSteps; ++i) {
 			// Compute GRIN curvature at current position
 			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
@@ -325,10 +462,22 @@ public:
 
 			// 🔥 Two tests: crossing the plane OR direct near-plane hit
 			if ((prevDist * currDist < 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
-				if (GetBaryCoordsSoft(p0, p1, p2, pos, b1, b2, barycentricEpsilon)) {
-					*tHit = tAccum;
-					*rk4Hit = pos;
-					return true;
+				const BaryResult br = ProjectToTriangleBary(p0, p1, p2, pos,
+						barycentricEpsilon, uvSeamTolerance);
+				if (br.inside) {
+						*tHit = tAccum;
+						*rk4Hit = pos;
+						*b1 = br.b1;
+						*b2 = br.b2;
+						return true;
+				} else if (br.nearEdge) {
+					nearEdge = true;
+					if (uvPolicy == UV_EDGE_PROJECT &&
+									EdgeProjectBary(p0, p1, p2, pos, br.edgeId, b1, b2)) {
+							*tHit = tAccum;
+							*rk4Hit = pos;
+							return true;
+					}
 				}
 			}
 
@@ -337,35 +486,40 @@ public:
 
 		if (finalPlaneDist)
 			*finalPlaneDist = std::fabs(currDist);
+		if (nearBary)
+			*nearBary = nearEdge;
 
 		return false; // No intersection found
 	}
 
 	// 🔥GRIN Curved Path Additions 
-	static bool xPRIMEIntersect(
-					const xPRIMEray &ray,
-					const Point &p0,
-					const Point &p1,
-					const Point &p2,
-					const Point &grinCenter,
-					const float rInner,
-					const float rOuter,
-					float *tHit,
-					float *b1,
-					float *b2,
-					const bool invert = false,
-					const float insightCurvatureThreshold = 1e-6f,
-					const float barycentricEpsilon = 0.03f,
-					const float rk4PlaneThreshold = 1e-4f,
-					float *finalPlaneDist = nullptr,
-					bool *nearBary = nullptr,
-					const float stitchBaryMargin = 0.02f,
-					Point *outHitPos = nullptr) {
+        static bool xPRIMEIntersect(
+						const xPRIMEray &ray,
+						const Point &p0,
+						const Point &p1,
+						const Point &p2,
+						const Point &grinCenter,
+						const float rInner,
+						const float rOuter,
+						float *tHit,
+						float *b1,
+						float *b2,
+						const bool invert = false,
+						const float insightCurvatureThreshold = 1e-6f,
+						const float barycentricEpsilon = 0.03f,
+						const float rk4PlaneThreshold = 1e-4f,
+						const float uvSeamTolerance = 1e-6f,
+						const UVCrossPolicy uvPolicy = UV_REJECT,
+						float *finalPlaneDist = nullptr,
+						bool *nearBary = nullptr,
+						const float stitchBaryMargin = 0.02f,
+						Point *outHitPos = nullptr) {
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;
 		const Vector edge2 = p2 - p0;
 		const Vector N = Normalize(Cross(edge1, edge2));
+		const float side0 = Dot(ray.origin - p0, N);
 
 		Point approxHit;
 		float tINSIGHT;
@@ -375,16 +529,19 @@ public:
 			return false;
 
 		// STEP 2: Quick barycentric test
-		if (!GetBaryCoordsSoft(p0, p1, p2, approxHit, b1, b2, barycentricEpsilon)) {
-			if (nearBary) {
-				float tb1, tb2;
-				if (GetBaryCoordsSoft(p0, p1, p2, approxHit, &tb1, &tb2,
-								barycentricEpsilon + stitchBaryMargin))
-					*nearBary = true;
-				else
-					*nearBary = false;
+		const BaryResult br0 = ProjectToTriangleBary(p0, p1, p2, approxHit,
+						barycentricEpsilon, uvSeamTolerance);
+		if (!br0.inside) {
+			if (br0.nearEdge && uvPolicy == UV_EDGE_PROJECT) {
+				EdgeProjectBary(p0, p1, p2, approxHit, br0.edgeId, b1, b2);
+			} else {
+				if (nearBary)
+						*nearBary = br0.nearEdge ||
+								ProjectToTriangleBary(p0, p1, p2, approxHit,
+										barycentricEpsilon + stitchBaryMargin,
+										uvSeamTolerance).nearEdge;
+				return false;
 			}
-			return false;
 		} else if (nearBary)
 			*nearBary = false;
 		
@@ -395,11 +552,20 @@ public:
 		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter,
 								&tRK4, &rk4Hit, b1, b2, invert,
 								barycentricEpsilon, rk4PlaneThreshold,
-								finalPlaneDist))
+								finalPlaneDist, nearBary,
+								uvSeamTolerance, uvPolicy))
 			return false;
 
 		// Clamp barycentrics softly to the triangle interior before returning
 		ClampBarycentricSoft(rk4Hit, p0, p1, p2, /*tol=*/0.f, b1, b2);
+		// Same-side guard: reject hits that didn't cross the plane
+		const float sideH = Dot(rk4Hit - p0, N);
+		if ((side0 * sideH > 0.f) && !invert) {
+			if (nearBary)
+				*nearBary = false;
+			return false;
+		}
+
 		if (outHitPos)
 			*outHitPos = rk4Hit;
 
@@ -407,6 +573,8 @@ public:
 
 		// Final guard: tiny numerical excursions can still happen → clamp softly
 		ClampBarycentricSoft(rk4Hit, p0, p1, p2, 1e-6f, b1, b2);
+		if (nearBary)
+			*nearBary = false;
 		return true;
 	}
 

@@ -302,7 +302,9 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
                                const float insightCurvatureThreshold,
                                const float barycentricEpsilon,
                                const float rk4PlaneThreshold,
-                               slg::StitchHint *stitchHint,
+                               const float uvSeamTolerance,
+                               const UVCrossPolicy uvPolicy,
+							   slg::StitchHint *stitchHint,
                                float stitchPlaneFactor,
                                float stitchBaryMargin) const {
 	assert (initialized);
@@ -362,13 +364,15 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 			const u_int meshIdx = node.triangleLeaf.meshIndex;
 			const u_int triIdx = node.triangleLeaf.triangleIndex;
 			const bool ok = Triangle::xPRIMEIntersect(xPRIMEray, p0, p1, p2, grinCenter, rInner, rOuter,
-														&t, &b1, &b2, invert,
-														insightCurvatureThreshold,
-														barycentricEpsilon,
-														rk4PlaneThreshold,
-														&planeDist, &nearBary,
-														stitchBaryMargin,
-														&rk4Hit);
+													&t, &b1, &b2, invert,
+													insightCurvatureThreshold,
+													barycentricEpsilon,
+													rk4PlaneThreshold,
+													uvSeamTolerance,
+													uvPolicy,
+													&planeDist, &nearBary,
+													stitchBaryMargin,
+													&rk4Hit);
 			if (ok && t < rayHit->t) {
 				// Replace t with projection length to rk4Hit so downstream 'ray(rayHit.t)' is close
 				const Vector v = rk4Hit - initialRay->o;

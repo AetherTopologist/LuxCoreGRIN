@@ -110,39 +110,39 @@ struct GRINRayContext {
 // Parsed World GRIN information
 //------------------------------------------------------------------------------
 struct WorldGRINInfo {
-				bool enabled = false;
-				const GRINVolume *volume = nullptr;
-				float iorInner;
-				float iorOuter;
-				luxrays::Vector stretch;
-				luxrays::Point center;
-				std::string profile;
-				float beta = 0.f;
-				luxrays::Vector gamma;
-				float rInner = 1e-4f;
-				float rOuter = 1.f;
-				float stepSize = 0.01f;
-				int numSteps = 64;
-				bool invert = false;
+								bool enabled = false;
+								const GRINVolume *volume = nullptr;
+								float iorInner;
+								float iorOuter;
+								luxrays::Vector stretch;
+								luxrays::Point center;
+								std::string profile;
+								float beta = 0.f;
+								luxrays::Vector gamma;
+								float rInner = 1e-4f;
+								float rOuter = 1.f;
+								float stepSize = 0.01f;
+								int numSteps = 64;
+								bool invert = false;
 
-				// Scene-level GRIN filtering thresholds
-				float insightCurvatureThreshold = 1e-6f;
-				float barycentricEpsilon = 0.03f;
-				float rk4PlaneThreshold = 1e-4f;
+								// Scene-level GRIN filtering thresholds
+								float insightCurvatureThreshold = 1e-6f;
+								float barycentricEpsilon = 0.03f;
+								float rk4PlaneThreshold = 1e-4f;
 
-				// Stitch tunables
-				float stitchPlaneFactor = 2.0f;     // multiplier for near-plane test
-				float stitchBaryMargin  = 0.02f;    // extra margin on bary test
-				int   stitchMaxProbes   = 3;        // neighbors to try
-				int   stitchEdgeJitterCount = 2;    // extra nudged rays per neighbor
-				float stitchEdgeJitterScale = 1e-4f;// origin offset scale relative to edge length
-				bool  stitchUseVertexNeighbors = false;
-				bool  stitchDebug = false;
+								// Stitch tunables
+								float stitchPlaneFactor = 2.0f;     // multiplier for near-plane test
+								float stitchBaryMargin  = 0.02f;    // extra margin on bary test
+								int   stitchMaxProbes   = 3;        // neighbors to try
+								int   stitchEdgeJitterCount = 2;    // extra nudged rays per neighbor
+								float stitchEdgeJitterScale = 1e-4f;// origin offset scale relative to edge length
+								bool  stitchUseVertexNeighbors = false;
+								bool  stitchDebug = false;
 
-				// UV seam handling
-				float uvSeamTolerance = 1e-4f;   // how far outside a tri we still accept (in barycentric units)
-				enum UVCrossIslandPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
-				int   uvCrossIslandPolicy = UV_REJECT; // default: reject neighbor if bary hits outside
+                                // UV seam handling
+                                float uvSeamTolerance = 1e-6f;   // how far outside a tri we still accept (in barycentric units)
+                                enum UVCrossIslandPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
+                                int   uvCrossIslandPolicy = UV_REJECT; // default: reject neighbor if bary hits outside
 };
 
 class Scene {

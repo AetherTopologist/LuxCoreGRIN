@@ -38,6 +38,7 @@
 
 #include "luxrays/core/randomgen.h"
 #include "luxrays/utils/properties.h"
+#include "luxrays/core/geometry/triangle.h"
 #include "luxrays/core/exttrianglemesh.h"
 #include "luxrays/core/geometry/xprimeray.h"
 #include "slg/core/sphericalfunction/sphericalfunction.h"
@@ -644,17 +645,19 @@ bool Scene::Intersect(IntersectionDevice *device,
 		Scene::StitchHint stitchHint;
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-										worldGrinInfo.beta, worldGrinInfo.gamma,
-										worldGrinInfo.center,
-										worldGrinInfo.rInner, worldGrinInfo.rOuter,
-										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-										worldGrinInfo.invert,
-										worldGrinInfo.insightCurvatureThreshold,
-										worldGrinInfo.barycentricEpsilon,
-										worldGrinInfo.rk4PlaneThreshold,
-										&stitchHint,
-										worldGrinInfo.stitchPlaneFactor,
-										worldGrinInfo.stitchBaryMargin);
+							worldGrinInfo.beta, worldGrinInfo.gamma,
+							worldGrinInfo.center,
+							worldGrinInfo.rInner, worldGrinInfo.rOuter,
+							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+							worldGrinInfo.invert,
+							worldGrinInfo.insightCurvatureThreshold,
+							worldGrinInfo.barycentricEpsilon,
+							worldGrinInfo.rk4PlaneThreshold,
+							worldGrinInfo.uvSeamTolerance,
+							(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
+							&stitchHint,
+							worldGrinInfo.stitchPlaneFactor,
+							worldGrinInfo.stitchBaryMargin);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
@@ -797,10 +800,11 @@ static bool GRINIntersectSingleTriangle(const ExtTriangleMesh *mesh, const u_int
 					info.stepSize, info.numSteps);
 
 	if (Triangle::xPRIMEIntersect(xray, p0, p1, p2, info.center, info.rInner, info.rOuter,
-									&hit->t, &hit->b1, &hit->b2, info.invert,
-									info.insightCurvatureThreshold, info.barycentricEpsilon,
-									info.rk4PlaneThreshold, nullptr, nullptr,
-									info.stitchBaryMargin)) {
+								&hit->t, &hit->b1, &hit->b2, info.invert,
+								info.insightCurvatureThreshold, info.barycentricEpsilon,
+								info.rk4PlaneThreshold, info.uvSeamTolerance,
+								(luxrays::UVCrossPolicy)info.uvCrossIslandPolicy,
+								nullptr, nullptr, info.stitchBaryMargin)) {
 		hit->triangleIndex = triIndex;
 		return true;
 	}
@@ -984,17 +988,19 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 		Scene::StitchHint stitchHint;
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-										worldGrinInfo.beta, worldGrinInfo.gamma,
-										worldGrinInfo.center,
-										worldGrinInfo.rInner, worldGrinInfo.rOuter,
-										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-										worldGrinInfo.invert,
-										worldGrinInfo.insightCurvatureThreshold,
-										worldGrinInfo.barycentricEpsilon,
-										worldGrinInfo.rk4PlaneThreshold,
-										&stitchHint,
-										worldGrinInfo.stitchPlaneFactor,
-										worldGrinInfo.stitchBaryMargin);
+							worldGrinInfo.beta, worldGrinInfo.gamma,
+							worldGrinInfo.center,
+							worldGrinInfo.rInner, worldGrinInfo.rOuter,
+							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+							worldGrinInfo.invert,
+							worldGrinInfo.insightCurvatureThreshold,
+							worldGrinInfo.barycentricEpsilon,
+							worldGrinInfo.rk4PlaneThreshold,
+							worldGrinInfo.uvSeamTolerance,
+							(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
+							&stitchHint,
+							worldGrinInfo.stitchPlaneFactor,
+							worldGrinInfo.stitchBaryMargin);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
