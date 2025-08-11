@@ -440,7 +440,8 @@ public:
 		float tAccum = 0.f;
 
 		// For sign-change detection
-		float prevDist = Dot(pos - p0, N);
+		Point prevPos = ray.origin;
+		float prevDist = Dot(prevPos - p0, N);
 		float currDist = prevDist;
 
 		bool nearEdge = false;
@@ -460,27 +461,48 @@ public:
 			// Current signed distance to plane
 			currDist = Dot(pos - p0, N);
 
-			// 🔥 Two tests: crossing the plane OR direct near-plane hit
-			if ((prevDist * currDist < 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
-				const BaryResult br = ProjectToTriangleBary(p0, p1, p2, pos,
-						barycentricEpsilon, uvSeamTolerance);
-				if (br.inside) {
-						*tHit = tAccum;
-						*rk4Hit = pos;
-						*b1 = br.b1;
-						*b2 = br.b2;
-						return true;
-				} else if (br.nearEdge) {
-					nearEdge = true;
-					if (uvPolicy == UV_EDGE_PROJECT &&
-									EdgeProjectBary(p0, p1, p2, pos, br.edgeId, b1, b2)) {
-							*tHit = tAccum;
-							*rk4Hit = pos;
-							return true;
-					}
+			// Crossing detected or near the plane: refine within the step
+			if ((prevDist * currDist <= 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
+				Point A = prevPos, B = pos;
+				float da = prevDist, db = currDist;
+				for (int it = 0; it < 5; ++it) {
+					const Point M = (A + B) * 0.5f;
+					const float dm = Dot(M - p0, N);
+					if (dm == 0.f) { A = B = M; break; }
+					if (da * dm <= 0.f) { B = M; db = dm; }
+					else { A = M; da = dm; }
 				}
+				const Point planePoint = (A + B) * 0.5f;
+
+				// Precise tHit inside the step
+				const float segLen = (pos - prevPos).Length();
+				const float hitLen = (planePoint - prevPos).Length();
+				const float frac = (segLen > 0.f) ? (hitLen / segLen) : 0.f;
+				const float tStepStart = tAccum - stepSize;
+				const float tPlane = tStepStart + stepSize * frac;
+
+				const BaryResult br = ProjectToTriangleBary(p0, p1, p2, planePoint,
+								barycentricEpsilon, uvSeamTolerance);
+				if (br.inside) {
+					*tHit = tPlane;
+					*rk4Hit = planePoint;
+					*b1 = br.b1;
+					*b2 = br.b2;
+					ClampBarycentricSoft(planePoint, p0, p1, p2, 1e-6f, b1, b2);
+					return true;
+				}
+				if (br.nearEdge && uvPolicy == UV_EDGE_PROJECT &&
+					EdgeProjectBary(p0, p1, p2, planePoint, br.edgeId, b1, b2)) {
+					*tHit = tPlane;
+					*rk4Hit = planePoint;
+					ClampBarycentricSoft(planePoint, p0, p1, p2, 1e-6f, b1, b2);
+					return true;
+				}
+				if (br.nearEdge)
+					nearEdge = true;
 			}
 
+			prevPos = pos;
 			prevDist = currDist;
 		}
 
