@@ -399,24 +399,25 @@ public:
 	}
 
 	static bool RK4_GRINIntersect(
-						const xPRIMEray &ray,
-						const Point &p0,
-						const Point &p1,
-						const Point &p2,
-						const Point &grinCenter,
-						const float rInner,
-						const float rOuter,
-						float *tHit,
-						Point *rk4Hit,
-						float *b1,
-						float *b2,
-						const bool invert = false,
-						const float barycentricEpsilon = 0.03f,
-						const float rk4PlaneThreshold = 1e-4f,
-						float *finalPlaneDist = nullptr,
-						bool *nearBary = nullptr,
-						const float uvSeamTolerance = 1e-6f,
-						const UVCrossPolicy uvPolicy = UV_REJECT) {
+							const xPRIMEray &ray,
+							const Point &p0,
+							const Point &p1,
+							const Point &p2,
+							const Point &grinCenter,
+							const float rInner,
+							const float rOuter,
+							float *tHit,
+							Point *rk4Hit,
+							float *b1,
+							float *b2,
+							const bool invert = false,
+							const float barycentricEpsilon = 0.03f,
+							const float rk4PlaneThreshold = 1e-4f,
+							float *finalPlaneDist = nullptr,
+							bool *nearBary = nullptr,
+							const float uvSeamTolerance = 1e-6f,
+							const UVCrossPolicy uvPolicy = UV_REJECT,
+							const float side0 = 0.f) {
 		
 		// Triangle plane setup
 		const Vector edge1 = p1 - p0;
@@ -481,8 +482,15 @@ public:
 				const float tStepStart = tAccum - stepSize;
 				const float tPlane = tStepStart + stepSize * frac;
 
+				// Backface guard inside the RK4 step (reject if we didn't actually cross)
+				{
+						const float sidePlane = Dot(planePoint - p0, N);
+						if (!invert && (side0 * sidePlane > std::max(1e-8f, 0.5f * std::max(barycentricEpsilon, uvSeamTolerance) + 0.25f * rk4PlaneThreshold)))
+								return false;
+				}
+
 				const BaryResult br = ProjectToTriangleBary(p0, p1, p2, planePoint,
-								barycentricEpsilon, uvSeamTolerance);
+												barycentricEpsilon, uvSeamTolerance);
 				if (br.inside) {
 					*tHit = tPlane;
 					*rk4Hit = planePoint;
@@ -543,11 +551,20 @@ public:
 		const Vector N = Normalize(Cross(edge1, edge2));
 		const float side0 = Dot(ray.origin - p0, N);
 
+		// Adaptive-ish guard tolerance (keeps backfaces out but allows tiny slack)
+		const float effBaryEps = std::max(barycentricEpsilon, uvSeamTolerance);
+		const float sideTol = std::max(1e-8f, 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold);
+
 		Point approxHit;
 		float tINSIGHT;
 
 		// STEP 1: Do INSIGHT symbolic intersection with the triangle's plane
 		if (!IntersectINSIGHT(ray, p0, N, &tINSIGHT, &approxHit, insightCurvatureThreshold))
+			return false;
+
+		// Early backface guard at the symbolic plane hit (unless invert)
+		const float sideApprox = Dot(approxHit - p0, N);
+		if (!invert && (side0 * sideApprox > sideTol))
 			return false;
 
 		// STEP 2: Quick barycentric test
@@ -572,19 +589,19 @@ public:
 		float tRK4;
 
 		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter,
-								&tRK4, &rk4Hit, b1, b2, invert,
-								barycentricEpsilon, rk4PlaneThreshold,
-								finalPlaneDist, nearBary,
-								uvSeamTolerance, uvPolicy))
+										&tRK4, &rk4Hit, b1, b2, invert,
+										barycentricEpsilon, rk4PlaneThreshold,
+										finalPlaneDist, nearBary,
+										uvSeamTolerance, uvPolicy,
+										side0))
 			return false;
 
 		// Clamp barycentrics softly to the triangle interior before returning
 		ClampBarycentricSoft(rk4Hit, p0, p1, p2, /*tol=*/0.f, b1, b2);
 		// Same-side guard: reject hits that didn't cross the plane
 		const float sideH = Dot(rk4Hit - p0, N);
-		if ((side0 * sideH > 0.f) && !invert) {
-			if (nearBary)
-				*nearBary = false;
+		if (!invert && (side0 * sideH > sideTol)) {
+			if (nearBary) *nearBary = false;
 			return false;
 		}
 
