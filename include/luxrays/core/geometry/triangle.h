@@ -439,6 +439,7 @@ public:
 		Vector dir = ray.direction;
 
 		float tAccum = 0.f;
+		float bendAccum = 0.f;
 
 		// For sign-change detection
 		Point prevPos = ray.origin;
@@ -455,7 +456,10 @@ public:
 			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
 
 			// RK4 update
+			Vector dirPrev = dir;
 			dir += (stepSize / 6.f) * (k1 + 2.f * k2 + 2.f * k3 + k4);
+			const float cosA = Clamp(Dot(Normalize(dirPrev), Normalize(dir)), -1.f, 1.f);
+			bendAccum += acosf(cosA);
 			pos += stepSize * dir;
 			tAccum += stepSize;
 
@@ -482,15 +486,22 @@ public:
 				const float tStepStart = tAccum - stepSize;
 				const float tPlane = tStepStart + stepSize * frac;
 
-				// Backface guard inside the RK4 step (reject if we didn't actually cross)
-				{
-						const float sidePlane = Dot(planePoint - p0, N);
-						if (!invert && (side0 * sidePlane > std::max(1e-8f, 0.5f * std::max(barycentricEpsilon, uvSeamTolerance) + 0.25f * rk4PlaneThreshold)))
-								return false;
-				}
+				// Adaptive epsilon driven by accumulated bending
+				const float effRate = 0.25f;      // TODO: expose later if desired
+				const float effMaxScale = 4.0f;   // cap growth
+				const float effScale = std::min(effMaxScale, 1.f + effRate * bendAccum);
+				const float effBaryEps = std::max(barycentricEpsilon, effScale * barycentricEpsilon);
 
+				// Tolerant same-side guard for this step
+				const float stepSideTol = std::max(1e-8f, 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold);
+				const float sidePlane = Dot(planePoint - p0, N);
+				if (!invert && (side0 * sidePlane > stepSideTol))
+								return false;
+
+				// Project with effective epsilon
 				const BaryResult br = ProjectToTriangleBary(p0, p1, p2, planePoint,
-												barycentricEpsilon, uvSeamTolerance);
+																				/*insideTol=*/effBaryEps,
+																				/*edgeTol=*/uvSeamTolerance);
 				if (br.inside) {
 					*tHit = tPlane;
 					*rk4Hit = planePoint;
