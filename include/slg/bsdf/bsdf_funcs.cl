@@ -1,5 +1,7 @@
 #line 2 "bsdf_funcs.cl"
 
+#include "slg/bsdf/grin_uv_funcs.cl"
+
 /***************************************************************************
  * Copyright 1998-2020 by authors (see AUTHORS.txt)                        *
  *                                                                         *
@@ -84,6 +86,27 @@ OPENCL_FORCE_INLINE void BSDF_Init(
 	const float3 dpdu = VLOAD3F(&bsdf->hitPoint.dpdu.x);
 	const float3 dpdv = VLOAD3F(&bsdf->hitPoint.dpdv.x);
 
+	// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
+	// Falls back to axis-wise projection if basis degenerates (det ~ 0).
+	if (ray->type != GENERIC_RAY) {
+		const float3 field = Triangle_ComputeGRINField(hitPointP,
+							scene->worldGrinInfo.beta, scene->worldGrinInfo.gamma,
+							scene->worldGrinInfo.center, scene->worldGrinInfo.rInner,
+							scene->worldGrinInfo.rOuter, scene->worldGrinInfo.invert);
+		const float3 tangent = field - dot(field, shadeN) * shadeN;
+		float du = 0.f, dv = 0.f;
+		ProjectTangentToUV_cl(tangent, dpdu, dpdv, &du, &dv);
+		const float mag = hypot(du, dv);
+		if (mag > 1e3f) {
+			const float s = 1e3f / mag;
+			du *= s;
+			dv *= s;
+		}
+		const float strength = scene->grinUVDistortionStrength;
+		bsdf->hitPoint.grinUvDelta.s0 = strength * du;
+		bsdf->hitPoint.grinUvDelta.s1 = strength * dv;
+	}
+
 	//--------------------------------------------------------------------------
 	// Build the local reference system
 	//--------------------------------------------------------------------------
@@ -136,6 +159,20 @@ OPENCL_FORCE_INLINE void BSDF_InitVolume(
 	VSTORE3F(dpdv, &bsdf->hitPoint.dpdv.x);
 	VSTORE3F(MAKE_FLOAT3(0.f, 0.f, 0.f), &bsdf->hitPoint.dndu.x);
 	VSTORE3F(MAKE_FLOAT3(0.f, 0.f, 0.f), &bsdf->hitPoint.dndv.x);
+
+	// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
+	// Falls back to axis-wise projection if basis degenerates (det ~ 0).
+	float du = 0.f, dv = 0.f;
+	ProjectTangentToUV_cl(MAKE_FLOAT3(0.f, 0.f, 0.f), dpdu, dpdv, &du, &dv);
+	const float mag = hypot(du, dv);
+	if (mag > 1e3f) {
+		const float s = 1e3f / mag;
+		du *= s;
+		dv *= s;
+	}
+	const float strength = scene->grinUVDistortionStrength;
+	bsdf->hitPoint.grinUvDelta.s0 = strength * du;
+	bsdf->hitPoint.grinUvDelta.s1 = strength * dv;
 
 	bsdf->hitPoint.meshIndex = NULL_INDEX;
 	bsdf->hitPoint.triangleIndex = NULL_INDEX;

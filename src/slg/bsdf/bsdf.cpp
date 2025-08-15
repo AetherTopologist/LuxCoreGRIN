@@ -20,6 +20,7 @@
 #include "slg/scene/scene.h"
 #include "slg/materials/glass.h"
 #include "luxrays/core/geometry/triangle.h"
+#include "slg/bsdf/grin_uv.h"
 
 using namespace luxrays;
 using namespace slg;
@@ -97,9 +98,16 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 		// Project the distortion to be tangent to the surface
 		const Vector tangent = field - Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
 
-		const float du = Dot(tangent, hitPoint.dpdu) / hitPoint.dpdu.LengthSquared();
-		const float dv = Dot(tangent, hitPoint.dpdv) / hitPoint.dpdv.LengthSquared();
-
+		// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
+		// Falls back to axis-wise projection if basis degenerates (det ~ 0).
+		float du = 0.f, dv = 0.f;
+		ProjectTangentToUV(tangent, hitPoint.dpdu, hitPoint.dpdv, du, dv);
+		const float mag = hypotf(du, dv);
+		if (mag > 1e3f) {
+			const float s = 1e3f / mag;
+			du *= s;
+			dv *= s;
+		}
 		const float strength = scene.grinUVDistortionStrength;
 		hitPoint.grinUvDelta.u = strength * du;
 		hitPoint.grinUvDelta.v = strength * dv;
@@ -160,10 +168,18 @@ void BSDF::Init(const Scene &scene,
 									scene.worldGrinInfo.rOuter,
 									scene.worldGrinInfo.invert);
 		const Vector tangent = field -
-						Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
+							Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
 
-		const float du = Dot(tangent, hitPoint.dpdu) / hitPoint.dpdu.LengthSquared();
-		const float dv = Dot(tangent, hitPoint.dpdv) / hitPoint.dpdv.LengthSquared();
+		// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
+		// Falls back to axis-wise projection if basis degenerates (det ~ 0).
+		float du = 0.f, dv = 0.f;
+		ProjectTangentToUV(tangent, hitPoint.dpdu, hitPoint.dpdv, du, dv);
+		const float mag = hypotf(du, dv);
+		if (mag > 1e3f) {
+			const float s = 1e3f / mag;
+			du *= s;
+			dv *= s;
+		}
 
 		const float strength = scene.grinUVDistortionStrength;
 		hitPoint.grinUvDelta.u = strength * du;
