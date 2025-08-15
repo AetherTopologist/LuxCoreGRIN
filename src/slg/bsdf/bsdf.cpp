@@ -168,7 +168,7 @@ void BSDF::Init(const Scene &scene,
 									scene.worldGrinInfo.rOuter,
 									scene.worldGrinInfo.invert);
 		const Vector tangent = field -
-							Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
+										Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
 
 		// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
 		// Falls back to axis-wise projection if basis degenerates (det ~ 0).

@@ -643,7 +643,7 @@ bool Scene::Intersect(IntersectionDevice *device,
 		//     - Mesh UVs, normals, and shading all follow original logic
 		// ------------------------------------------------------------
 		Scene::StitchHint stitchHint;
-		if (ray->IsCurved())
+		if (ray->IsCurved() && worldGrinInfo.enabled)
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
 									worldGrinInfo.beta, worldGrinInfo.gamma,
 									worldGrinInfo.center,
@@ -1005,7 +1005,7 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 		//     - Mesh UVs, normals, and shading all follow original logic
 		// ------------------------------------------------------------
 		Scene::StitchHint stitchHint;
-		if (ray->IsCurved())
+		if (ray->IsCurved() && worldGrinInfo.enabled)
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
 										worldGrinInfo.beta, worldGrinInfo.gamma,
 										worldGrinInfo.center,
@@ -1017,8 +1017,7 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 										worldGrinInfo.rk4PlaneThreshold,
 										worldGrinInfo.uvSeamTolerance,
 										(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
-										&stitchHint,
-										worldGrinInfo.stitchPlaneFactor,
+										&stitchHint,										worldGrinInfo.stitchPlaneFactor,
 										worldGrinInfo.stitchBaryMargin,
 										worldGrinInfo.adaptiveEnable,
 										worldGrinInfo.adaptivePlaneTriggerFactor,

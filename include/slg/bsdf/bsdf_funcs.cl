@@ -90,9 +90,9 @@ OPENCL_FORCE_INLINE void BSDF_Init(
 	// Falls back to axis-wise projection if basis degenerates (det ~ 0).
 	if (ray->type != GENERIC_RAY) {
 		const float3 field = Triangle_ComputeGRINField(hitPointP,
-							scene->worldGrinInfo.beta, scene->worldGrinInfo.gamma,
-							scene->worldGrinInfo.center, scene->worldGrinInfo.rInner,
-							scene->worldGrinInfo.rOuter, scene->worldGrinInfo.invert);
+						scene->worldGrinInfo.beta, scene->worldGrinInfo.gamma,
+						scene->worldGrinInfo.center, scene->worldGrinInfo.rInner,
+						scene->worldGrinInfo.rOuter, scene->worldGrinInfo.invert);
 		const float3 tangent = field - dot(field, shadeN) * shadeN;
 		float du = 0.f, dv = 0.f;
 		ProjectTangentToUV_cl(tangent, dpdu, dpdv, &du, &dv);

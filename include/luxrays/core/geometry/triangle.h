@@ -551,37 +551,44 @@ public:
 	}
 
 	// 🔥GRIN Curved Path Additions 
-        static bool xPRIMEIntersect(
-						const xPRIMEray &ray,
-						const Point &p0,
-						const Point &p1,
-						const Point &p2,
-						const Point &grinCenter,
-						const float rInner,
-						const float rOuter,
-						float *tHit,
-						float *b1,
-						float *b2,
-						const bool invert = false,
-						const float insightCurvatureThreshold = 1e-6f,
-						const float barycentricEpsilon = 0.03f,
-						const float rk4PlaneThreshold = 1e-4f,
-						const float uvSeamTolerance = 1e-6f,
-						const UVCrossPolicy uvPolicy = UV_REJECT,
-						float *finalPlaneDist = nullptr,
-						bool *nearBary = nullptr,
-						const float stitchBaryMargin = 0.02f,
-						Point *outHitPos = nullptr,
-						// Adaptive controls
-						bool adaptiveEnable = false,
-						float adaptivePlaneTriggerFactor = 1.0f,
-						float adaptiveCurvatureTrigger = 0.2f,
-						int adaptiveMaxSubdiv = 2,
-						int adaptiveBisectIters = 5,
-						float adaptiveMinStep = 1e-5f,
-						float adaptiveInsightAcceptMargin = 0.0f,
-						float adaptiveRate = 0.25f,
-						float adaptiveMaxScale = 4.0f) {
+	static bool xPRIMEIntersect(
+					const xPRIMEray &ray,
+					const Point &p0,
+					const Point &p1,
+					const Point &p2,
+					const Point &grinCenter,
+					const float rInner,
+					const float rOuter,
+					float *tHit,
+					float *b1,
+					float *b2,
+					const bool invert = false,
+					const float insightCurvatureThreshold = 1e-6f,
+					const float barycentricEpsilon = 0.03f,
+					const float rk4PlaneThreshold = 1e-4f,
+					const float uvSeamTolerance = 1e-6f,
+					const UVCrossPolicy uvPolicy = UV_REJECT,
+					float *finalPlaneDist = nullptr,
+					bool *nearBary = nullptr,
+					const float stitchBaryMargin = 0.02f,
+					Point *outHitPos = nullptr,
+					// Adaptive controls
+					bool adaptiveEnable = false,
+					float adaptivePlaneTriggerFactor = 1.0f,
+					float adaptiveCurvatureTrigger = 0.2f,
+					int adaptiveMaxSubdiv = 2,
+					int adaptiveBisectIters = 5,
+					float adaptiveMinStep = 1e-5f,
+					float adaptiveInsightAcceptMargin = 0.0f,
+					float adaptiveRate = 0.25f,
+					float adaptiveMaxScale = 4.0f) {
+		if ((std::abs(ray.beta) < 1e-12f &&
+				std::abs(ray.gamma.x) < 1e-12f &&
+				std::abs(ray.gamma.y) < 1e-12f &&
+				std::abs(ray.gamma.z) < 1e-12f) || rOuter <= rInner) {
+			Ray linear(ray.origin, ray.direction, ray.mint, ray.maxt);
+			return Intersect(linear, p0, p1, p2, tHit, b1, b2);
+		}
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;

@@ -43,8 +43,8 @@ typedef struct {
 	struct {
 		int enabled;
 		float beta;
-		float3 gamma;
-		float3 center;
+		Vector gamma;
+		Point center;
 		float rInner;
 		float rOuter;
 		int invert;
