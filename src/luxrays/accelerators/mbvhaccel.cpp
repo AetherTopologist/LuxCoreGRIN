@@ -305,8 +305,7 @@ bool MBVHAccel::Intersect(const Ray *ray, RayHit *rayHit) const {
 				float t, b1, b2;
 				if (Triangle::Intersect(currentRay, p0, p1, p2, &t, &b1, &b2)) {
 					// === BACKFACE CULLING UPDATE START ===
-					const Normal geomN = currentMesh->GetGeometryNormal(
-										Transform::TRANS_IDENTITY, node.triangleLeaf.triangleIndex);
+					const Normal geomN = Normal(Normalize(Cross(p1 - p0, p2 - p0)));
 					const bool frontFacing = Dot(geomN, currentRay.d) < 0.f;
 					// === BACKFACE CULLING UPDATE END ===
 					if (frontFacing && t < rayHit->t) {

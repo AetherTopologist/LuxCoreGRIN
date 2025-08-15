@@ -52,7 +52,7 @@ public:
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const;
 
-virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,
+	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,
 							const float beta, const luxrays::Vector &gamma,
 							const luxrays::Point &grinCenter,
 							const float rInner, const float rOuter,
