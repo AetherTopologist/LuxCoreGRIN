@@ -645,19 +645,28 @@ bool Scene::Intersect(IntersectionDevice *device,
 		Scene::StitchHint stitchHint;
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-							worldGrinInfo.beta, worldGrinInfo.gamma,
-							worldGrinInfo.center,
-							worldGrinInfo.rInner, worldGrinInfo.rOuter,
-							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-							worldGrinInfo.invert,
-							worldGrinInfo.insightCurvatureThreshold,
-							worldGrinInfo.barycentricEpsilon,
-							worldGrinInfo.rk4PlaneThreshold,
-							worldGrinInfo.uvSeamTolerance,
-							(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
-							&stitchHint,
-							worldGrinInfo.stitchPlaneFactor,
-							worldGrinInfo.stitchBaryMargin);
+									worldGrinInfo.beta, worldGrinInfo.gamma,
+									worldGrinInfo.center,
+									worldGrinInfo.rInner, worldGrinInfo.rOuter,
+									worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+									worldGrinInfo.invert,
+									worldGrinInfo.insightCurvatureThreshold,
+									worldGrinInfo.barycentricEpsilon,
+									worldGrinInfo.rk4PlaneThreshold,
+									worldGrinInfo.uvSeamTolerance,
+									(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
+									&stitchHint,
+									worldGrinInfo.stitchPlaneFactor,
+									worldGrinInfo.stitchBaryMargin,
+									worldGrinInfo.adaptiveEnable,
+									worldGrinInfo.adaptivePlaneTriggerFactor,
+									worldGrinInfo.adaptiveCurvatureTrigger,
+									worldGrinInfo.adaptiveMaxSubdiv,
+									worldGrinInfo.adaptiveBisectIters,
+									worldGrinInfo.adaptiveMinStep,
+									worldGrinInfo.adaptiveInsightAcceptMargin,
+									worldGrinInfo.adaptiveRate,
+									worldGrinInfo.adaptiveMaxScale);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
@@ -804,7 +813,17 @@ static bool GRINIntersectSingleTriangle(const ExtTriangleMesh *mesh, const u_int
 								info.insightCurvatureThreshold, info.barycentricEpsilon,
 								info.rk4PlaneThreshold, info.uvSeamTolerance,
 								(luxrays::UVCrossPolicy)info.uvCrossIslandPolicy,
-								nullptr, nullptr, info.stitchBaryMargin)) {
+								nullptr, nullptr, info.stitchBaryMargin,
+								nullptr,
+								info.adaptiveEnable,
+								info.adaptivePlaneTriggerFactor,
+								info.adaptiveCurvatureTrigger,
+								info.adaptiveMaxSubdiv,
+								info.adaptiveBisectIters,
+								info.adaptiveMinStep,
+								info.adaptiveInsightAcceptMargin,
+								info.adaptiveRate,
+								info.adaptiveMaxScale)) {
 		hit->triangleIndex = triIndex;
 		return true;
 	}
@@ -988,19 +1007,28 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 		Scene::StitchHint stitchHint;
 		if (ray->IsCurved())
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-							worldGrinInfo.beta, worldGrinInfo.gamma,
-							worldGrinInfo.center,
-							worldGrinInfo.rInner, worldGrinInfo.rOuter,
-							worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-							worldGrinInfo.invert,
-							worldGrinInfo.insightCurvatureThreshold,
-							worldGrinInfo.barycentricEpsilon,
-							worldGrinInfo.rk4PlaneThreshold,
-							worldGrinInfo.uvSeamTolerance,
-							(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
-							&stitchHint,
-							worldGrinInfo.stitchPlaneFactor,
-							worldGrinInfo.stitchBaryMargin);
+										worldGrinInfo.beta, worldGrinInfo.gamma,
+										worldGrinInfo.center,
+										worldGrinInfo.rInner, worldGrinInfo.rOuter,
+										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+										worldGrinInfo.invert,
+										worldGrinInfo.insightCurvatureThreshold,
+										worldGrinInfo.barycentricEpsilon,
+										worldGrinInfo.rk4PlaneThreshold,
+										worldGrinInfo.uvSeamTolerance,
+										(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
+										&stitchHint,
+										worldGrinInfo.stitchPlaneFactor,
+										worldGrinInfo.stitchBaryMargin,
+										worldGrinInfo.adaptiveEnable,
+										worldGrinInfo.adaptivePlaneTriggerFactor,
+										worldGrinInfo.adaptiveCurvatureTrigger,
+										worldGrinInfo.adaptiveMaxSubdiv,
+										worldGrinInfo.adaptiveBisectIters,
+										worldGrinInfo.adaptiveMinStep,
+										worldGrinInfo.adaptiveInsightAcceptMargin,
+										worldGrinInfo.adaptiveRate,
+										worldGrinInfo.adaptiveMaxScale);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 

@@ -108,31 +108,49 @@ OPENCL_FORCE_INLINE void Triangle_Intersect(
 		const float3 v1,
 		const float3 v2) {
 	// Calculate intersection
-	const float3 e1 = v1 - v0;
-	const float3 e2 = v2 - v0;
-	const float3 s1 = cross(rayDir, e2);
+       const float3 e1 = v1 - v0;
+       const float3 e2 = v2 - v0;
+       const float3 s1 = cross(rayDir, e2);
 
-	const float divisor = dot(s1, e1);
-	if (divisor == 0.f)
-		return;
+       const float divisor = dot(s1, e1);
+       if (divisor == 0.f)
+               return;
 
-	const float invDivisor = 1.f / divisor;
+       const float invDivisor = 1.f / divisor;
 
-	// Compute first barycentric coordinate
-	const float3 d = rayOrig - v0;
-	const float b1 = dot(d, s1) * invDivisor;
-	if (b1 < 0.f)
-		return;
+       // === BACKFACE CULLING UPDATE START ===
+       const float3 geomN = Triangle_GetGeometryNormal(v0, v1, v2);
+       if (dot(geomN, rayDir) >= 0.f)
+			return;
+       // === BACKFACE CULLING UPDATE END ===
 
-	// Compute second barycentric coordinate
-	const float3 s2 = cross(d, e1);
-	const float b2 = dot(rayDir, s2) * invDivisor;
-	if (b2 < 0.f)
-		return;
+       // === ADAPTIVE EPSILON UPDATE START ===
+       const float triScale = fmax(fmax(length(v0 - v1), length(v1 - v2)), length(v2 - v0));
+       const float rayMag = length(rayDir);
+       const float adaptiveEps = fmax(1e-7f, (triScale * 1e-6f) / rayMag);
+       // === ADAPTIVE EPSILON UPDATE END ===
 
-	const float b0 = 1.f - b1 - b2;
-	if (b0 < 0.f)
-		return;
+       // Compute first barycentric coordinate
+       const float3 d = rayOrig - v0;
+       const float b1 = dot(d, s1) * invDivisor;
+       // === ADAPTIVE EPSILON UPDATE START ===
+       if (b1 < -adaptiveEps)
+			return;
+       // === ADAPTIVE EPSILON UPDATE END ===
+
+       // Compute second barycentric coordinate
+       const float3 s2 = cross(d, e1);
+       const float b2 = dot(rayDir, s2) * invDivisor;
+       // === ADAPTIVE EPSILON UPDATE START ===
+       if (b2 < -adaptiveEps)
+			return;
+       // === ADAPTIVE EPSILON UPDATE END ===
+
+       const float b0 = 1.f - b1 - b2;
+       // === ADAPTIVE EPSILON UPDATE START ===
+       if (b0 < -adaptiveEps)
+			return;
+       // === ADAPTIVE EPSILON UPDATE END ===
 
 	// Compute _t_ to intersection point
 	const float t = dot(e2, s2) * invDivisor;

@@ -188,10 +188,26 @@ void Scene::ParseVolumes(const Properties &props) {
 	if (props.IsDefined("grin.uv_seam_tolerance"))
 		worldGrinInfo.uvSeamTolerance = props.Get("grin.uv_seam_tolerance").Get<float>();
 	if (props.IsDefined("grin.uv_cross_island_policy")) {
-		const std::string mode = props.Get("grin.uv_cross_island_policy").Get<std::string>();
-		if (boost::iequals(mode, "reject")) worldGrinInfo.uvCrossIslandPolicy = WorldGRINInfo::UV_REJECT;
-		else if (boost::iequals(mode, "edge_project")) worldGrinInfo.uvCrossIslandPolicy = WorldGRINInfo::UV_EDGE_PROJECT;
+	const std::string mode = props.Get("grin.uv_cross_island_policy").Get<std::string>();
+	if (boost::iequals(mode, "reject")) worldGrinInfo.uvCrossIslandPolicy = WorldGRINInfo::UV_REJECT;
+	else if (boost::iequals(mode, "edge_project")) worldGrinInfo.uvCrossIslandPolicy = WorldGRINInfo::UV_EDGE_PROJECT;
 	}
+
+	// Adaptive controls
+	if (props.IsDefined("grin.adaptive.enable"))
+		worldGrinInfo.adaptiveEnable = (props.Get("grin.adaptive.enable").Get<int>() != 0);
+	if (props.IsDefined("grin.adaptive.plane_trigger_factor"))
+		worldGrinInfo.adaptivePlaneTriggerFactor = props.Get("grin.adaptive.plane_trigger_factor").Get<float>();
+	if (props.IsDefined("grin.adaptive.curvature_trigger"))
+		worldGrinInfo.adaptiveCurvatureTrigger = props.Get("grin.adaptive.curvature_trigger").Get<float>();
+	if (props.IsDefined("grin.adaptive.max_subdiv"))
+		worldGrinInfo.adaptiveMaxSubdiv = props.Get("grin.adaptive.max_subdiv").Get<int>();
+	if (props.IsDefined("grin.adaptive.bisect_iters"))
+		worldGrinInfo.adaptiveBisectIters = props.Get("grin.adaptive.bisect_iters").Get<int>();
+	if (props.IsDefined("grin.adaptive.min_step"))
+		worldGrinInfo.adaptiveMinStep = props.Get("grin.adaptive.min_step").Get<float>();
+	if (props.IsDefined("grin.adaptive.insight_accept_margin"))
+		worldGrinInfo.adaptiveInsightAcceptMargin = props.Get("grin.adaptive.insight_accept_margin").Get<float>();
 
 	if (matKeys.size() > 0)
 		editActions.AddActions(MATERIALS_EDIT | MATERIAL_TYPES_EDIT);

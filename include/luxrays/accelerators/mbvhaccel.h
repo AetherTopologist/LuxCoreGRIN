@@ -23,6 +23,7 @@
 
 #include "luxrays/luxrays.h"
 #include "luxrays/accelerators/bvhaccel.h"
+#include "slg/scene/stitchhint.h"
 #include "luxrays/core/geometry/transform.h"
 #include "luxrays/core/geometry/motionsystem.h"
 
@@ -52,6 +53,30 @@ public:
 	virtual void Update();
 
 	virtual bool Intersect(const Ray *ray, RayHit *hit) const;
+
+	virtual bool xPRIMEIntersect(const Ray *ray, RayHit *hit,
+			const float beta, const luxrays::Vector &gamma,
+			const luxrays::Point &grinCenter,
+			const float rInner, const float rOuter,
+			const float stepSize, const int numSteps,
+			const bool invert = false,
+			const float insightCurvatureThreshold = 1e-6f,
+			const float barycentricEpsilon = 0.03f,
+			const float rk4PlaneThreshold = 1e-4f,
+			const float uvSeamTolerance = 1e-6f,
+			const UVCrossPolicy uvPolicy = UV_REJECT,
+			slg::StitchHint *stitchHint = nullptr,
+			float stitchPlaneFactor = 2.f,
+			float stitchBaryMargin = 0.02f,
+			bool adaptiveEnable = false,
+			float adaptivePlaneTriggerFactor = 1.0f,
+			float adaptiveCurvatureTrigger = 0.2f,
+			int adaptiveMaxSubdiv = 2,
+			int adaptiveBisectIters = 5,
+			float adaptiveMinStep = 1e-5f,
+			float adaptiveInsightAcceptMargin = 0.0f,
+			float adaptiveRate = 0.25f,
+			float adaptiveMaxScale = 4.0f) const;
 
 	friend class MBVHKernel;
 

@@ -265,7 +265,12 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 			// 🔥GRIN Straight-Line Hit Operation
 			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-				if (t < rayHit->t) {
+				// === BACKFACE CULLING UPDATE START ===
+				const Normal geomN = mesh->GetGeometryNormal(Transform::TRANS_IDENTITY,
+						node.triangleLeaf.triangleIndex);
+				const bool frontFacing = Dot(geomN, ray.d) < 0.f;
+				// === BACKFACE CULLING UPDATE END ===
+				if (frontFacing && t < rayHit->t) {
 					ray.maxt = t;
 					rayHit->t = t;
 					rayHit->b1 = b1;
@@ -304,9 +309,18 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
                                const float rk4PlaneThreshold,
                                const float uvSeamTolerance,
                                const UVCrossPolicy uvPolicy,
-							   slg::StitchHint *stitchHint,
+                               slg::StitchHint *stitchHint,
                                float stitchPlaneFactor,
-                               float stitchBaryMargin) const {
+                               float stitchBaryMargin,
+                               bool adaptiveEnable,
+                               float adaptivePlaneTriggerFactor,
+                               float adaptiveCurvatureTrigger,
+                               int adaptiveMaxSubdiv,
+                               int adaptiveBisectIters,
+                               float adaptiveMinStep,
+                               float adaptiveInsightAcceptMargin,
+                               float adaptiveRate,
+                               float adaptiveMaxScale) const {
 	assert (initialized);
 
 	rayHit->t = initialRay->maxt;
@@ -372,7 +386,16 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 													uvPolicy,
 													&planeDist, &nearBary,
 													stitchBaryMargin,
-													&rk4Hit);
+													&rk4Hit,
+													adaptiveEnable,
+													adaptivePlaneTriggerFactor,
+													adaptiveCurvatureTrigger,
+													adaptiveMaxSubdiv,
+													adaptiveBisectIters,
+													adaptiveMinStep,
+													adaptiveInsightAcceptMargin,
+													adaptiveRate,
+													adaptiveMaxScale);
 			if (ok && t < rayHit->t) {
 				// Replace t with projection length to rk4Hit so downstream 'ray(rayHit.t)' is close
 				const Vector v = rk4Hit - initialRay->o;

@@ -399,30 +399,38 @@ public:
 	}
 
 	static bool RK4_GRINIntersect(
-							const xPRIMEray &ray,
-							const Point &p0,
-							const Point &p1,
-							const Point &p2,
-							const Point &grinCenter,
-							const float rInner,
-							const float rOuter,
-							float *tHit,
-							Point *rk4Hit,
-							float *b1,
-							float *b2,
-							const bool invert = false,
-							const float barycentricEpsilon = 0.03f,
-							const float rk4PlaneThreshold = 1e-4f,
-							float *finalPlaneDist = nullptr,
-							bool *nearBary = nullptr,
-							const float uvSeamTolerance = 1e-6f,
-							const UVCrossPolicy uvPolicy = UV_REJECT,
-							const float side0 = 0.f) {
-		
+									const xPRIMEray &ray,
+									const Point &p0,
+									const Point &p1,
+									const Point &p2,
+									const Point &grinCenter,
+									const float rInner,
+									const float rOuter,
+									float *tHit,
+									Point *rk4Hit,
+									float *b1,
+									float *b2,
+									const bool invert = false,
+									const float barycentricEpsilon = 0.03f,
+									const float rk4PlaneThreshold = 1e-4f,
+									float *finalPlaneDist = nullptr,
+									bool *nearBary = nullptr,
+									const float uvSeamTolerance = 1e-6f,
+									const UVCrossPolicy uvPolicy = UV_REJECT,
+									bool adaptiveEnable = false,
+									float adaptivePlaneTriggerFactor = 1.0f,
+									float adaptiveCurvatureTrigger = 0.2f,
+									int adaptiveMaxSubdiv = 2,
+									int adaptiveBisectIters = 5,
+									float adaptiveMinStep = 1e-5f,
+									float adaptiveRate = 0.25f,
+									float adaptiveMaxScale = 4.0f) {
+
 		// Triangle plane setup
 		const Vector edge1 = p1 - p0;
 		const Vector edge2 = p2 - p0;
 		const Vector N = Normalize(Cross(edge1, edge2));
+		const float side0 = Dot(ray.origin - p0, N);
 
 		// Optional INSIGHT straight-line shortcut
 		const float r0 = (ray.origin - grinCenter).Length();
@@ -431,7 +439,6 @@ public:
 			return Intersect(linearRay, p0, p1, p2, tHit, b1, b2);
 		}
 
-		// RK4 setup
 		const float stepSize = ray.stepSize;
 		const int maxSteps = ray.numSteps;
 
@@ -441,36 +448,54 @@ public:
 		float tAccum = 0.f;
 		float bendAccum = 0.f;
 
-		// For sign-change detection
 		Point prevPos = ray.origin;
 		float prevDist = Dot(prevPos - p0, N);
 		float currDist = prevDist;
 
-		bool nearEdge = false;
-
 		for (int i = 0; i < maxSteps; ++i) {
-			// Compute GRIN curvature at current position
-			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
-			Vector k2 = ComputeGRINField(pos + 0.5f * stepSize * k1, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
-			Vector k3 = ComputeGRINField(pos + 0.5f * stepSize * k2, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
-			Vector k4 = ComputeGRINField(pos + stepSize * k3, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+			float effBaryEps = barycentricEpsilon;
+			if (adaptiveEnable && bendAccum > adaptiveCurvatureTrigger) {
+					const float effScale = std::min(adaptiveMaxScale,
+									1.f + adaptiveRate * (bendAccum - adaptiveCurvatureTrigger));
+					effBaryEps = effScale * barycentricEpsilon;
+			}
 
-			// RK4 update
+			float h = stepSize;
+			int subdiv = 0;
+			if (adaptiveEnable) {
+					const float baseTol = 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold;
+					const float stepSideTol = std::max(1e-8f, adaptivePlaneTriggerFactor * baseTol);
+
+					const float distNow = std::fabs(Dot(pos - p0, N));
+					const bool nearPlane = (distNow < 4.f * stepSideTol);
+					const bool highCurv  = (bendAccum > adaptiveCurvatureTrigger);
+
+					while ((nearPlane || highCurv) &&
+							subdiv < adaptiveMaxSubdiv &&
+							h > adaptiveMinStep) {
+							h *= 0.5f;
+							++subdiv;
+					}
+			}
+
+			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+			Vector k2 = ComputeGRINField(pos + 0.5f * h * k1, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+			Vector k3 = ComputeGRINField(pos + 0.5f * h * k2, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+			Vector k4 = ComputeGRINField(pos + h * k3,     ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+
 			Vector dirPrev = dir;
-			dir += (stepSize / 6.f) * (k1 + 2.f * k2 + 2.f * k3 + k4);
+			dir += (h / 6.f) * (k1 + 2.f*k2 + 2.f*k3 + k4);
 			const float cosA = Clamp(Dot(Normalize(dirPrev), Normalize(dir)), -1.f, 1.f);
 			bendAccum += acosf(cosA);
-			pos += stepSize * dir;
-			tAccum += stepSize;
+			pos += h * dir;
+			tAccum += h;
 
-			// Current signed distance to plane
 			currDist = Dot(pos - p0, N);
 
-			// Crossing detected or near the plane: refine within the step
 			if ((prevDist * currDist <= 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
 				Point A = prevPos, B = pos;
 				float da = prevDist, db = currDist;
-				for (int it = 0; it < 5; ++it) {
+				for (int it = 0; it < adaptiveBisectIters; ++it) {
 					const Point M = (A + B) * 0.5f;
 					const float dm = Dot(M - p0, N);
 					if (dm == 0.f) { A = B = M; break; }
@@ -479,46 +504,40 @@ public:
 				}
 				const Point planePoint = (A + B) * 0.5f;
 
-				// Precise tHit inside the step
 				const float segLen = (pos - prevPos).Length();
 				const float hitLen = (planePoint - prevPos).Length();
 				const float frac = (segLen > 0.f) ? (hitLen / segLen) : 0.f;
-				const float tStepStart = tAccum - stepSize;
-				const float tPlane = tStepStart + stepSize * frac;
+				const float tStepStart = tAccum - h;
+				const float tPlane = tStepStart + h * frac;
 
-				// Adaptive epsilon driven by accumulated bending
-				const float effRate = 0.25f;      // TODO: expose later if desired
-				const float effMaxScale = 4.0f;   // cap growth
-				const float effScale = std::min(effMaxScale, 1.f + effRate * bendAccum);
-				const float effBaryEps = std::max(barycentricEpsilon, effScale * barycentricEpsilon);
-
-				// Tolerant same-side guard for this step
-				const float stepSideTol = std::max(1e-8f, 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold);
+				const float baseTol = 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold;
+				const float stepSideTol = std::max(1e-8f, adaptiveEnable ? adaptivePlaneTriggerFactor * baseTol : baseTol);
 				const float sidePlane = Dot(planePoint - p0, N);
-				if (!invert && (side0 * sidePlane > stepSideTol))
-								return false;
 
-				// Project with effective epsilon
-				const BaryResult br = ProjectToTriangleBary(p0, p1, p2, planePoint,
-																				/*insideTol=*/effBaryEps,
-																				/*edgeTol=*/uvSeamTolerance);
-				if (br.inside) {
-					*tHit = tPlane;
-					*rk4Hit = planePoint;
-					*b1 = br.b1;
-					*b2 = br.b2;
-					ClampBarycentricSoft(planePoint, p0, p1, p2, 1e-6f, b1, b2);
-					return true;
+				if (!invert && (side0 * sidePlane > stepSideTol)) {
+					// didn’t cross enough
+				} else {
+					const BaryResult br = ProjectToTriangleBary(p0, p1, p2, planePoint,
+															/*insideTol=*/effBaryEps,
+															/*edgeTol=*/uvSeamTolerance);
+					if (br.inside) {
+						*tHit = tPlane;
+						*rk4Hit = planePoint;
+						*b1 = br.b1;
+						*b2 = br.b2;
+						ClampBarycentricSoft(planePoint, p0, p1, p2, 1e-6f, b1, b2);
+						return true;
+					}
+					if (br.nearEdge && (uvPolicy == UV_EDGE_PROJECT) &&
+						EdgeProjectBary(p0, p1, p2, planePoint, br.edgeId, b1, b2)) {
+						*tHit = tPlane;
+						*rk4Hit = planePoint;
+						ClampBarycentricSoft(planePoint, p0, p1, p2, 1e-6f, b1, b2);
+						return true;
+					}
+					if (nearBary)
+						*nearBary = true;
 				}
-				if (br.nearEdge && uvPolicy == UV_EDGE_PROJECT &&
-					EdgeProjectBary(p0, p1, p2, planePoint, br.edgeId, b1, b2)) {
-					*tHit = tPlane;
-					*rk4Hit = planePoint;
-					ClampBarycentricSoft(planePoint, p0, p1, p2, 1e-6f, b1, b2);
-					return true;
-				}
-				if (br.nearEdge)
-					nearEdge = true;
 			}
 
 			prevPos = pos;
@@ -527,10 +546,8 @@ public:
 
 		if (finalPlaneDist)
 			*finalPlaneDist = std::fabs(currDist);
-		if (nearBary)
-			*nearBary = nearEdge;
 
-		return false; // No intersection found
+		return false;
 	}
 
 	// 🔥GRIN Curved Path Additions 
@@ -554,7 +571,17 @@ public:
 						float *finalPlaneDist = nullptr,
 						bool *nearBary = nullptr,
 						const float stitchBaryMargin = 0.02f,
-						Point *outHitPos = nullptr) {
+						Point *outHitPos = nullptr,
+						// Adaptive controls
+						bool adaptiveEnable = false,
+						float adaptivePlaneTriggerFactor = 1.0f,
+						float adaptiveCurvatureTrigger = 0.2f,
+						int adaptiveMaxSubdiv = 2,
+						int adaptiveBisectIters = 5,
+						float adaptiveMinStep = 1e-5f,
+						float adaptiveInsightAcceptMargin = 0.0f,
+						float adaptiveRate = 0.25f,
+						float adaptiveMaxScale = 4.0f) {
 
 		// Compute plane normal
 		const Vector edge1 = p1 - p0;
@@ -562,9 +589,11 @@ public:
 		const Vector N = Normalize(Cross(edge1, edge2));
 		const float side0 = Dot(ray.origin - p0, N);
 
-		// Adaptive-ish guard tolerance (keeps backfaces out but allows tiny slack)
-		const float effBaryEps = std::max(barycentricEpsilon, uvSeamTolerance);
-		const float sideTol = std::max(1e-8f, 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold);
+		// Adaptive-aware backface guard tolerance
+		const float baseTol = 0.5f * std::max(barycentricEpsilon, uvSeamTolerance) +
+								0.25f * rk4PlaneThreshold;
+		const float sideTol = std::max(1e-8f,
+								adaptiveEnable ? adaptivePlaneTriggerFactor * baseTol : baseTol);
 
 		Point approxHit;
 		float tINSIGHT;
@@ -579,18 +608,21 @@ public:
 			return false;
 
 		// STEP 2: Quick barycentric test
+		const float insightTol = barycentricEpsilon + (adaptiveEnable ? adaptiveInsightAcceptMargin : 0.f);
 		const BaryResult br0 = ProjectToTriangleBary(p0, p1, p2, approxHit,
-						barycentricEpsilon, uvSeamTolerance);
+										insightTol, uvSeamTolerance);
 		if (!br0.inside) {
 			if (br0.nearEdge && uvPolicy == UV_EDGE_PROJECT) {
 				EdgeProjectBary(p0, p1, p2, approxHit, br0.edgeId, b1, b2);
 			} else {
-				if (nearBary)
-						*nearBary = br0.nearEdge ||
-								ProjectToTriangleBary(p0, p1, p2, approxHit,
-										barycentricEpsilon + stitchBaryMargin,
-										uvSeamTolerance).nearEdge;
-				return false;
+				if (nearBary) {
+					const BaryResult brWide = ProjectToTriangleBary(p0, p1, p2, approxHit,
+											insightTol + stitchBaryMargin,
+											uvSeamTolerance);
+					*nearBary = br0.nearEdge || brWide.nearEdge;
+				}
+				if (!adaptiveEnable)
+					return false;
 			}
 		} else if (nearBary)
 			*nearBary = false;
@@ -600,11 +632,18 @@ public:
 		float tRK4;
 
 		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter,
-										&tRK4, &rk4Hit, b1, b2, invert,
-										barycentricEpsilon, rk4PlaneThreshold,
-										finalPlaneDist, nearBary,
-										uvSeamTolerance, uvPolicy,
-										side0))
+								&tRK4, &rk4Hit, b1, b2, invert,
+								barycentricEpsilon, rk4PlaneThreshold,
+								finalPlaneDist, nearBary,
+								uvSeamTolerance, uvPolicy,
+								adaptiveEnable,
+								adaptivePlaneTriggerFactor,
+								adaptiveCurvatureTrigger,
+								adaptiveMaxSubdiv,
+								adaptiveBisectIters,
+								adaptiveMinStep,
+								adaptiveRate,
+								adaptiveMaxScale))
 			return false;
 
 		// Clamp barycentrics softly to the triangle interior before returning
@@ -638,23 +677,36 @@ public:
 		if (divisor == 0.f)
 			return false;
 
-		const float invDivisor = 1.f / divisor;
+			const float invDivisor = 1.f / divisor;
 
-		// Compute first barycentric coordinate
-		const Vector d = ray.o - p0;
-		*b1 = Dot(d, s1) * invDivisor;
-		if (*b1 < 0.f)
-			return false;
+			// === ADAPTIVE EPSILON UPDATE START ===
+			const float triScale = std::max(std::max((p0 - p1).Length(), (p1 - p2).Length()),
+									(p2 - p0).Length());
+			const float rayMag = ray.d.Length();
+			const float adaptiveEps = std::max(1e-7f, (triScale * 1e-6f) / rayMag);
+			// === ADAPTIVE EPSILON UPDATE END ===
 
-		// Compute second barycentric coordinate
-		const Vector s2 = Cross(d, e1);
-		*b2 = Dot(ray.d, s2) * invDivisor;
-		if (*b2 < 0.f)
-			return false;
+			// Compute first barycentric coordinate
+			const Vector d = ray.o - p0;
+			*b1 = Dot(d, s1) * invDivisor;
+			// === ADAPTIVE EPSILON UPDATE START ===
+			if (*b1 < -adaptiveEps)
+				return false;
+			// === ADAPTIVE EPSILON UPDATE END ===
 
-		const float b0 = 1.f - *b1 - *b2;
-		if (b0 < 0.f)
-			return false;
+			// Compute second barycentric coordinate
+			const Vector s2 = Cross(d, e1);
+			*b2 = Dot(ray.d, s2) * invDivisor;
+			// === ADAPTIVE EPSILON UPDATE START ===
+			if (*b2 < -adaptiveEps)
+				return false;
+			// === ADAPTIVE EPSILON UPDATE END ===
+
+			const float b0 = 1.f - *b1 - *b2;
+			// === ADAPTIVE EPSILON UPDATE START ===
+			if (b0 < -adaptiveEps)
+				return false;
+			// === ADAPTIVE EPSILON UPDATE END ===
 
 		// Compute _t_ to intersection point
 		*t = Dot(e2, s2) * invDivisor;

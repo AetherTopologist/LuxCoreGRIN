@@ -304,7 +304,12 @@ bool MBVHAccel::Intersect(const Ray *ray, RayHit *rayHit) const {
 
 				float t, b1, b2;
 				if (Triangle::Intersect(currentRay, p0, p1, p2, &t, &b1, &b2)) {
-					if (t < rayHit->t) {
+					// === BACKFACE CULLING UPDATE START ===
+					const Normal geomN = currentMesh->GetGeometryNormal(
+										Transform::TRANS_IDENTITY, node.triangleLeaf.triangleIndex);
+					const bool frontFacing = Dot(geomN, currentRay.d) < 0.f;
+					// === BACKFACE CULLING UPDATE END ===
+					if (frontFacing && t < rayHit->t) {
 						currentRay.maxt = t;
 						rayHit->t = t;
 						rayHit->b1 = b1;
@@ -354,6 +359,32 @@ bool MBVHAccel::Intersect(const Ray *ray, RayHit *rayHit) const {
 	}
 
 	return !rayHit->Miss();
+}
+
+bool MBVHAccel::xPRIMEIntersect(const Ray *ray, RayHit *hit,
+               const float beta, const luxrays::Vector &gamma,
+               const luxrays::Point &grinCenter,
+               const float rInner, const float rOuter,
+               const float stepSize, const int numSteps,
+               const bool invert,
+               const float insightCurvatureThreshold,
+               const float barycentricEpsilon,
+               const float rk4PlaneThreshold,
+               const float uvSeamTolerance,
+               const UVCrossPolicy uvPolicy,
+               slg::StitchHint *stitchHint,
+               float stitchPlaneFactor,
+               float stitchBaryMargin,
+               bool adaptiveEnable,
+               float adaptivePlaneTriggerFactor,
+               float adaptiveCurvatureTrigger,
+               int adaptiveMaxSubdiv,
+               int adaptiveBisectIters,
+               float adaptiveMinStep,
+               float adaptiveInsightAcceptMargin,
+               float adaptiveRate,
+               float adaptiveMaxScale) const {
+       return Intersect(ray, hit);
 }
 
 }

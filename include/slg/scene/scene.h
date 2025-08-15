@@ -139,10 +139,23 @@ struct WorldGRINInfo {
 								bool  stitchUseVertexNeighbors = false;
 								bool  stitchDebug = false;
 
-                                // UV seam handling
-                                float uvSeamTolerance = 1e-6f;   // how far outside a tri we still accept (in barycentric units)
-                                enum UVCrossIslandPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
-                                int   uvCrossIslandPolicy = UV_REJECT; // default: reject neighbor if bary hits outside
+								// Adaptive controls
+								bool  adaptiveEnable              = false;
+								float adaptivePlaneTriggerFactor  = 1.0f;   // scales near-plane tolerance
+								float adaptiveCurvatureTrigger    = 0.2f;   // radians of accumulated bend before scaling epsilon
+								int   adaptiveMaxSubdiv           = 2;      // 0..8 step halvings near plane / high curvature
+								int   adaptiveBisectIters         = 5;      // 0..8 within-step bisection for crossing
+								float adaptiveMinStep             = 1e-5f;  // floor for step halving
+								float adaptiveInsightAcceptMargin = 0.0f;   // expands early INSIGHT acceptance window
+
+								// Optional internal tuning: leave hard-coded or expose later
+								float adaptiveRate                = 0.25f;  // epsilon growth per rad (post-trigger)
+								float adaptiveMaxScale            = 4.0f;   // cap on epsilon growth
+
+								// UV seam handling
+								float uvSeamTolerance = 1e-6f;   // how far outside a tri we still accept (in barycentric units)
+								enum UVCrossIslandPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
+								int   uvCrossIslandPolicy = UV_REJECT; // default: reject neighbor if bary hits outside
 };
 
 class Scene {

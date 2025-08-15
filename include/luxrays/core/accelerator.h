@@ -69,7 +69,17 @@ public:
 								const UVCrossPolicy uvPolicy = UV_REJECT,
 								slg::StitchHint *stitchHint = nullptr,
 								float stitchPlaneFactor = 2.f,
-								float stitchBaryMargin = 0.02f) const {
+								float stitchBaryMargin = 0.02f,
+								// Adaptive controls
+								bool  adaptiveEnable = false,
+								float adaptivePlaneTriggerFactor = 1.0f,
+								float adaptiveCurvatureTrigger = 0.2f,
+								int   adaptiveMaxSubdiv = 2,
+								int   adaptiveBisectIters = 5,
+								float adaptiveMinStep = 1e-5f,
+								float adaptiveInsightAcceptMargin = 0.0f,
+								float adaptiveRate = 0.25f,
+								float adaptiveMaxScale = 4.0f) const {
 		return Intersect(ray, hit); // <== fallback behavior
 	}
 	
