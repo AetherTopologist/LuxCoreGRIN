@@ -654,27 +654,27 @@ public:
 		for (int i = 0; i < maxSteps; ++i) {
 			float effBaryEps = barycentricEpsilon;
 			if (adaptiveEnable && bendAccum > adaptiveCurvatureTrigger) {
-					const float effScale = std::min(adaptiveMaxScale,
-									1.f + adaptiveRate * (bendAccum - adaptiveCurvatureTrigger));
-					effBaryEps = effScale * barycentricEpsilon;
+				const float effScale = std::min(adaptiveMaxScale,
+								1.f + adaptiveRate * (bendAccum - adaptiveCurvatureTrigger));
+				effBaryEps = effScale * barycentricEpsilon;
 			}
 
 			float h = stepSize;
 			int subdiv = 0;
 			if (adaptiveEnable) {
-					const float baseTol = 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold;
-					const float stepSideTol = std::max(1e-8f, adaptivePlaneTriggerFactor * baseTol);
+				const float baseTol = 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold;
+				const float stepSideTol = std::max(1e-8f, adaptivePlaneTriggerFactor * baseTol);
 
-					const float distNow = std::fabs(Dot(pos - p0, N));
-					const bool nearPlane = (distNow < 4.f * stepSideTol);
-					const bool highCurv  = (bendAccum > adaptiveCurvatureTrigger);
+				const float distNow = std::fabs(Dot(pos - basis.p0, N));
+				const bool nearPlane = (distNow < 4.f * stepSideTol);
+				const bool highCurv  = (bendAccum > adaptiveCurvatureTrigger);
 
-					while ((nearPlane || highCurv) &&
-							subdiv < adaptiveMaxSubdiv &&
-							h > adaptiveMinStep) {
-							h *= 0.5f;
-							++subdiv;
-					}
+				while ((nearPlane || highCurv) &&
+					subdiv < adaptiveMaxSubdiv &&
+					h > adaptiveMinStep) {
+					h *= 0.5f;
+					++subdiv;
+				}
 			}
 
 			Vector k1 = ComputeGRINField(pos, grinCenter, rInner, inv, invert);
