@@ -62,6 +62,9 @@ void HitPoint::Init(const bool fixedFromLight, const bool throughShadowTransp,
 
 	// Interpolate UV coordinates
 	defaultUV = mesh->InterpolateTriUV(triangleIndex, b1, b2, 0);
+	// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+	// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+	// TODO: re-enable via a runtime toggle if we want to experiment later.
 	grinUvDelta.u = 0.f;
 	grinUvDelta.v = 0.f;
 
@@ -89,6 +92,9 @@ void HitPoint::Init() {
 	intoObject = true;
 	throughShadowTransparency = false;
 
+	// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+	// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+	// TODO: re-enable via a runtime toggle if we want to experiment later.
 	grinUvDelta.u = 0.f;
 	grinUvDelta.v = 0.f;
 }

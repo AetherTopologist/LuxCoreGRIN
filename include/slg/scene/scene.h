@@ -156,6 +156,7 @@ struct WorldGRINInfo {
 								float uvSeamTolerance = 1e-6f;   // how far outside a tri we still accept (in barycentric units)
 								enum UVCrossIslandPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
 								int   uvCrossIslandPolicy = UV_REJECT; // default: reject neighbor if bary hits outside
+								bool  uvBaryDebug = false;
 };
 
 class Scene {

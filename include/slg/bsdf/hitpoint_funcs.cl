@@ -18,13 +18,17 @@
  * limitations under the License.                                          *
  ***************************************************************************/
 
+#ifndef GRIN_UV_USE_RAW_BARY
+#define GRIN_UV_USE_RAW_BARY 1
+#endif
+
 // Used when hitting a surface
 OPENCL_FORCE_INLINE void HitPoint_Init(__global HitPoint *hitPoint, const bool throughShadowTransp,
-		const uint meshIndex, const uint triIndex,
-		const float3 pnt, const float3 fixedDir,
-		const float b1, const float b2,
-		const float passThroughEvnt
-		MATERIALS_PARAM_DECL) {
+                const uint meshIndex, const uint triIndex,
+                const float3 pnt, const float3 fixedDir,
+                const float b1, const float b2,
+				const float passThroughEvnt
+				MATERIALS_PARAM_DECL) {
 	hitPoint->throughShadowTransparency = throughShadowTransp;
 	hitPoint->passThroughEvent = passThroughEvnt;
 
@@ -44,8 +48,40 @@ OPENCL_FORCE_INLINE void HitPoint_Init(__global HitPoint *hitPoint, const bool t
 	hitPoint->intoObject = (dot(-fixedDir, geometryN) < 0.f);
 
 	// Interpolate UV coordinates
+#if GRIN_UV_USE_RAW_BARY
+	float3 localHit = Transform_InvApplyPoint(&hitPoint->localToWorld, pnt);
+	float rb0, rb1, rb2;
+	{
+			__global const ExtMesh* restrict meshDesc = &meshDescs[meshIndex];
+			__global const Triangle* restrict tri = &triangles[meshDesc->trisOffset + triIndex];
+			__global const Point* restrict verts = &vertices[meshDesc->vertsOffset];
+			const float3 p0 = VLOAD3F(&verts[tri->v[0]].x);
+			const float3 p1 = VLOAD3F(&verts[tri->v[1]].x);
+			const float3 p2 = VLOAD3F(&verts[tri->v[2]].x);
+			const float3 v0 = p1 - p0;
+			const float3 v1 = p2 - p0;
+			const float3 v2 = localHit - p0;
+			const float d00 = dot(v0, v0);
+			const float d01 = dot(v0, v1);
+			const float d11 = dot(v1, v1);
+			const float d20 = dot(v2, v0);
+			const float d21 = dot(v2, v1);
+			const float denom = d00 * d11 - d01 * d01;
+			rb1 = (d11 * d20 - d01 * d21) / denom;
+			rb2 = (d00 * d21 - d01 * d20) / denom;
+			rb0 = 1.f - rb1 - rb2;
+	}
+	rb0 = clamp(rb0, -1e-6f, 1.f + 1e-6f);
+	rb1 = clamp(rb1, -1e-6f, 1.f + 1e-6f);
+	rb2 = 1.f - rb1 - rb0;
+	const float2 defaultUV = ExtMesh_GetInterpolateUV(meshIndex, triIndex, rb1, rb2, 0 EXTMESH_PARAM);
+#else
 	const float2 defaultUV = ExtMesh_GetInterpolateUV(meshIndex, triIndex, b1, b2, 0 EXTMESH_PARAM);
+#endif
 	VSTORE2F(defaultUV, &hitPoint->defaultUV.u);
+	// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+	// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+	// TODO: re-enable via a runtime toggle if we want to experiment later.
 	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &hitPoint->grinUvDelta.u);
 
 	hitPoint->meshIndex = meshIndex;
@@ -88,6 +124,9 @@ OPENCL_FORCE_INLINE void HitPoint_InitDefault(__global HitPoint *hitPoint) {
 	hitPoint->intoObject = true;
 
 	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &hitPoint->defaultUV.u);
+	// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+	// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+	// TODO: re-enable via a runtime toggle if we want to experiment later.
 	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &hitPoint->grinUvDelta.u);
 
 	VSTORE3F(MAKE_FLOAT3(0.f, 0.f, 0.f), &hitPoint->dpdu.x);
@@ -124,8 +163,11 @@ OPENCL_FORCE_INLINE float2 HitPoint_GetUV(__global const HitPoint *hitPoint, con
 
 	if (meshIndex != NULL_INDEX) {
 		return (dataIndex == 0) ?
-			(VLOAD2F(&hitPoint->defaultUV.u) + VLOAD2F(&hitPoint->grinUvDelta.u)) :
-			ExtMesh_GetInterpolateUV(meshIndex, hitPoint->triangleIndex, hitPoint->triangleBariCoord1, hitPoint->triangleBariCoord2, dataIndex EXTMESH_PARAM);
+				// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+				// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+				// TODO: re-enable via a runtime toggle if we want to experiment later.
+				VLOAD2F(&hitPoint->defaultUV.u) :
+				ExtMesh_GetInterpolateUV(meshIndex, hitPoint->triangleIndex, hitPoint->triangleBariCoord1, hitPoint->triangleBariCoord2, dataIndex EXTMESH_PARAM);
 	} else
 		return MAKE_FLOAT2(0.f, 0.f);
 }

@@ -21,6 +21,38 @@
 #include "slg/materials/glass.h"
 #include "luxrays/core/geometry/triangle.h"
 #include "slg/bsdf/grin_uv.h"
+#include <iostream>
+
+#ifndef GRIN_UV_USE_RAW_BARY
+#define GRIN_UV_USE_RAW_BARY 1
+#endif
+
+SLG_FORCE_INLINE static void GetTriangleBary_ObjectSpace(
+                const ExtMesh *mesh, const u_int triIndex,
+                const Point &objectSpaceHit,
+                float &b0, float &b1, float &b2) {
+	const Triangle *tris = mesh->GetTriangles();
+	const Point *verts = mesh->GetVertices();
+	const Triangle &tri = tris[triIndex];
+	const Point p0 = verts[tri.v[0]];
+	const Point p1 = verts[tri.v[1]];
+	const Point p2 = verts[tri.v[2]];
+
+	const Vector v0 = p1 - p0;
+	const Vector v1 = p2 - p0;
+	const Vector v2 = objectSpaceHit - p0;
+
+	const float d00 = Dot(v0, v0);
+	const float d01 = Dot(v0, v1);
+	const float d11 = Dot(v1, v1);
+	const float d20 = Dot(v2, v0);
+	const float d21 = Dot(v2, v1);
+	const float denom = d00 * d11 - d01 * d01;
+
+	b1 = (d11 * d20 - d01 * d21) / denom;
+	b2 = (d00 * d21 - d01 * d20) / denom;
+	b0 = 1.f - b1 - b2;
+}
 
 using namespace luxrays;
 using namespace slg;
@@ -63,13 +95,41 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	} else
 		hp = ray(rayHit.t);
 
-	hitPoint.Init(fixedFromLight, throughShadowTransparency,
-					scene, rayHit.meshIndex, rayHit.triangleIndex,
-					hp, -ray.d,
-					rayHit.b1, rayHit.b2,
-					passThroughEvent);
+        hitPoint.Init(fixedFromLight, throughShadowTransparency,
+                                        scene, rayHit.meshIndex, rayHit.triangleIndex,
+                                        hp, -ray.d,
+                                        rayHit.b1, rayHit.b2,
+                                        passThroughEvent);
 
-	//hitPoint.Init(fixedFromLight, throughShadowTransparency, scene, rayHit.meshIndex, rayHit.triangleIndex, ray(rayHit.t), -ray.d, rayHit.b1, rayHit.b2, passThroughEvent);
+        //hitPoint.Init(fixedFromLight, throughShadowTransparency, scene, rayHit.meshIndex, rayHit.triangleIndex, ray(rayHit.t), -ray.d, rayHit.b1, rayHit.b2, passThroughEvent);
+
+#if GRIN_UV_USE_RAW_BARY
+        if (ray.IsCurved() && scene.worldGrinInfo.enabled) {
+			const Transform worldToLocal = Inverse(hitPoint.localToWorld);
+			const Point localHit = worldToLocal * hp;
+			float rb0, rb1, rb2;
+			GetTriangleBary_ObjectSpace(mesh, rayHit.triangleIndex, localHit, rb0, rb1, rb2);
+			rb0 = Clamp(rb0, -1e-6f, 1.f + 1e-6f);
+			rb1 = Clamp(rb1, -1e-6f, 1.f + 1e-6f);
+			rb2 = 1.f - rb1 - rb0;
+			const Triangle &tri = mesh->GetTriangles()[rayHit.triangleIndex];
+			const UV uv0 = mesh->GetUV(tri.v[0], 0);
+			const UV uv1 = mesh->GetUV(tri.v[1], 0);
+			const UV uv2 = mesh->GetUV(tri.v[2], 0);
+			const float u = rb0 * uv0.u + rb1 * uv1.u + rb2 * uv2.u;
+			const float v = rb0 * uv0.v + rb1 * uv1.v + rb2 * uv2.v;
+			hitPoint.defaultUV = UV(u, v);
+
+			if (scene.worldGrinInfo.uvBaryDebug) {
+				const float pb0 = 1.f - rayHit.b1 - rayHit.b2;
+				const float pb1 = rayHit.b1;
+				const float pb2 = rayHit.b2;
+				cout << "[GRIN-UV] raw bary=" << rb0 << "," << rb1 << "," << rb2
+					<< " policy=" << pb0 << "," << pb1 << "," << pb2
+					<< " delta=" << (rb0 - pb0) << "," << (rb1 - pb1) << "," << (rb2 - pb2) << endl;
+			}
+        }
+#endif
 	
         // Apply GRIN-based UV distortion if enabled
         // ------------------------------------------------------------
@@ -100,17 +160,24 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 
 		// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
 		// Falls back to axis-wise projection if basis degenerates (det ~ 0).
-		float du = 0.f, dv = 0.f;
-		ProjectTangentToUV(tangent, hitPoint.dpdu, hitPoint.dpdv, du, dv);
-		const float mag = hypotf(du, dv);
-		if (mag > 1e3f) {
-			const float s = 1e3f / mag;
-			du *= s;
-			dv *= s;
-		}
-		const float strength = scene.grinUVDistortionStrength;
-		hitPoint.grinUvDelta.u = strength * du;
-		hitPoint.grinUvDelta.v = strength * dv;
+		// float du = 0.f, dv = 0.f;
+		// ProjectTangentToUV(tangent, hitPoint.dpdu, hitPoint.dpdv, du, dv);
+		// const float mag = hypotf(du, dv);
+		// if (mag > 1e3f) {
+		//      const float s = 1e3f / mag;
+		//      du *= s;
+		//      dv *= s;
+		// }
+		// const float strength = scene.grinUVDistortionStrength;
+		// hitPoint.grinUvDelta.u = strength * du;
+		// hitPoint.grinUvDelta.v = strength * dv;
+
+		// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+		// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+		// TODO: re-enable via a runtime toggle if we want to experiment later.
+		float du = 0.f, dv = 0.f; // Force no UV distortion
+		hitPoint.grinUvDelta.u = 0.f;
+		hitPoint.grinUvDelta.v = 0.f;
 	}
 
 	// Get the material
@@ -172,18 +239,25 @@ void BSDF::Init(const Scene &scene,
 
 		// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
 		// Falls back to axis-wise projection if basis degenerates (det ~ 0).
-		float du = 0.f, dv = 0.f;
-		ProjectTangentToUV(tangent, hitPoint.dpdu, hitPoint.dpdv, du, dv);
-		const float mag = hypotf(du, dv);
-		if (mag > 1e3f) {
-			const float s = 1e3f / mag;
-			du *= s;
-			dv *= s;
-		}
+		// float du = 0.f, dv = 0.f;
+		// ProjectTangentToUV(tangent, hitPoint.dpdu, hitPoint.dpdv, du, dv);
+		// const float mag = hypotf(du, dv);
+		// if (mag > 1e3f) {
+		//      const float s = 1e3f / mag;
+		//      du *= s;
+		//      dv *= s;
+		// }
 
-		const float strength = scene.grinUVDistortionStrength;
-		hitPoint.grinUvDelta.u = strength * du;
-		hitPoint.grinUvDelta.v = strength * dv;
+		// const float strength = scene.grinUVDistortionStrength;
+		// hitPoint.grinUvDelta.u = strength * du;
+		// hitPoint.grinUvDelta.v = strength * dv;
+
+		// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+		// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+		// TODO: re-enable via a runtime toggle if we want to experiment later.
+		float du = 0.f, dv = 0.f; // Force no UV distortion
+		hitPoint.grinUvDelta.u = 0.f;
+		hitPoint.grinUvDelta.v = 0.f;
 	}
 	
 	// Get the material
@@ -235,6 +309,9 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 	triangleLightSource = NULL;
 
 	hitPoint.defaultUV = UV(0.f, 0.f);
+	// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+	// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+	// TODO: re-enable via a runtime toggle if we want to experiment later.
 	hitPoint.grinUvDelta.u = 0.f;
 	hitPoint.grinUvDelta.v = 0.f;
 

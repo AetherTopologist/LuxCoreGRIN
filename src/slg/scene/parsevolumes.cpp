@@ -183,7 +183,10 @@ void Scene::ParseVolumes(const Properties &props) {
 	if (props.IsDefined("grin.stitch_use_vertex_neighbors"))
 		worldGrinInfo.stitchUseVertexNeighbors = props.Get("grin.stitch_use_vertex_neighbors").Get<bool>();
 	if (props.IsDefined("grin.stitch_debug"))
-		worldGrinInfo.stitchDebug = props.Get("grin.stitch_debug").Get<bool>();
+			worldGrinInfo.stitchDebug = props.Get("grin.stitch_debug").Get<bool>();
+
+	if (props.IsDefined("grin.uv_bary_debug"))
+			worldGrinInfo.uvBaryDebug = props.Get("grin.uv_bary_debug").Get<bool>();
 
 	if (props.IsDefined("grin.uv_seam_tolerance"))
 		worldGrinInfo.uvSeamTolerance = props.Get("grin.uv_seam_tolerance").Get<float>();

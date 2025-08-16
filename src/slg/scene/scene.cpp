@@ -107,6 +107,7 @@ void Scene::Init(const luxrays::Properties *resizePolicyProps) {
 	worldGrinInfo.barycentricEpsilon = 0.03f;
 	worldGrinInfo.rk4PlaneThreshold = 1e-4f;
 	worldGrinInfo.stitchDebug = false;
+	worldGrinInfo.uvBaryDebug = false;
 	worldVolumeType = CLEAR_VOL;
 	grinUVDistortionStrength = 0.05f;
 

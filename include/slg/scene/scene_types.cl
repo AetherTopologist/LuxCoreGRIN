@@ -48,6 +48,7 @@ typedef struct {
 		float rInner;
 		float rOuter;
 		int invert;
+		int uvBaryDebug;
 	} worldGrinInfo;
 } Scene;
 
