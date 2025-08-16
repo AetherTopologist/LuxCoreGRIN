@@ -32,19 +32,19 @@ using namespace std;
 #endif
 
 SLG_FORCE_INLINE static void GetTriangleBary_ObjectSpace(
-                const ExtMesh *mesh, const u_int triIndex,
-                const Point &objectSpaceHit,
-                float &b0, float &b1, float &b2) {
-	const Triangle *tris = mesh->GetTriangles();
-	const Point *verts = mesh->GetVertices();
-	const Triangle &tri = tris[triIndex];
-	const Point p0 = verts[tri.v[0]];
-	const Point p1 = verts[tri.v[1]];
-	const Point p2 = verts[tri.v[2]];
+               const luxrays::ExtMesh *mesh, const u_int triIndex,
+               const luxrays::Point &objectSpaceHit,
+               float &b0, float &b1, float &b2) {
+	const luxrays::Triangle *tris = mesh->GetTriangles();
+	const luxrays::Point *verts = mesh->GetVertices();
+	const luxrays::Triangle &tri = tris[triIndex];
+	const luxrays::Point p0 = verts[tri.v[0]];
+	const luxrays::Point p1 = verts[tri.v[1]];
+	const luxrays::Point p2 = verts[tri.v[2]];
 
-	const Vector v0 = p1 - p0;
-	const Vector v1 = p2 - p0;
-	const Vector v2 = objectSpaceHit - p0;
+	const luxrays::Vector v0 = p1 - p0;
+	const luxrays::Vector v1 = p2 - p0;
+	const luxrays::Vector v2 = objectSpaceHit - p0;
 
 	const float d00 = Dot(v0, v0);
 	const float d01 = Dot(v0, v1);
