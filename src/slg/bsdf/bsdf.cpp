@@ -104,55 +104,58 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
         //hitPoint.Init(fixedFromLight, throughShadowTransparency, scene, rayHit.meshIndex, rayHit.triangleIndex, ray(rayHit.t), -ray.d, rayHit.b1, rayHit.b2, passThroughEvent);
 
 #if GRIN_UV_USE_RAW_BARY
-        if (ray.IsCurved() && scene.worldGrinInfo.enabled) {
-			const Transform worldToLocal = Inverse(hitPoint.localToWorld);
-			const Point localHit = worldToLocal * hp;
-			float rb0, rb1, rb2;
-			GetTriangleBary_ObjectSpace(mesh, rayHit.triangleIndex, localHit, rb0, rb1, rb2);
-			rb0 = Clamp(rb0, -1e-6f, 1.f + 1e-6f);
-			rb1 = Clamp(rb1, -1e-6f, 1.f + 1e-6f);
-			rb2 = 1.f - rb1 - rb0;
-			const Triangle &tri = mesh->GetTriangles()[rayHit.triangleIndex];
-			const UV uv0 = mesh->GetUV(tri.v[0], 0);
-			const UV uv1 = mesh->GetUV(tri.v[1], 0);
-			const UV uv2 = mesh->GetUV(tri.v[2], 0);
-			const float u = rb0 * uv0.u + rb1 * uv1.u + rb2 * uv2.u;
-			const float v = rb0 * uv0.v + rb1 * uv1.v + rb2 * uv2.v;
-			hitPoint.defaultUV = UV(u, v);
+	if (ray.IsCurved() && scene.worldGrinInfo.enabled) {
+		const Transform worldToLocal = Inverse(hitPoint.localToWorld);
+		const Point localHit = worldToLocal * hp;
+		float rb0, rb1, rb2;
+		GetTriangleBary_ObjectSpace(mesh, rayHit.triangleIndex, localHit, rb0, rb1, rb2);
+		rb0 = Clamp(rb0, -1e-6f, 1.f + 1e-6f);
+		rb1 = Clamp(rb1, -1e-6f, 1.f + 1e-6f);
+		rb2 = 1.f - rb1 - rb0;
+		const Triangle &tri = mesh->GetTriangles()[rayHit.triangleIndex];
+		const UV uv0 = mesh->GetUV(tri.v[0], 0);
+		const UV uv1 = mesh->GetUV(tri.v[1], 0);
+		const UV uv2 = mesh->GetUV(tri.v[2], 0);
+		const float u = rb0 * uv0.u + rb1 * uv1.u + rb2 * uv2.u;
+		const float v = rb0 * uv0.v + rb1 * uv1.v + rb2 * uv2.v;
+		hitPoint.defaultUV = UV(u, v);
 
-			if (scene.worldGrinInfo.uvBaryDebug) {
-				const float pb0 = 1.f - rayHit.b1 - rayHit.b2;
-				const float pb1 = rayHit.b1;
-				const float pb2 = rayHit.b2;
-				cout << "[GRIN-UV] raw bary=" << rb0 << "," << rb1 << "," << rb2
-					<< " policy=" << pb0 << "," << pb1 << "," << pb2
-					<< " delta=" << (rb0 - pb0) << "," << (rb1 - pb1) << "," << (rb2 - pb2) << endl;
-			}
-        }
+		if (scene.worldGrinInfo.uvBaryDebug) {
+			const float pb0 = 1.f - rayHit.b1 - rayHit.b2;
+			const float pb1 = rayHit.b1;
+			const float pb2 = rayHit.b2;
+			cout << "[GRIN-UV] raw bary=" << rb0 << "," << rb1 << "," << rb2
+				<< " policy=" << pb0 << "," << pb1 << "," << pb2
+				<< " delta=" << (rb0 - pb0) << "," << (rb1 - pb1) << "," << (rb2 - pb2) << endl;
+		}
+	}
 #endif
 	
-        // Apply GRIN-based UV distortion if enabled
-        // ------------------------------------------------------------
-        // Path Logic Branch: Curved vs. Straight Ray Behavior
-        //
-        // If ray.rayType == RAYTYPE_CURVED:
-        //     - Apply RK4 or symbolic curved ray stepping
-        //     - Interpolate hitpoint via barycentric mesh vertices
-        //     - Compute GRIN field distortion, non-linear IOR paths
-        //
-        // Else (RAYTYPE_DEFAULT):
-        //     - Standard linear ray marching and hit resolution
-        //     - Use ray(rayHit.t) for hitpoint position
-        //     - Mesh UVs, normals, and shading all follow original logic
-        // ------------------------------------------------------------
-        if (ray.IsCurved()) {
+	// Apply GRIN-based UV distortion if enabled
+	// ------------------------------------------------------------
+	// Path Logic Branch: Curved vs. Straight Ray Behavior
+	//
+	// If ray.rayType == RAYTYPE_CURVED:
+	//     - Apply RK4 or symbolic curved ray stepping
+	//     - Interpolate hitpoint via barycentric mesh vertices
+	//     - Compute GRIN field distortion, non-linear IOR paths
+	//
+	// Else (RAYTYPE_DEFAULT):
+	//     - Standard linear ray marching and hit resolution
+	//     - Use ray(rayHit.t) for hitpoint position
+	//     - Mesh UVs, normals, and shading all follow original logic
+	// ------------------------------------------------------------
+	if (ray.IsCurved()) {
+		GrinStepInvariants inv;
+		inv.invShellWidth = 1.f / (scene.worldGrinInfo.rOuter - scene.worldGrinInfo.rInner);
+		inv.gamma = scene.worldGrinInfo.gamma;
+		inv.beta = Vector(scene.worldGrinInfo.beta, scene.worldGrinInfo.beta, scene.worldGrinInfo.beta);
+		inv.fastMath = false;
 		const Vector field = Triangle::ComputeGRINField(
 								hp,
-								scene.worldGrinInfo.beta,
-								scene.worldGrinInfo.gamma,
 								scene.worldGrinInfo.center,
 								scene.worldGrinInfo.rInner,
-								scene.worldGrinInfo.rOuter,
+								inv,
 								scene.worldGrinInfo.invert);
 
 		// Project the distortion to be tangent to the surface
@@ -226,16 +229,19 @@ void BSDF::Init(const Scene &scene,
 
 	// Apply GRIN-based UV distortion if enabled
 	if (scene.worldGrinInfo.enabled) {
+		GrinStepInvariants inv;
+		inv.invShellWidth = 1.f / (scene.worldGrinInfo.rOuter - scene.worldGrinInfo.rInner);
+		inv.gamma = scene.worldGrinInfo.gamma;
+		inv.beta = Vector(scene.worldGrinInfo.beta, scene.worldGrinInfo.beta, scene.worldGrinInfo.beta);
+		inv.fastMath = false;
 		const Vector field = Triangle::ComputeGRINField(
-									surfacePoint,
-									scene.worldGrinInfo.beta,
-									scene.worldGrinInfo.gamma,
-									scene.worldGrinInfo.center,
-									scene.worldGrinInfo.rInner,
-									scene.worldGrinInfo.rOuter,
-									scene.worldGrinInfo.invert);
+											surfacePoint,
+											scene.worldGrinInfo.center,
+											scene.worldGrinInfo.rInner,
+											inv,
+											scene.worldGrinInfo.invert);
 		const Vector tangent = field -
-										Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
+						Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);
 
 		// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
 		// Falls back to axis-wise projection if basis degenerates (det ~ 0).

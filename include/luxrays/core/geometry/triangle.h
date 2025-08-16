@@ -37,6 +37,52 @@
 
 namespace luxrays {
 
+#ifndef GRIN_FAST_MATH
+#define GRIN_FAST_MATH 0
+#endif
+
+inline float fast_powf(float x, float y, bool useFast = true) {
+#if GRIN_FAST_MATH
+    if (useFast)
+        return exp2f(y * log2f(x));
+    else
+        return powf(x, y);
+#else
+    (void)useFast;
+    return powf(x, y);
+#endif
+}
+
+struct GrinStepInvariants {
+    float invShellWidth;
+    Vector gamma;
+    Vector beta;
+    bool fastMath;
+};
+
+struct TriBasis {
+    Point p0, p1, p2;
+    Vector e1, e2;
+    Vector N, u, v;
+    Vector edges[3];
+    float edgeLen2[3];
+};
+
+static inline TriBasis MakeTriBasis(const Point &p0, const Point &p1, const Point &p2) {
+    TriBasis b;
+    b.p0 = p0; b.p1 = p1; b.p2 = p2;
+    b.e1 = p1 - p0;
+    b.e2 = p2 - p0;
+    const Vector Nraw = Cross(b.e1, b.e2);
+    b.N = Normalize(Nraw);
+    b.u = Normalize(b.e1);
+    b.v = Normalize(Cross(b.N, b.u));
+    b.edges[0] = p1 - p0; b.edgeLen2[0] = b.edges[0].LengthSquared();
+    b.edges[1] = p2 - p1; b.edgeLen2[1] = b.edges[1].LengthSquared();
+    b.edges[2] = p0 - p2; b.edgeLen2[2] = b.edges[2].LengthSquared();
+    return b;
+}
+	
 // UV seam handling policy
 enum UVCrossPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
 
@@ -46,6 +92,60 @@ struct BaryResult {
     float b1, b2;         // barycentrics (b0 = 1 - b1 - b2)
     u_int edgeId;         // 0:(p0,p1) 1:(p1,p2) 2:(p2,p0), or 3 if none
 };
+
+// Overloads using precomputed triangle basis
+static inline BaryResult ProjectToTriangleBary(
+    const TriBasis &basis,
+    const Point &hit, const float insideTol, const float edgeTol) {
+    BaryResult br;
+    br.inside = false;
+    br.nearEdge = false;
+    br.b1 = br.b2 = 0.f;
+    br.edgeId = 3;
+
+    const Vector hpv = hit - basis.p0;
+    const float dist = Dot(hpv, basis.N);
+    const Point hp = hit - dist * basis.N;
+
+    const double x1 = Dot(basis.e1, basis.u);
+    const double y1 = Dot(basis.e1, basis.v);
+    const double x2 = Dot(basis.e2, basis.u);
+    const double y2 = Dot(basis.e2, basis.v);
+    const double xh = Dot(hp - basis.p0, basis.u);
+    const double yh = Dot(hp - basis.p0, basis.v);
+
+    const double denom = x1 * y2 - x2 * y1;
+    if (denom != 0.0) {
+        const double b1d = (xh * y2 - x2 * yh) / denom;
+        const double b2d = (x1 * yh - xh * y1) / denom;
+        br.b1 = static_cast<float>(b1d);
+        br.b2 = static_cast<float>(b2d);
+        const double b0d = 1.0 - b1d - b2d;
+        if (b1d >= -insideTol && b2d >= -insideTol && b0d >= -insideTol &&
+            b1d <= 1.0 + insideTol && b2d <= 1.0 + insideTol && b0d <= 1.0 + insideTol)
+            br.inside = true;
+    }
+
+    const Point pts[3] = { basis.p0, basis.p1, basis.p2 };
+    for (u_int i = 0; i < 3; ++i) {
+        const Point &a = pts[i];
+        const Vector &ab = basis.edges[i];
+        const double abLen2 = basis.edgeLen2[i];
+        if (abLen2 == 0.0)
+            continue;
+        double t = Dot(hp - a, ab) / abLen2;
+        t = std::clamp(t, 0.0, 1.0);
+        const Point proj = a + ab * t;
+        const double d = Distance(hp, proj);
+        if (d <= edgeTol) {
+            br.nearEdge = true;
+            br.edgeId = i;
+            break;
+        }
+    }
+
+    return br;
+}
 
 // Project a 3D point (curved hit) to triangle plane and compute robust barycentrics.
 // Uses an orthonormal basis, returns nearEdge if within edgeTol of an edge.
@@ -169,6 +269,43 @@ static inline bool EdgeProjectBary(
     return true;
 }
 
+static inline bool EdgeProjectBary(
+    const TriBasis &basis,
+    const Point &hit, u_int edgeId, float *b1, float *b2) {
+    const Vector hpv = hit - basis.p0;
+    const Point hp = hit - Dot(hpv, basis.N) * basis.N;
+
+    const Point pts[3] = { basis.p0, basis.p1, basis.p2 };
+    const Point &a = pts[edgeId];
+    const Vector &ab = basis.edges[edgeId];
+    const double abLen2 = basis.edgeLen2[edgeId];
+    if (abLen2 == 0.0)
+        return false;
+
+    double t = Dot(hp - a, ab) / abLen2;
+    t = std::clamp(t, 0.0, 1.0);
+    const double wA = 1.0 - t;
+    const double wB = t;
+
+    switch (edgeId) {
+        case 0:
+            *b1 = static_cast<float>(wB);
+            *b2 = 0.f;
+            break;
+        case 1:
+            *b1 = static_cast<float>(wA);
+            *b2 = static_cast<float>(wB);
+            break;
+        case 2:
+            *b1 = 0.f;
+            *b2 = static_cast<float>(wA);
+            break;
+        default:
+            return false;
+    }
+    return true;
+}
+
 // OpenCL data types
 namespace ocl {
 #include "luxrays/core/geometry/triangle_types.cl"
@@ -237,33 +374,32 @@ public:
 	}
 
 	static Vector ComputeGRINField(
-			const Point &pos,
-			const float beta,
-			const Vector &gamma,
-			const Point &GRINCenter,
-			const float rInner,
-			const float rOuter,
-			const bool invert = false) {
+					const Point &pos,
+					const Point &GRINCenter,
+					const float rInner,
+					const GrinStepInvariants &inv,
+					const bool invert = false) {
 
 		const Vector offset = pos - GRINCenter;
-		const float r = offset.Length();
+		const float r2 = offset.LengthSquared();
+		const float r = sqrtf(r2);
 
-		// Straight-line region inside rInner
 		if (r < rInner)
 			return Vector(0.f, 0.f, 0.f);
 
-		// Normalize r into t ∈ [0, 1]
-		const float t = std::clamp((r - rInner) / (rOuter - rInner), 0.f, 1.f);
-		const float t_x = std::pow(t, gamma.x);
-		const float t_y = std::pow(t, gamma.y);
-		const float t_z = std::pow(t, gamma.z);
+		const float t = std::clamp((r - rInner) * inv.invShellWidth, 0.f, 1.f);
+		const float tx = fast_powf(t, inv.gamma.x, inv.fastMath);
+		const float ty = fast_powf(t, inv.gamma.y, inv.fastMath);
+		const float tz = fast_powf(t, inv.gamma.z, inv.fastMath);
 
-		const float effectiveBeta = invert ? -beta : beta;
+		const Vector beta = inv.beta;
+		const Vector effBeta = invert ? -beta : beta;
+		const float invR = 1.f / r;
 
 		return Vector(
-				effectiveBeta * t_x * offset.x / r,
-				effectiveBeta * t_y * offset.y / r,
-				effectiveBeta * t_z * offset.z / r);
+						effBeta.x * tx * offset.x * invR,
+						effBeta.y * ty * offset.y * invR,
+						effBeta.z * tz * offset.z * invR);
 	}
 
 	static bool IntersectINSIGHT(
@@ -317,8 +453,8 @@ public:
 
 	// Project point P to the closest point on triangle (p0,p1,p2). Returns clamped barycentrics.
 	static inline void ClosestPointBarycentric(const Point &p,
-					const Point &p0, const Point &p1, const Point &p2,
-					float *b1, float *b2) {
+			const Point &p0, const Point &p1, const Point &p2,
+			float *b1, float *b2) {
 		// Ericson-style closest-point on triangle
 		const Vector v0 = p1 - p0;
 		const Vector v1 = p2 - p0;
@@ -390,54 +526,117 @@ public:
 		}
 	}
 
+	static inline void ClosestPointBarycentric(const Point &p,
+									const TriBasis &basis,
+									float *b1, float *b2) {
+		const Vector v0 = basis.e1;
+		const Vector v1 = basis.e2;
+		const Vector v2 = p - basis.p0;
+
+		const float d00 = Dot(v0, v0);
+		const float d01 = Dot(v0, v1);
+		const float d11 = Dot(v1, v1);
+		const float d20 = Dot(v2, v0);
+		const float d21 = Dot(v2, v1);
+		const float denom = d00 * d11 - d01 * d01;
+
+		float v = (d11 * d20 - d01 * d21) / denom;
+		float w = (d00 * d21 - d01 * d20) / denom;
+		float u = 1.f - v - w;
+
+		if (u >= 0.f && v >= 0.f && w >= 0.f) {
+			*b1 = v; *b2 = w;
+			return;
+		}
+
+		auto clamp01 = [](float x) { return (x < 0.f) ? 0.f : (x > 1.f ? 1.f : x); };
+
+		{
+			const Vector e = v0;
+			float t = clamp01(Dot(v2, e) / Dot(e, e));
+			float vv = t, ww = 0.f;
+			float uu = 1.f - vv - ww;
+			if (uu >= 0.f && vv >= 0.f && ww >= 0.f) { *b1 = vv; *b2 = ww; return; }
+		}
+		{
+			const Vector e = v1;
+			float t = clamp01(Dot(v2, e) / Dot(e, e));
+			float vv = 0.f, ww = t;
+			float uu = 1.f - vv - ww;
+			if (uu >= 0.f && vv >= 0.f && ww >= 0.f) { *b1 = vv; *b2 = ww; return; }
+		}
+		{
+			const Vector e = v1 - v0;
+			const Vector w2 = p - basis.p1;
+			float t = clamp01(Dot(w2, e) / Dot(e, e));
+			float vv = 1.f - t, ww = t;
+			if (vv >= 0.f && ww >= 0.f) { *b1 = vv; *b2 = ww; return; }
+		}
+
+		*b1 = clamp01(v);
+		*b2 = clamp01(w);
+		float u2 = 1.f - *b1 - *b2;
+		if (u2 < 0.f) {
+			if (*b1 > *b2) *b1 = clamp01(1.f - *b2); else *b2 = clamp01(1.f - *b1);
+		}
+	}
+
 	static inline void ClampBarycentricSoft(const Point &p,
-					const Point &p0, const Point &p1, const Point &p2,
-					float tol, float *b1, float *b2) {
+			const Point &p0, const Point &p1, const Point &p2,
+			float tol, float *b1, float *b2) {
 		const float u = 1.f - *b1 - *b2;
 		if (u >= -tol && *b1 >= -tol && *b2 >= -tol)
 			ClosestPointBarycentric(p, p0, p1, p2, b1, b2);
 	}
 
-	static bool RK4_GRINIntersect(
-									const xPRIMEray &ray,
-									const Point &p0,
-									const Point &p1,
-									const Point &p2,
-									const Point &grinCenter,
-									const float rInner,
-									const float rOuter,
-									float *tHit,
-									Point *rk4Hit,
-									float *b1,
-									float *b2,
-									const bool invert = false,
-									const float barycentricEpsilon = 0.03f,
-									const float rk4PlaneThreshold = 1e-4f,
-									float *finalPlaneDist = nullptr,
-									bool *nearBary = nullptr,
-									const float uvSeamTolerance = 1e-6f,
-									const UVCrossPolicy uvPolicy = UV_REJECT,
-									bool adaptiveEnable = false,
-									float adaptivePlaneTriggerFactor = 1.0f,
-									float adaptiveCurvatureTrigger = 0.2f,
-									int adaptiveMaxSubdiv = 2,
-									int adaptiveBisectIters = 5,
-									float adaptiveMinStep = 1e-5f,
-									float adaptiveRate = 0.25f,
-									float adaptiveMaxScale = 4.0f) {
+	static inline void ClampBarycentricSoft(const TriBasis &basis,
+									const Point &p, float tol, float *b1, float *b2) {
+		const float u = 1.f - *b1 - *b2;
+		if (u >= -tol && *b1 >= -tol && *b2 >= -tol)
+				ClosestPointBarycentric(p, basis, b1, b2);
+	}
 
-		// Triangle plane setup
-		const Vector edge1 = p1 - p0;
-		const Vector edge2 = p2 - p0;
-		const Vector N = Normalize(Cross(edge1, edge2));
-		const float side0 = Dot(ray.origin - p0, N);
+	static bool RK4_GRINIntersect(
+					const xPRIMEray &ray,
+					const TriBasis &basis,
+					const Point &grinCenter,
+					const float rInner,
+					const float rOuter,
+					float *tHit,
+					Point *rk4Hit,
+					float *b1,
+					float *b2,
+					const bool invert = false,
+					const float barycentricEpsilon = 0.03f,
+					const float rk4PlaneThreshold = 1e-4f,
+					float *finalPlaneDist = nullptr,
+					bool *nearBary = nullptr,
+					const float uvSeamTolerance = 1e-6f,
+					const UVCrossPolicy uvPolicy = UV_REJECT,
+					bool adaptiveEnable = false,
+					float adaptivePlaneTriggerFactor = 1.0f,
+					float adaptiveCurvatureTrigger = 0.2f,
+					int adaptiveMaxSubdiv = 2,
+					int adaptiveBisectIters = 5,
+					float adaptiveMinStep = 1e-5f,
+					float adaptiveRate = 0.25f,
+					float adaptiveMaxScale = 4.0f) {
+
+		const Vector &N = basis.N;
+		const float side0 = Dot(ray.origin - basis.p0, N);
 
 		// Optional INSIGHT straight-line shortcut
 		const float r0 = (ray.origin - grinCenter).Length();
 		if (r0 < rInner) {
 			Ray linearRay(ray.origin, ray.direction, ray.mint, ray.maxt);
-			return Intersect(linearRay, p0, p1, p2, tHit, b1, b2);
+			return Intersect(linearRay, basis.p0, basis.p1, basis.p2, tHit, b1, b2);
 		}
+
+		GrinStepInvariants inv;
+		inv.invShellWidth = 1.f / (rOuter - rInner);
+		inv.gamma = ray.gamma;
+		inv.beta = Vector(ray.beta, ray.beta, ray.beta);
+		inv.fastMath = false;
 
 		const float stepSize = ray.stepSize;
 		const int maxSteps = ray.numSteps;
@@ -449,7 +648,7 @@ public:
 		float bendAccum = 0.f;
 
 		Point prevPos = ray.origin;
-		float prevDist = Dot(prevPos - p0, N);
+		float prevDist = Dot(prevPos - basis.p0, N);
 		float currDist = prevDist;
 
 		for (int i = 0; i < maxSteps; ++i) {
@@ -478,10 +677,10 @@ public:
 					}
 			}
 
-			Vector k1 = ComputeGRINField(pos, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
-			Vector k2 = ComputeGRINField(pos + 0.5f * h * k1, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
-			Vector k3 = ComputeGRINField(pos + 0.5f * h * k2, ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
-			Vector k4 = ComputeGRINField(pos + h * k3,     ray.beta, ray.gamma, grinCenter, rInner, rOuter, invert);
+			Vector k1 = ComputeGRINField(pos, grinCenter, rInner, inv, invert);
+			Vector k2 = ComputeGRINField(pos + 0.5f * h * k1, grinCenter, rInner, inv, invert);
+			Vector k3 = ComputeGRINField(pos + 0.5f * h * k2, grinCenter, rInner, inv, invert);
+			Vector k4 = ComputeGRINField(pos + h * k3,     grinCenter, rInner, inv, invert);
 
 			Vector dirPrev = dir;
 			dir += (h / 6.f) * (k1 + 2.f*k2 + 2.f*k3 + k4);
@@ -490,14 +689,14 @@ public:
 			pos += h * dir;
 			tAccum += h;
 
-			currDist = Dot(pos - p0, N);
+			currDist = Dot(pos - basis.p0, N);
 
 			if ((prevDist * currDist <= 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
 				Point A = prevPos, B = pos;
 				float da = prevDist, db = currDist;
 				for (int it = 0; it < adaptiveBisectIters; ++it) {
 					const Point M = (A + B) * 0.5f;
-					const float dm = Dot(M - p0, N);
+					const float dm = Dot(M - basis.p0, N);
 					if (dm == 0.f) { A = B = M; break; }
 					if (da * dm <= 0.f) { B = M; db = dm; }
 					else { A = M; da = dm; }
@@ -512,27 +711,27 @@ public:
 
 				const float baseTol = 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold;
 				const float stepSideTol = std::max(1e-8f, adaptiveEnable ? adaptivePlaneTriggerFactor * baseTol : baseTol);
-				const float sidePlane = Dot(planePoint - p0, N);
+				const float sidePlane = Dot(planePoint - basis.p0, N);
 
 				if (!invert && (side0 * sidePlane > stepSideTol)) {
 					// didn’t cross enough
 				} else {
-					const BaryResult br = ProjectToTriangleBary(p0, p1, p2, planePoint,
-															/*insideTol=*/effBaryEps,
-															/*edgeTol=*/uvSeamTolerance);
+					const BaryResult br = ProjectToTriangleBary(basis, planePoint,
+									/*insideTol=*/effBaryEps,
+									/*edgeTol=*/uvSeamTolerance);
 					if (br.inside) {
 						*tHit = tPlane;
 						*rk4Hit = planePoint;
 						*b1 = br.b1;
 						*b2 = br.b2;
-						ClampBarycentricSoft(planePoint, p0, p1, p2, 1e-6f, b1, b2);
+						ClampBarycentricSoft(basis, planePoint, 1e-6f, b1, b2);
 						return true;
 					}
 					if (br.nearEdge && (uvPolicy == UV_EDGE_PROJECT) &&
-						EdgeProjectBary(p0, p1, p2, planePoint, br.edgeId, b1, b2)) {
+						EdgeProjectBary(basis, planePoint, br.edgeId, b1, b2)) {
 						*tHit = tPlane;
 						*rk4Hit = planePoint;
-						ClampBarycentricSoft(planePoint, p0, p1, p2, 1e-6f, b1, b2);
+						ClampBarycentricSoft(basis, planePoint, 1e-6f, b1, b2);
 						return true;
 					}
 					if (nearBary)
@@ -593,11 +792,9 @@ public:
 			return Intersect(linear, p0, p1, p2, tHit, b1, b2);
 		}
 
-		// Compute plane normal
-		const Vector edge1 = p1 - p0;
-		const Vector edge2 = p2 - p0;
-		const Vector N = Normalize(Cross(edge1, edge2));
-		const float side0 = Dot(ray.origin - p0, N);
+		TriBasis basis = MakeTriBasis(p0, p1, p2);
+		const Vector &N = basis.N;
+		const float side0 = Dot(ray.origin - basis.p0, N);
 
 		// Adaptive-aware backface guard tolerance
 		const float baseTol = 0.5f * std::max(barycentricEpsilon, uvSeamTolerance) +
@@ -609,26 +806,26 @@ public:
 		float tINSIGHT;
 
 		// STEP 1: Do INSIGHT symbolic intersection with the triangle's plane
-		if (!IntersectINSIGHT(ray, p0, N, &tINSIGHT, &approxHit, insightCurvatureThreshold))
+		if (!IntersectINSIGHT(ray, basis.p0, N, &tINSIGHT, &approxHit, insightCurvatureThreshold))
 			return false;
 
 		// Early backface guard at the symbolic plane hit (unless invert)
-		const float sideApprox = Dot(approxHit - p0, N);
+		const float sideApprox = Dot(approxHit - basis.p0, N);
 		if (!invert && (side0 * sideApprox > sideTol))
 			return false;
 
 		// STEP 2: Quick barycentric test
 		const float insightTol = barycentricEpsilon + (adaptiveEnable ? adaptiveInsightAcceptMargin : 0.f);
-		const BaryResult br0 = ProjectToTriangleBary(p0, p1, p2, approxHit,
-										insightTol, uvSeamTolerance);
+		const BaryResult br0 = ProjectToTriangleBary(basis, approxHit,
+									insightTol, uvSeamTolerance);
 		if (!br0.inside) {
 			if (br0.nearEdge && uvPolicy == UV_EDGE_PROJECT) {
-				EdgeProjectBary(p0, p1, p2, approxHit, br0.edgeId, b1, b2);
+				EdgeProjectBary(basis, approxHit, br0.edgeId, b1, b2);
 			} else {
 				if (nearBary) {
-					const BaryResult brWide = ProjectToTriangleBary(p0, p1, p2, approxHit,
-											insightTol + stitchBaryMargin,
-											uvSeamTolerance);
+					const BaryResult brWide = ProjectToTriangleBary(basis, approxHit,
+									insightTol + stitchBaryMargin,
+									uvSeamTolerance);
 					*nearBary = br0.nearEdge || brWide.nearEdge;
 				}
 				if (!adaptiveEnable)
@@ -641,7 +838,7 @@ public:
 		Point rk4Hit;
 		float tRK4;
 
-		if (!RK4_GRINIntersect(ray, p0, p1, p2, grinCenter, rInner, rOuter,
+		if (!RK4_GRINIntersect(ray, basis, grinCenter, rInner, rOuter,
 								&tRK4, &rk4Hit, b1, b2, invert,
 								barycentricEpsilon, rk4PlaneThreshold,
 								finalPlaneDist, nearBary,
@@ -657,9 +854,9 @@ public:
 			return false;
 
 		// Clamp barycentrics softly to the triangle interior before returning
-		ClampBarycentricSoft(rk4Hit, p0, p1, p2, /*tol=*/0.f, b1, b2);
+		ClampBarycentricSoft(basis, rk4Hit, /*tol=*/0.f, b1, b2);
 		// Same-side guard: reject hits that didn't cross the plane
-		const float sideH = Dot(rk4Hit - p0, N);
+		const float sideH = Dot(rk4Hit - basis.p0, N);
 		if (!invert && (side0 * sideH > sideTol)) {
 			if (nearBary) *nearBary = false;
 			return false;
@@ -671,7 +868,7 @@ public:
 		*tHit = tRK4;
 
 		// Final guard: tiny numerical excursions can still happen → clamp softly
-		ClampBarycentricSoft(rk4Hit, p0, p1, p2, 1e-6f, b1, b2);
+		ClampBarycentricSoft(basis, rk4Hit, 1e-6f, b1, b2);
 		if (nearBary)
 			*nearBary = false;
 		return true;
