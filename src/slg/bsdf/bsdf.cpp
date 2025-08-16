@@ -23,6 +23,10 @@
 #include "slg/bsdf/grin_uv.h"
 #include <iostream>
 
+using namespace luxrays;
+using namespace slg;
+using namespace std;
+
 #ifndef GRIN_UV_USE_RAW_BARY
 #define GRIN_UV_USE_RAW_BARY 1
 #endif
@@ -53,10 +57,6 @@ SLG_FORCE_INLINE static void GetTriangleBary_ObjectSpace(
 	b2 = (d00 * d21 - d01 * d20) / denom;
 	b0 = 1.f - b1 - b2;
 }
-
-using namespace luxrays;
-using namespace slg;
-using namespace std;
 
 // Used when hitting a surface
 void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
