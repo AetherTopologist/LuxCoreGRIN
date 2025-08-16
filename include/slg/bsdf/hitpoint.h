@@ -100,8 +100,11 @@ typedef struct HitPoint_t {
 	const luxrays::UV GetUV(const u_int dataIndex) const {
 		if (mesh) {
 			return (dataIndex == 0) ?
-				(defaultUV + grinUvDelta) :
-				mesh->InterpolateTriUV(triangleIndex, triangleBariCoord1, triangleBariCoord2, dataIndex);
+					// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+					// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+					// TODO: re-enable via a runtime toggle if we want to experiment later.
+					defaultUV :
+					mesh->InterpolateTriUV(triangleIndex, triangleBariCoord1, triangleBariCoord2, dataIndex);
 		} else
 			return luxrays::UV();
 	}

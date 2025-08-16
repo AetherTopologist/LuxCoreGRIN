@@ -102,9 +102,17 @@ OPENCL_FORCE_INLINE void BSDF_Init(
 			du *= s;
 			dv *= s;
 		}
-		const float strength = scene->grinUVDistortionStrength;
-		bsdf->hitPoint.grinUvDelta.s0 = strength * du;
-		bsdf->hitPoint.grinUvDelta.s1 = strength * dv;
+		// const float strength = scene->grinUVDistortionStrength;
+		// bsdf->hitPoint.grinUvDelta.s0 = strength * du;
+		// bsdf->hitPoint.grinUvDelta.s1 = strength * dv;
+
+		// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+		// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+		// TODO: re-enable via a runtime toggle if we want to experiment later.
+		du = 0.f;
+		dv = 0.f;
+		bsdf->hitPoint.grinUvDelta.s0 = 0.f;
+		bsdf->hitPoint.grinUvDelta.s1 = 0.f;
 	}
 
 	//--------------------------------------------------------------------------
@@ -151,6 +159,9 @@ OPENCL_FORCE_INLINE void BSDF_InitVolume(
 	bsdf->triangleLightSourceIndex = NULL_INDEX;
 
 	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &bsdf->hitPoint.defaultUV.u);
+	// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+	// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+	// TODO: re-enable via a runtime toggle if we want to experiment later.
 	VSTORE2F(MAKE_FLOAT2(0.f, 0.f), &bsdf->hitPoint.grinUvDelta.u);
 
 	float3 dpdu, dpdv;
@@ -162,17 +173,24 @@ OPENCL_FORCE_INLINE void BSDF_InitVolume(
 
 	// NOTE: GRIN UV projection uses full Gram-matrix solve (dpdu, dpdv not orthogonal).
 	// Falls back to axis-wise projection if basis degenerates (det ~ 0).
-	float du = 0.f, dv = 0.f;
-	ProjectTangentToUV_cl(MAKE_FLOAT3(0.f, 0.f, 0.f), dpdu, dpdv, &du, &dv);
-	const float mag = hypot(du, dv);
-	if (mag > 1e3f) {
-		const float s = 1e3f / mag;
-		du *= s;
-		dv *= s;
-	}
-	const float strength = scene->grinUVDistortionStrength;
-	bsdf->hitPoint.grinUvDelta.s0 = strength * du;
-	bsdf->hitPoint.grinUvDelta.s1 = strength * dv;
+	// float du = 0.f, dv = 0.f;
+	// ProjectTangentToUV_cl(MAKE_FLOAT3(0.f, 0.f, 0.f), dpdu, dpdv, &du, &dv);
+	// const float mag = hypot(du, dv);
+	// if (mag > 1e3f) {
+	//      const float s = 1e3f / mag;
+	//      du *= s;
+	//      dv *= s;
+	// }
+	// const float strength = scene->grinUVDistortionStrength;
+	// bsdf->hitPoint.grinUvDelta.s0 = strength * du;
+	// bsdf->hitPoint.grinUvDelta.s1 = strength * dv;
+
+	// GRIN-UV DISABLED (minimal fast revert): UV mapping mirrors non-GRIN behavior.
+	// Reason: adaptive barycentric epsilon + smart stepping fixed geometry; UV distortion is unnecessary and caused apparent "zoom".
+	// TODO: re-enable via a runtime toggle if we want to experiment later.
+	float du = 0.f, dv = 0.f; // Force no UV distortion
+	bsdf->hitPoint.grinUvDelta.s0 = 0.f;
+	bsdf->hitPoint.grinUvDelta.s1 = 0.f;
 
 	bsdf->hitPoint.meshIndex = NULL_INDEX;
 	bsdf->hitPoint.triangleIndex = NULL_INDEX;
