@@ -97,10 +97,11 @@ private:
 	std::vector<const BVHAccel *> uniqueLeafs;
 	std::vector<const Transform *> uniqueLeafsTransform;
 	std::vector<const MotionSystem *> uniqueLeafsMotionSystem;
-	
+
 	const Context *ctx;
 	std::deque<const Mesh *> meshes;
 
+	bool linearBackfaceCull;
 	bool initialized;
 };
 

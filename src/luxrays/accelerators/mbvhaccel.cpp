@@ -40,6 +40,8 @@ namespace luxrays {
 MBVHAccel::MBVHAccel(const Context *context) : ctx(context) {
 	params = BVHAccel::ToBVHParams(ctx->GetConfig());
 
+	linearBackfaceCull = ctx->GetConfig().Get(Property("render.linear_backface_cull")(false)).Get<bool>();
+
 	initialized = false;
 }
 
@@ -304,18 +306,21 @@ bool MBVHAccel::Intersect(const Ray *ray, RayHit *rayHit) const {
 
 				float t, b1, b2;
 				if (Triangle::Intersect(currentRay, p0, p1, p2, &t, &b1, &b2)) {
-					// === BACKFACE CULLING UPDATE START ===
-					const Normal geomN = Normal(Normalize(Cross(p1 - p0, p2 - p0)));
-					const bool frontFacing = Dot(geomN, currentRay.d) < 0.f;
-					// === BACKFACE CULLING UPDATE END ===
-					if (frontFacing && t < rayHit->t) {
-						currentRay.maxt = t;
-						rayHit->t = t;
-						rayHit->b1 = b1;
-						rayHit->b2 = b2;
-						rayHit->meshIndex = absoluteMeshIndex;
-						rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
-						// Continue testing for closer intersections
+					if (t < rayHit->t) {
+						bool accept = true;
+						if (linearBackfaceCull) {
+							const Normal geomN = Normal(Normalize(Cross(p1 - p0, p2 - p0)));
+							accept = Dot(geomN, currentRay.d) < 0.f;
+						}
+						if (accept) {
+							currentRay.maxt = t;
+							rayHit->t = t;
+							rayHit->b1 = b1;
+							rayHit->b2 = b2;
+							rayHit->meshIndex = absoluteMeshIndex;
+							rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
+							// Continue testing for closer intersections
+						}
 					}
 				}
 

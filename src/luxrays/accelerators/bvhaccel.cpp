@@ -99,6 +99,8 @@ bool GRINRK4_Intersect(
 BVHAccel::BVHAccel(const Context *context) : ctx(context) {
 	params = ToBVHParams(ctx->GetConfig());
 
+	linearBackfaceCull = ctx->GetConfig().Get(Property("render.linear_backface_cull")(false)).Get<bool>();
+
 	initialized = false;
 }
 
@@ -265,18 +267,21 @@ bool BVHAccel::Intersect(const Ray *initialRay, RayHit *rayHit) const {
 
 			// 🔥GRIN Straight-Line Hit Operation
 			if (Triangle::Intersect(ray, p0, p1, p2, &t, &b1, &b2)) {
-				// === BACKFACE CULLING UPDATE START ===
-				const Normal geomN = Normal(Normalize(Cross(p1 - p0, p2 - p0)));
-				const bool frontFacing = Dot(geomN, ray.d) < 0.f;
-				// === BACKFACE CULLING UPDATE END ===
-				if (frontFacing && t < rayHit->t) {
-					ray.maxt = t;
-					rayHit->t = t;
-					rayHit->b1 = b1;
-					rayHit->b2 = b2;
-					rayHit->meshIndex = node.triangleLeaf.meshIndex;
-					rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
-					// Continue testing for closer intersections
+				if (t < rayHit->t) {
+					bool accept = true;
+					if (linearBackfaceCull) {
+						const Normal geomN = Normal(Normalize(Cross(p1 - p0, p2 - p0)));
+						accept = Dot(geomN, ray.d) < 0.f;
+					}
+					if (accept) {
+						ray.maxt = t;
+						rayHit->t = t;
+						rayHit->b1 = b1;
+						rayHit->b2 = b2;
+						rayHit->meshIndex = node.triangleLeaf.meshIndex;
+						rayHit->triangleIndex = node.triangleLeaf.triangleIndex;
+						// Continue testing for closer intersections
+					}
 				}
 			}
 			++currentNode;

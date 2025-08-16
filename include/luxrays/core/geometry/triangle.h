@@ -582,10 +582,13 @@ public:
 					float adaptiveInsightAcceptMargin = 0.0f,
 					float adaptiveRate = 0.25f,
 					float adaptiveMaxScale = 4.0f) {
-		if ((std::abs(ray.beta) < 1e-12f &&
-				std::abs(ray.gamma.x) < 1e-12f &&
-				std::abs(ray.gamma.y) < 1e-12f &&
-				std::abs(ray.gamma.z) < 1e-12f) || rOuter <= rInner) {
+		// GRIN effectively off -> fall back to linear test
+		const bool grinOff =
+						(fabsf(ray.beta) < 1e-12f) &&
+						(fabsf(ray.gamma.x) < 1e-12f) &&
+						(fabsf(ray.gamma.y) < 1e-12f) &&
+						(fabsf(ray.gamma.z) < 1e-12f);
+		if (grinOff || rOuter <= rInner) {
 			Ray linear(ray.origin, ray.direction, ray.mint, ray.maxt);
 			return Intersect(linear, p0, p1, p2, tHit, b1, b2);
 		}

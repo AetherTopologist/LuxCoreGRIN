@@ -93,6 +93,7 @@ private:
 	std::deque<const Mesh *> meshes;
 	u_longlong totalVertexCount, totalTriangleCount;
 
+	bool linearBackfaceCull;
 	bool initialized;
 };
 
