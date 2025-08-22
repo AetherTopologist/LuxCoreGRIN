@@ -36,26 +36,43 @@ public:
 	// Integration controls for RK4 path solving
 	float stepSize;
 	int numSteps;
+	float stepMin;
+	float stepMax;
+	float stepCurvK;
+	float maxArcLen;
+	float deflectEps;
+	float linearizeThreshold;
+	bool  fastMath;
 
-
+	
 	// Constructor
 	xPRIMEray(const Point &o, const Vector &d,
-	          const Point &c, float b,
-	          const Vector &g,
-	          xPRIMErayType t = xPRIMErayType::POWER,
-	          float minT = 0.0001f, float maxT = 1e30f,
-			  float step = 0.01f, int steps = 64)
-              : origin(o), direction(Normalize(d)), center(c), beta(b), gamma(g),
-                type(t), mint(minT), maxt(maxT), stepSize(step), numSteps(steps) { }
+				const Point &c, float b,
+				const Vector &g,
+				xPRIMErayType t = xPRIMErayType::POWER,
+				float minT = 0.0001f, float maxT = 1e30f,
+				float step = 0.01f, int steps = 64,
+				float stepMin_ = 1e-5f, float stepMax_ = 0.05f,
+				float stepCurvK_ = 0.25f, float maxArcLen_ = 0.5f,
+				float deflectEps_ = 1e-4f, float linearizeThreshold_ = 1e-3f,
+				bool fastMath_ = false)
+				: origin(o), direction(Normalize(d)), center(c), beta(b), gamma(g),
+				type(t), mint(minT), maxt(maxT), stepSize(step), numSteps(steps),
+                stepMin(stepMin_), stepMax(stepMax_), stepCurvK(stepCurvK_),
+                maxArcLen(maxArcLen_), deflectEps(deflectEps_),
+                linearizeThreshold(linearizeThreshold_), fastMath(fastMath_) { }
 
 	// Default constructor
 	xPRIMEray()
 		: origin(Point()), direction(Vector(0, 0, 1)),
-			center(Point()), beta(2.f),
-			gamma(Vector(1.f, 1.f, 1.6f)),
-			type(xPRIMErayType::POWER), mint(0.0001f), maxt(1e30f),
-			stepSize(0.01f), numSteps(64) { }
-			
+				center(Point()), beta(2.f),
+				gamma(Vector(1.f, 1.f, 1.6f)),
+				type(xPRIMErayType::POWER), mint(0.0001f), maxt(1e30f),
+				stepSize(0.01f), numSteps(64),
+				stepMin(1e-5f), stepMax(0.05f), stepCurvK(0.25f),
+				maxArcLen(0.5f), deflectEps(1e-4f),
+				linearizeThreshold(1e-3f), fastMath(false) { }
+
 };
 //------------------------------------------------------------------------------
 // Utility helpers

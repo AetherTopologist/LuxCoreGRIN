@@ -93,7 +93,7 @@ struct BaryResult {
     u_int edgeId;         // 0:(p0,p1) 1:(p1,p2) 2:(p2,p0), or 3 if none
 };
 
-// Overloads using precomputed triangle basis
+//// Overloads using precomputed triangle basis
 static inline BaryResult ProjectToTriangleBary(
     const TriBasis &basis,
     const Point &hit, const float insideTol, const float edgeTol) {
@@ -397,9 +397,9 @@ public:
 		const float invR = 1.f / r;
 
 		return Vector(
-						effBeta.x * tx * offset.x * invR,
-						effBeta.y * ty * offset.y * invR,
-						effBeta.z * tz * offset.z * invR);
+					effBeta.x * tx * offset.x * invR,
+					effBeta.y * ty * offset.y * invR,
+					effBeta.z * tz * offset.z * invR);
 	}
 
 	static bool IntersectINSIGHT(
@@ -453,8 +453,8 @@ public:
 
 	// Project point P to the closest point on triangle (p0,p1,p2). Returns clamped barycentrics.
 	static inline void ClosestPointBarycentric(const Point &p,
-			const Point &p0, const Point &p1, const Point &p2,
-			float *b1, float *b2) {
+					const Point &p0, const Point &p1, const Point &p2,
+					float *b1, float *b2) {
 		// Ericson-style closest-point on triangle
 		const Vector v0 = p1 - p0;
 		const Vector v1 = p2 - p0;
@@ -597,30 +597,31 @@ public:
 	}
 
 	static bool RK4_GRINIntersect(
-					const xPRIMEray &ray,
-					const TriBasis &basis,
-					const Point &grinCenter,
-					const float rInner,
-					const float rOuter,
-					float *tHit,
-					Point *rk4Hit,
-					float *b1,
-					float *b2,
-					const bool invert = false,
-					const float barycentricEpsilon = 0.03f,
-					const float rk4PlaneThreshold = 1e-4f,
-					float *finalPlaneDist = nullptr,
-					bool *nearBary = nullptr,
-					const float uvSeamTolerance = 1e-6f,
-					const UVCrossPolicy uvPolicy = UV_REJECT,
-					bool adaptiveEnable = false,
-					float adaptivePlaneTriggerFactor = 1.0f,
-					float adaptiveCurvatureTrigger = 0.2f,
-					int adaptiveMaxSubdiv = 2,
-					int adaptiveBisectIters = 5,
-					float adaptiveMinStep = 1e-5f,
-					float adaptiveRate = 0.25f,
-					float adaptiveMaxScale = 4.0f) {
+								const xPRIMEray &ray,
+								const TriBasis &basis,
+								const Point &grinCenter,
+								const float rInner,
+								const float rOuter,
+								float *tHit,
+								Point *rk4Hit,
+								float *b1,
+								float *b2,
+								const bool invert = false,
+								const float barycentricEpsilon = 0.03f,
+								const float rk4PlaneThreshold = 1e-4f,
+								float *finalPlaneDist = nullptr,
+								bool *nearBary = nullptr,
+								const float uvSeamTolerance = 1e-6f,
+								const UVCrossPolicy uvPolicy = UV_REJECT,
+								bool adaptiveEnable = false,
+								float adaptivePlaneTriggerFactor = 1.0f,
+								float adaptiveCurvatureTrigger = 0.2f,
+								int adaptiveMaxSubdiv = 2,
+								int adaptiveBisectIters = 5,
+								float adaptiveMinStep = 1e-5f,
+								float adaptiveRate = 0.25f,
+								float adaptiveMaxScale = 4.0f,
+								bool *segmentLinear = nullptr) {
 
 		const Vector &N = basis.N;
 		const float side0 = Dot(ray.origin - basis.p0, N);
@@ -636,9 +637,15 @@ public:
 		inv.invShellWidth = 1.f / (rOuter - rInner);
 		inv.gamma = ray.gamma;
 		inv.beta = Vector(ray.beta, ray.beta, ray.beta);
-		inv.fastMath = false;
+		inv.fastMath = ray.fastMath;
 
-		const float stepSize = ray.stepSize;
+		float h = ray.stepSize;
+		const float hmin = ray.stepMin;
+		const float hmax = ray.stepMax;
+		auto step_for_curv = [&](float curv) {
+			const float s = h / (1.f + ray.stepCurvK * curv);
+			return Clamp(s, hmin, hmax);
+		};
 		const int maxSteps = ray.numSteps;
 
 		Point pos = ray.origin;
@@ -651,7 +658,10 @@ public:
 		float prevDist = Dot(prevPos - basis.p0, N);
 		float currDist = prevDist;
 
+		bool linearFlag = false;
 		for (int i = 0; i < maxSteps; ++i) {
+			if (tAccum > ray.maxArcLen)
+					break;
 			float effBaryEps = barycentricEpsilon;
 			if (adaptiveEnable && bendAccum > adaptiveCurvatureTrigger) {
 				const float effScale = std::min(adaptiveMaxScale,
@@ -659,7 +669,6 @@ public:
 				effBaryEps = effScale * barycentricEpsilon;
 			}
 
-			float h = stepSize;
 			int subdiv = 0;
 			if (adaptiveEnable) {
 				const float baseTol = 0.5f * effBaryEps + 0.25f * rk4PlaneThreshold;
@@ -685,11 +694,17 @@ public:
 			Vector dirPrev = dir;
 			dir += (h / 6.f) * (k1 + 2.f*k2 + 2.f*k3 + k4);
 			const float cosA = Clamp(Dot(Normalize(dirPrev), Normalize(dir)), -1.f, 1.f);
-			bendAccum += acosf(cosA);
+			const float bend = acosf(cosA);
+			bendAccum += bend;
 			pos += h * dir;
 			tAccum += h;
 
 			currDist = Dot(pos - basis.p0, N);
+
+			if (bendAccum < ray.deflectEps && (fabs(currDist) > fabs(prevDist)) && i > 0) {
+				linearFlag = true;
+				break;
+			}
 
 			if ((prevDist * currDist <= 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
 				Point A = prevPos, B = pos;
@@ -717,8 +732,8 @@ public:
 					// didn’t cross enough
 				} else {
 					const BaryResult br = ProjectToTriangleBary(basis, planePoint,
-									/*insideTol=*/effBaryEps,
-									/*edgeTol=*/uvSeamTolerance);
+															/*insideTol=*/effBaryEps,
+															/*edgeTol=*/uvSeamTolerance);
 					if (br.inside) {
 						*tHit = tPlane;
 						*rk4Hit = planePoint;
@@ -728,7 +743,7 @@ public:
 						return true;
 					}
 					if (br.nearEdge && (uvPolicy == UV_EDGE_PROJECT) &&
-						EdgeProjectBary(basis, planePoint, br.edgeId, b1, b2)) {
+							EdgeProjectBary(basis, planePoint, br.edgeId, b1, b2)) {
 						*tHit = tPlane;
 						*rk4Hit = planePoint;
 						ClampBarycentricSoft(basis, planePoint, 1e-6f, b1, b2);
@@ -741,7 +756,10 @@ public:
 
 			prevPos = pos;
 			prevDist = currDist;
+			h = step_for_curv(fabs(bend));
 		}
+		if (segmentLinear)
+			*segmentLinear = linearFlag;
 
 		if (finalPlaneDist)
 			*finalPlaneDist = std::fabs(currDist);
@@ -811,21 +829,24 @@ public:
 
 		// Early backface guard at the symbolic plane hit (unless invert)
 		const float sideApprox = Dot(approxHit - basis.p0, N);
+		const float planeDist = fabsf(sideApprox);
+		if (planeDist > ray.linearizeThreshold)
+			return false;
 		if (!invert && (side0 * sideApprox > sideTol))
 			return false;
 
 		// STEP 2: Quick barycentric test
 		const float insightTol = barycentricEpsilon + (adaptiveEnable ? adaptiveInsightAcceptMargin : 0.f);
 		const BaryResult br0 = ProjectToTriangleBary(basis, approxHit,
-									insightTol, uvSeamTolerance);
+													insightTol, uvSeamTolerance);
 		if (!br0.inside) {
 			if (br0.nearEdge && uvPolicy == UV_EDGE_PROJECT) {
 				EdgeProjectBary(basis, approxHit, br0.edgeId, b1, b2);
 			} else {
 				if (nearBary) {
 					const BaryResult brWide = ProjectToTriangleBary(basis, approxHit,
-									insightTol + stitchBaryMargin,
-									uvSeamTolerance);
+														insightTol + stitchBaryMargin,
+														uvSeamTolerance);
 					*nearBary = br0.nearEdge || brWide.nearEdge;
 				}
 				if (!adaptiveEnable)
@@ -837,6 +858,7 @@ public:
 		// STEP 3: RK4 refinement through GRIN field (like your Blender)
 		Point rk4Hit;
 		float tRK4;
+		bool segLinear = false;
 
 		if (!RK4_GRINIntersect(ray, basis, grinCenter, rInner, rOuter,
 								&tRK4, &rk4Hit, b1, b2, invert,
@@ -850,7 +872,8 @@ public:
 								adaptiveBisectIters,
 								adaptiveMinStep,
 								adaptiveRate,
-								adaptiveMaxScale))
+								adaptiveMaxScale,
+								&segLinear))
 			return false;
 
 		// Clamp barycentrics softly to the triangle interior before returning

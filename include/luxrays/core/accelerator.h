@@ -79,7 +79,17 @@ public:
 								float adaptiveMinStep = 1e-5f,
 								float adaptiveInsightAcceptMargin = 0.0f,
 								float adaptiveRate = 0.25f,
-								float adaptiveMaxScale = 4.0f) const {
+								float adaptiveMaxScale = 4.0f,
+								// Curvature-aware stepping controls
+								float rk4StepInit = 0.01f,
+								float rk4StepMin = 1e-5f,
+								float rk4StepMax = 0.05f,
+								float rk4StepCurvK = 0.25f,
+								int   rk4MaxSteps = 64,
+								float rk4MaxArcLen = 0.5f,
+								float deflectEps = 1e-4f,
+								float linearizeThreshold = 1e-3f,
+								bool  grinFastMath = false) const {
 		return Intersect(ray, hit); // <== fallback behavior
 	}
 	

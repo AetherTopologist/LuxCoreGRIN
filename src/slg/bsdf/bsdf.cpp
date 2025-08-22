@@ -152,11 +152,11 @@ void BSDF::Init(const bool fixedFromLight, const bool throughShadowTransparency,
 		inv.beta = Vector(scene.worldGrinInfo.beta, scene.worldGrinInfo.beta, scene.worldGrinInfo.beta);
 		inv.fastMath = false;
 		const Vector field = Triangle::ComputeGRINField(
-								hp,
-								scene.worldGrinInfo.center,
-								scene.worldGrinInfo.rInner,
-								inv,
-								scene.worldGrinInfo.invert);
+										hp,
+										scene.worldGrinInfo.center,
+										scene.worldGrinInfo.rInner,
+										inv,
+										scene.worldGrinInfo.invert);
 
 		// Project the distortion to be tangent to the surface
 		const Vector tangent = field - Dot(field, hitPoint.shadeN) * Vector(hitPoint.shadeN);

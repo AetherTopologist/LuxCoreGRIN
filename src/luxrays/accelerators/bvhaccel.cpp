@@ -324,7 +324,16 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
                                float adaptiveMinStep,
                                float adaptiveInsightAcceptMargin,
                                float adaptiveRate,
-                               float adaptiveMaxScale) const {
+                               float adaptiveMaxScale,
+                               float rk4StepInit,
+                               float rk4StepMin,
+                               float rk4StepMax,
+                               float rk4StepCurvK,
+                               int   rk4MaxSteps,
+                               float rk4MaxArcLen,
+                               float deflectEps,
+                               float linearizeThreshold,
+                               bool  grinFastMath) const {
 	assert (initialized);
 
 	rayHit->t = initialRay->maxt;
@@ -335,16 +344,23 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 	Ray ray(*initialRay);
 	// -- Convert Ray to xPRIMEray --
 	xPRIMEray xPRIMEray(
-		initialRay->o,              // origin
-		initialRay->d,				// direction
-		grinCenter,					// center of curvature (can customize)
-		beta,                       // beta (GRIN intensity scalar)
-		gamma,						// gamma (exponents per axis)
-		xPRIMErayType::POWER,       // curvature model
-		initialRay->mint,
-		initialRay->maxt,
-		stepSize,
-		numSteps
+			initialRay->o,              // origin
+			initialRay->d,     		    // direction
+			grinCenter,                 // center of curvature (can customize)
+			beta,                       // beta (GRIN intensity scalar)
+			gamma,                      // gamma (exponents per axis)
+			xPRIMErayType::POWER,       // curvature model
+			initialRay->mint,
+			initialRay->maxt,
+			rk4StepInit,
+			rk4MaxSteps,
+			rk4StepMin,
+			rk4StepMax,
+			rk4StepCurvK,
+			rk4MaxArcLen,
+			deflectEps,
+			linearizeThreshold,
+			grinFastMath
 	);
 
 	// Use a scaled step count when computing the curved-ray envelope to

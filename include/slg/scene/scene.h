@@ -125,6 +125,18 @@ struct WorldGRINInfo {
 								int numSteps = 64;
 								bool invert = false;
 
+								// Curvature-aware RK4 controls
+								float rk4_step_init    = 0.01f;
+								float rk4_step_min     = 1e-5f;
+								float rk4_step_max     = 0.05f;
+								float rk4_step_curv_k  = 0.25f;
+								int   rk4_max_steps    = 64;
+								float rk4_max_arc_len  = 0.5f;
+								float deflect_eps      = 1e-4f;
+								float linearize_threshold = 1e-3f;
+								int   max_linearize_depth = 3;
+								bool  grin_fast_math   = false;
+
 								// Scene-level GRIN filtering thresholds
 								float insightCurvatureThreshold = 1e-6f;
 								float barycentricEpsilon = 0.03f;
