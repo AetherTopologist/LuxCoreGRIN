@@ -44,7 +44,7 @@ class PathVolumeInfo {
 public:
 	PathVolumeInfo();
 
-	const Volume *GetCurrentVolume() const { return currentVolume; }
+	inline const Volume *GetCurrentVolume() const noexcept { return currentVolume; }
 	const Volume *GetVolume(const u_int i) const { return volumeList[i]; }
 	const u_int GetListSize() const { return volumeListSize; }
 

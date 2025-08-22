@@ -204,7 +204,6 @@ void ProjectiveCamera::GenerateRay(const float time,
 		*ray = motionSystem->Sample(ray->time) * (camTrans.cameraToWorld * (*ray));
 	else
 		*ray = camTrans.cameraToWorld * (*ray);
-	ray->d = Normalize(ray->d);
 
 	// Tag the ray for curved GRIN handling if required
 	ray->rayType = (scene && scene->worldGrinInfo.enabled && (scene->worldVolumeType == GRIN_VOL)) ?

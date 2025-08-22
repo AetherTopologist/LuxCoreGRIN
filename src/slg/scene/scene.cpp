@@ -646,54 +646,60 @@ bool Scene::Intersect(IntersectionDevice *device,
 		Scene::StitchHint stitchHint;
 		if (ray->IsCurved() && worldGrinInfo.enabled)
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-											worldGrinInfo.beta, worldGrinInfo.gamma,
-											worldGrinInfo.center,
-											worldGrinInfo.rInner, worldGrinInfo.rOuter,
-											worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-											worldGrinInfo.invert,
-											worldGrinInfo.insightCurvatureThreshold,
-											worldGrinInfo.barycentricEpsilon,
-											worldGrinInfo.rk4PlaneThreshold,
-											worldGrinInfo.uvSeamTolerance,
-											(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
-											&stitchHint,
-											worldGrinInfo.stitchPlaneFactor,
-											worldGrinInfo.stitchBaryMargin,
-											worldGrinInfo.adaptiveEnable,
-											worldGrinInfo.adaptivePlaneTriggerFactor,
-											worldGrinInfo.adaptiveCurvatureTrigger,
-											worldGrinInfo.adaptiveMaxSubdiv,
-											worldGrinInfo.adaptiveBisectIters,
-											worldGrinInfo.adaptiveMinStep,
-											worldGrinInfo.adaptiveInsightAcceptMargin,
-											worldGrinInfo.adaptiveRate,
-											worldGrinInfo.adaptiveMaxScale,
-											worldGrinInfo.rk4_step_init,
-											worldGrinInfo.rk4_step_min,
-											worldGrinInfo.rk4_step_max,
-											worldGrinInfo.rk4_step_curv_k,
-											worldGrinInfo.rk4_max_steps,
-											worldGrinInfo.rk4_max_arc_len,
-											worldGrinInfo.deflect_eps,
-											worldGrinInfo.linearize_threshold,
-											worldGrinInfo.grin_fast_math);
+										worldGrinInfo.beta, worldGrinInfo.gamma,
+										worldGrinInfo.center,
+										worldGrinInfo.rInner, worldGrinInfo.rOuter,
+										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+										worldGrinInfo.invert,
+										worldGrinInfo.insightCurvatureThreshold,
+										worldGrinInfo.barycentricEpsilon,
+										worldGrinInfo.rk4PlaneThreshold,
+										worldGrinInfo.uvSeamTolerance,
+										(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
+										&stitchHint,
+										worldGrinInfo.stitchPlaneFactor,
+										worldGrinInfo.stitchBaryMargin,
+										worldGrinInfo.adaptiveEnable,
+										worldGrinInfo.adaptivePlaneTriggerFactor,
+										worldGrinInfo.adaptiveCurvatureTrigger,
+										worldGrinInfo.adaptiveMaxSubdiv,
+										worldGrinInfo.adaptiveBisectIters,
+										worldGrinInfo.adaptiveMinStep,
+										worldGrinInfo.adaptiveInsightAcceptMargin,
+										worldGrinInfo.adaptiveRate,
+										worldGrinInfo.adaptiveMaxScale,
+										worldGrinInfo.rk4_step_init,
+										worldGrinInfo.rk4_step_min,
+										worldGrinInfo.rk4_step_max,
+										worldGrinInfo.rk4_step_curv_k,
+										worldGrinInfo.rk4_max_steps,
+										worldGrinInfo.rk4_max_arc_len,
+										worldGrinInfo.deflect_eps,
+										worldGrinInfo.linearize_threshold,
+										worldGrinInfo.grin_fast_math);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 
-		// Attempt to recover a miss by probing neighboring triangles
-		if (!hit && ray->IsCurved() && worldGrinInfo.enabled && stitchHint.valid()) {
-			const SceneObject *obj = objDefs.GetSceneObject(stitchHint.meshIndex);
-			ExtTriangleMesh *mesh = obj ?
-							dynamic_cast<ExtTriangleMesh *>(const_cast<ExtMesh *>(obj->GetExtMesh())) : nullptr;
-			if (mesh && stitchHint.triIndex < mesh->GetTotalTriangleCount()) {
-				RayHit stitchHit;
-				if (EmitStitchRays(mesh, stitchHint.triIndex, *ray, &stitchHit)) {
-					stitchHit.meshIndex = stitchHint.meshIndex;
-					*rayHit = stitchHit;
-					hit = true;
+			// Attempt to recover a miss by probing neighboring triangles
+			if (!hit && ray->IsCurved() && worldGrinInfo.enabled && stitchHint.valid()) {
+				const float curvProxy = fabsf(worldGrinInfo.beta) +
+						fabsf(worldGrinInfo.gamma.x) +
+						fabsf(worldGrinInfo.gamma.y) +
+						fabsf(worldGrinInfo.gamma.z);
+				if (curvProxy >= worldGrinInfo.deflect_eps * 0.5f) {
+					const SceneObject *obj = objDefs.GetSceneObject(stitchHint.meshIndex);
+					ExtTriangleMesh *mesh = obj ?
+											dynamic_cast<ExtTriangleMesh *>(const_cast<ExtMesh *>(obj->GetExtMesh())) : nullptr;
+					if (mesh && stitchHint.triIndex < mesh->GetTotalTriangleCount()) {
+						RayHit stitchHit;
+						if (EmitStitchRays(mesh, stitchHint.triIndex, *ray, &stitchHit)) {
+							stitchHit.meshIndex = stitchHint.meshIndex;
+							*rayHit = stitchHit;
+							hit = true;
+						}
+					}
 				}
 			}
-		}
 		
 		bool bevelContinueToTrace = !hit;
 		const Volume *rayVolume = volInfo->GetCurrentVolume();
@@ -1021,37 +1027,37 @@ bool Scene::xPRIMEIntersect(IntersectionDevice *device,
 		Scene::StitchHint stitchHint;
 		if (ray->IsCurved() && worldGrinInfo.enabled)
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->xPRIMEIntersect(ray, rayHit,
-								worldGrinInfo.beta, worldGrinInfo.gamma,
-								worldGrinInfo.center,
-								worldGrinInfo.rInner, worldGrinInfo.rOuter,
-								worldGrinInfo.stepSize, worldGrinInfo.numSteps,
-								worldGrinInfo.invert,
-								worldGrinInfo.insightCurvatureThreshold,
-								worldGrinInfo.barycentricEpsilon,
-								worldGrinInfo.rk4PlaneThreshold,
-								worldGrinInfo.uvSeamTolerance,
-								(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
-								&stitchHint,
-								worldGrinInfo.stitchPlaneFactor,
-								worldGrinInfo.stitchBaryMargin,
-								worldGrinInfo.adaptiveEnable,
-								worldGrinInfo.adaptivePlaneTriggerFactor,
-								worldGrinInfo.adaptiveCurvatureTrigger,
-								worldGrinInfo.adaptiveMaxSubdiv,
-								worldGrinInfo.adaptiveBisectIters,
-								worldGrinInfo.adaptiveMinStep,
-								worldGrinInfo.adaptiveInsightAcceptMargin,
-								worldGrinInfo.adaptiveRate,
-								worldGrinInfo.adaptiveMaxScale,
-								worldGrinInfo.rk4_step_init,
-								worldGrinInfo.rk4_step_min,
-								worldGrinInfo.rk4_step_max,
-								worldGrinInfo.rk4_step_curv_k,
-								worldGrinInfo.rk4_max_steps,
-								worldGrinInfo.rk4_max_arc_len,
-								worldGrinInfo.deflect_eps,
-								worldGrinInfo.linearize_threshold,
-								worldGrinInfo.grin_fast_math);
+										worldGrinInfo.beta, worldGrinInfo.gamma,
+										worldGrinInfo.center,
+										worldGrinInfo.rInner, worldGrinInfo.rOuter,
+										worldGrinInfo.stepSize, worldGrinInfo.numSteps,
+										worldGrinInfo.invert,
+										worldGrinInfo.insightCurvatureThreshold,
+										worldGrinInfo.barycentricEpsilon,
+										worldGrinInfo.rk4PlaneThreshold,
+										worldGrinInfo.uvSeamTolerance,
+										(luxrays::UVCrossPolicy)worldGrinInfo.uvCrossIslandPolicy,
+										&stitchHint,
+										worldGrinInfo.stitchPlaneFactor,
+										worldGrinInfo.stitchBaryMargin,
+										worldGrinInfo.adaptiveEnable,
+										worldGrinInfo.adaptivePlaneTriggerFactor,
+										worldGrinInfo.adaptiveCurvatureTrigger,
+										worldGrinInfo.adaptiveMaxSubdiv,
+										worldGrinInfo.adaptiveBisectIters,
+										worldGrinInfo.adaptiveMinStep,
+										worldGrinInfo.adaptiveInsightAcceptMargin,
+										worldGrinInfo.adaptiveRate,
+										worldGrinInfo.adaptiveMaxScale,
+										worldGrinInfo.rk4_step_init,
+										worldGrinInfo.rk4_step_min,
+										worldGrinInfo.rk4_step_max,
+										worldGrinInfo.rk4_step_curv_k,
+										worldGrinInfo.rk4_max_steps,
+										worldGrinInfo.rk4_max_arc_len,
+										worldGrinInfo.deflect_eps,
+										worldGrinInfo.linearize_threshold,
+										worldGrinInfo.grin_fast_math);
 		else
 			hit = dataSet->GetAccelerator(ACCEL_BVH)->Intersect(ray, rayHit);
 

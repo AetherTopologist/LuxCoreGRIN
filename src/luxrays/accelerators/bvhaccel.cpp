@@ -336,6 +336,14 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
                                bool  grinFastMath) const {
 	assert (initialized);
 
+	auto nearZeroCurv = [](float b, const luxrays::Vector &g) {
+		const float eps = 1e-9f;
+		return fabsf(b) + fabsf(g.x) + fabsf(g.y) + fabsf(g.z) < eps;
+	};
+
+	if (numSteps <= 0 || nearZeroCurv(beta, gamma))
+		return Intersect(initialRay, rayHit);
+
 	rayHit->t = initialRay->maxt;
 	rayHit->SetMiss();
 	if (!nNodes)
@@ -344,23 +352,23 @@ bool BVHAccel::xPRIMEIntersect(const Ray *initialRay, RayHit *rayHit,
 	Ray ray(*initialRay);
 	// -- Convert Ray to xPRIMEray --
 	xPRIMEray xPRIMEray(
-			initialRay->o,              // origin
-			initialRay->d,     		    // direction
-			grinCenter,                 // center of curvature (can customize)
-			beta,                       // beta (GRIN intensity scalar)
-			gamma,                      // gamma (exponents per axis)
-			xPRIMErayType::POWER,       // curvature model
-			initialRay->mint,
-			initialRay->maxt,
-			rk4StepInit,
-			rk4MaxSteps,
-			rk4StepMin,
-			rk4StepMax,
-			rk4StepCurvK,
-			rk4MaxArcLen,
-			deflectEps,
-			linearizeThreshold,
-			grinFastMath
+                initialRay->o,              // origin
+                initialRay->d,              // direction
+                grinCenter,                 // center of curvature (can customize)
+                beta,                       // beta (GRIN intensity scalar)
+                gamma,                      // gamma (exponents per axis)
+                xPRIMErayType::POWER,       // curvature model
+                initialRay->mint,
+                initialRay->maxt,
+                rk4StepInit,
+                rk4MaxSteps,
+                rk4StepMin,
+                rk4StepMax,
+                rk4StepCurvK,
+                rk4MaxArcLen,
+                deflectEps,
+                linearizeThreshold,
+                grinFastMath
 	);
 
 	// Use a scaled step count when computing the curved-ray envelope to

@@ -57,21 +57,21 @@ public:
 				float deflectEps_ = 1e-4f, float linearizeThreshold_ = 1e-3f,
 				bool fastMath_ = false)
 				: origin(o), direction(Normalize(d)), center(c), beta(b), gamma(g),
-				type(t), mint(minT), maxt(maxT), stepSize(step), numSteps(steps),
+                type(t), mint(minT), maxt(maxT), stepSize(step), numSteps(steps),
                 stepMin(stepMin_), stepMax(stepMax_), stepCurvK(stepCurvK_),
                 maxArcLen(maxArcLen_), deflectEps(deflectEps_),
                 linearizeThreshold(linearizeThreshold_), fastMath(fastMath_) { }
 
 	// Default constructor
 	xPRIMEray()
-		: origin(Point()), direction(Vector(0, 0, 1)),
-				center(Point()), beta(2.f),
-				gamma(Vector(1.f, 1.f, 1.6f)),
-				type(xPRIMErayType::POWER), mint(0.0001f), maxt(1e30f),
-				stepSize(0.01f), numSteps(64),
-				stepMin(1e-5f), stepMax(0.05f), stepCurvK(0.25f),
-				maxArcLen(0.5f), deflectEps(1e-4f),
-				linearizeThreshold(1e-3f), fastMath(false) { }
+			: origin(Point()), direction(Vector(0, 0, 1)),
+			center(Point()), beta(2.f),
+			gamma(Vector(1.f, 1.f, 1.6f)),
+			type(xPRIMErayType::POWER), mint(0.0001f), maxt(1e30f),
+			stepSize(0.01f), numSteps(64),
+			stepMin(1e-5f), stepMax(0.05f), stepCurvK(0.25f),
+			maxArcLen(0.5f), deflectEps(1e-4f),
+			linearizeThreshold(1e-3f), fastMath(false) { }
 
 };
 //------------------------------------------------------------------------------

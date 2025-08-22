@@ -33,6 +33,7 @@
 #include "slg/volumes/grin.h"
 #include "slg/volumes/heterogenous.h"
 #include "slg/volumes/homogenous.h"
+#include "luxrays/utils/utils.h"
 
 using namespace std;
 using namespace luxrays;
@@ -191,10 +192,22 @@ void Scene::ParseVolumes(const Properties &props) {
 	if (props.IsDefined("grin.uv_seam_tolerance"))
 		worldGrinInfo.uvSeamTolerance = props.Get("grin.uv_seam_tolerance").Get<float>();
 	if (props.IsDefined("grin.uv_cross_island_policy")) {
-	const std::string mode = props.Get("grin.uv_cross_island_policy").Get<std::string>();
-	if (boost::iequals(mode, "reject")) worldGrinInfo.uvCrossIslandPolicy = WorldGRINInfo::UV_REJECT;
-	else if (boost::iequals(mode, "edge_project")) worldGrinInfo.uvCrossIslandPolicy = WorldGRINInfo::UV_EDGE_PROJECT;
+       const std::string mode = props.Get("grin.uv_cross_island_policy").Get<std::string>();
+       if (boost::iequals(mode, "reject")) worldGrinInfo.uvCrossIslandPolicy = WorldGRINInfo::UV_REJECT;
+       else if (boost::iequals(mode, "edge_project")) worldGrinInfo.uvCrossIslandPolicy = WorldGRINInfo::UV_EDGE_PROJECT;
 	}
+
+	// RK4 stepping controls and linearization thresholds
+	worldGrinInfo.rk4_step_init = Clamp(props.Get(Property("grin.rk4_step_init")(worldGrinInfo.rk4_step_init)).Get<float>(), 1e-6f, 0.1f);
+	worldGrinInfo.rk4_step_min = Clamp(props.Get(Property("grin.rk4_step_min")(worldGrinInfo.rk4_step_min)).Get<float>(), 1e-7f, 1e-2f);
+	worldGrinInfo.rk4_step_max = Clamp(props.Get(Property("grin.rk4_step_max")(worldGrinInfo.rk4_step_max)).Get<float>(), 1e-4f, 1.f);
+	worldGrinInfo.rk4_step_curv_k = Clamp(props.Get(Property("grin.rk4_step_curv_k")(worldGrinInfo.rk4_step_curv_k)).Get<float>(), 0.f, 1.f);
+	worldGrinInfo.rk4_max_steps = Clamp(props.Get(Property("grin.rk4_max_steps")(worldGrinInfo.rk4_max_steps)).Get<int>(), 1, 1024);
+	worldGrinInfo.rk4_max_arc_len = Clamp(props.Get(Property("grin.rk4_max_arc_len")(worldGrinInfo.rk4_max_arc_len)).Get<float>(), 0.01f, 10.f);
+	worldGrinInfo.deflect_eps = Clamp(props.Get(Property("grin.deflect_eps")(worldGrinInfo.deflect_eps)).Get<float>(), 1e-6f, 1e-2f);
+	worldGrinInfo.linearize_threshold = Clamp(props.Get(Property("grin.linearize_threshold")(worldGrinInfo.linearize_threshold)).Get<float>(), 1e-6f, 1e-1f);
+	worldGrinInfo.max_linearize_depth = Clamp(props.Get(Property("grin.max_linearize_depth")(worldGrinInfo.max_linearize_depth)).Get<int>(), 0, 10);
+	worldGrinInfo.grin_fast_math = props.Get(Property("grin.fast_math")(worldGrinInfo.grin_fast_math)).Get<bool>();
 
 	// Adaptive controls
 	if (props.IsDefined("grin.adaptive.enable"))

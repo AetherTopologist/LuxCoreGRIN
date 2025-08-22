@@ -82,7 +82,7 @@ static inline TriBasis MakeTriBasis(const Point &p0, const Point &p1, const Poin
     b.edges[2] = p0 - p2; b.edgeLen2[2] = b.edges[2].LengthSquared();
     return b;
 }
-	
+
 // UV seam handling policy
 enum UVCrossPolicy { UV_REJECT = 0, UV_EDGE_PROJECT = 1 };
 
@@ -93,7 +93,7 @@ struct BaryResult {
     u_int edgeId;         // 0:(p0,p1) 1:(p1,p2) 2:(p2,p0), or 3 if none
 };
 
-//// Overloads using precomputed triangle basis
+// Overloads using precomputed triangle basis
 static inline BaryResult ProjectToTriangleBary(
     const TriBasis &basis,
     const Point &hit, const float insideTol, const float edgeTol) {
@@ -374,11 +374,11 @@ public:
 	}
 
 	static Vector ComputeGRINField(
-					const Point &pos,
-					const Point &GRINCenter,
-					const float rInner,
-					const GrinStepInvariants &inv,
-					const bool invert = false) {
+				const Point &pos,
+				const Point &GRINCenter,
+				const float rInner,
+				const GrinStepInvariants &inv,
+				const bool invert = false) {
 
 		const Vector offset = pos - GRINCenter;
 		const float r2 = offset.LengthSquared();
@@ -401,7 +401,7 @@ public:
 					effBeta.y * ty * offset.y * invR,
 					effBeta.z * tz * offset.z * invR);
 	}
-
+	
 	static bool IntersectINSIGHT(
 			const xPRIMEray &ray,
 			const Point &p0,
@@ -453,8 +453,8 @@ public:
 
 	// Project point P to the closest point on triangle (p0,p1,p2). Returns clamped barycentrics.
 	static inline void ClosestPointBarycentric(const Point &p,
-					const Point &p0, const Point &p1, const Point &p2,
-					float *b1, float *b2) {
+									const Point &p0, const Point &p1, const Point &p2,
+									float *b1, float *b2) {
 		// Ericson-style closest-point on triangle
 		const Vector v0 = p1 - p0;
 		const Vector v1 = p2 - p0;
@@ -582,8 +582,8 @@ public:
 	}
 
 	static inline void ClampBarycentricSoft(const Point &p,
-			const Point &p0, const Point &p1, const Point &p2,
-			float tol, float *b1, float *b2) {
+									const Point &p0, const Point &p1, const Point &p2,
+									float tol, float *b1, float *b2) {
 		const float u = 1.f - *b1 - *b2;
 		if (u >= -tol && *b1 >= -tol && *b2 >= -tol)
 			ClosestPointBarycentric(p, p0, p1, p2, b1, b2);
@@ -593,7 +593,7 @@ public:
 									const Point &p, float tol, float *b1, float *b2) {
 		const float u = 1.f - *b1 - *b2;
 		if (u >= -tol && *b1 >= -tol && *b2 >= -tol)
-				ClosestPointBarycentric(p, basis, b1, b2);
+			ClosestPointBarycentric(p, basis, b1, b2);
 	}
 
 	static bool RK4_GRINIntersect(
@@ -661,7 +661,7 @@ public:
 		bool linearFlag = false;
 		for (int i = 0; i < maxSteps; ++i) {
 			if (tAccum > ray.maxArcLen)
-					break;
+				break;
 			float effBaryEps = barycentricEpsilon;
 			if (adaptiveEnable && bendAccum > adaptiveCurvatureTrigger) {
 				const float effScale = std::min(adaptiveMaxScale,
@@ -708,10 +708,10 @@ public:
 
 			if ((prevDist * currDist <= 0.f) || (std::fabs(currDist) < rk4PlaneThreshold)) {
 				Point A = prevPos, B = pos;
-				float da = prevDist, db = currDist;
-				for (int it = 0; it < adaptiveBisectIters; ++it) {
-					const Point M = (A + B) * 0.5f;
-					const float dm = Dot(M - basis.p0, N);
+					float da = prevDist, db = currDist;
+					for (int it = 0; it < adaptiveBisectIters; ++it) {
+						const Point M = (A + B) * 0.5f;
+						const float dm = Dot(M - basis.p0, N);
 					if (dm == 0.f) { A = B = M; break; }
 					if (da * dm <= 0.f) { B = M; db = dm; }
 					else { A = M; da = dm; }
@@ -743,7 +743,7 @@ public:
 						return true;
 					}
 					if (br.nearEdge && (uvPolicy == UV_EDGE_PROJECT) &&
-							EdgeProjectBary(basis, planePoint, br.edgeId, b1, b2)) {
+								EdgeProjectBary(basis, planePoint, br.edgeId, b1, b2)) {
 						*tHit = tPlane;
 						*rk4Hit = planePoint;
 						ClampBarycentricSoft(basis, planePoint, 1e-6f, b1, b2);
